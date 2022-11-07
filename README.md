@@ -52,6 +52,8 @@ TO DO LIST:
 
 URLS:
 
+[socket()](https://www.ibm.com/docs/en/zos/2.3.0?topic=functions-socket-create-socket)
+
 Tutorial Install HexChat: https://sourcedigit.com/24996-how-to-install-hexchat-irc-client-on-ubuntu-linux/
 What is a Socket? https://www.tutorialspoint.com/unix_sockets/what_is_socket.htm
 
