@@ -1,8 +1,7 @@
 # ft_IRC
 
-
 TO DO LIST:
-
+```
 [ ] - Main Funtion
     [ ] - Args: Port + Password
     [ ] - Infinite Loop
@@ -22,7 +21,6 @@ TO DO LIST:
     [ ] - Create Channel
     [ ] - Delete Channel
     [ ] - Users List Management (Creating and Deleting Users)
-
 
 [ ] - Classes
 
@@ -50,7 +48,7 @@ TO DO LIST:
             - Source
             - Dest
             - Content
-
+```
 
 URLS:
 
