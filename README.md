@@ -2,7 +2,7 @@
 
 
 TO DO LIST: 
-
+```
 [ ] - Client Locator
     [ ] - Nickname & Username
     [ ] - Authenticate
@@ -41,7 +41,7 @@ TO DO LIST:
             - Source
             - Dest
             - Content
-
+```
 
 URLS:
 
