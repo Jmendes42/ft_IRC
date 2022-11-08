@@ -52,7 +52,11 @@ TO DO LIST:
 
 URLS:
 
+[RFC](www.rfc-editor.org/rfc/rfc1459.html)
+
 [Socket class](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)
+
+#define _XOPEN_SOURCE_EXTENDED 1 // Needed for something related to socket()
 
 [socket()](https://www.ibm.com/docs/en/zos/2.3.0?topic=functions-socket-create-socket)
 
