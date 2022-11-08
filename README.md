@@ -52,6 +52,7 @@ TO DO LIST:
 
 URLS:
 
+[Socket class](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)
 [socket()](https://www.ibm.com/docs/en/zos/2.3.0?topic=functions-socket-create-socket)
 
 Tutorial Install HexChat: https://sourcedigit.com/24996-how-to-install-hexchat-irc-client-on-ubuntu-linux/
