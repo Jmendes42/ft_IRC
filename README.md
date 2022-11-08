@@ -87,3 +87,33 @@ Channel Operators (also referred to as a "chop" or "chanop" and identified by th
         MODE    - Change the channel's mode
         INVITE  - Invite a client to an invite-only channel (mode +i)
         TOPIC   - Change the channel topic in a mode +t channel
+    
+Messages: (Comunication is essentially asyncrhonous)
+    - 3 Main Parts: (separated by 1 or more spaces (' '))
+        - Prefix (optional)
+            --> Indicated using a colon (':') (ex: ':isousa') *No whitespaces between the ':' and the prefix.
+            --> Used to indicate the origin of the message.
+            --> If there is no prefix, Server will assume it is originated from the connection it was received.
+            --> If the source can't be found (ex: prefix dont match any user) or if the source is different than the link it arrived from, the message should be ignored.
+        - Command
+            --> Valid IRC command or a 3 digit number.
+        - Command Parameters (up to 15)
+    - Messages are always terminated with Carriage Return - Line Feed and they should NOT exceed 512 chars. 
+    - Server must parse the entire message and return appropriate errors.
+    - All Parameters must be check for validity. 
+
+    Fatal Error:    (Terminate Parsing and return Error)
+        --> Incorrect Command
+        --> Destination Unknown
+        --> Not enough Parameters
+        --> Incorrect Privileges
+
+    1) Connection Registration (to connect and disconnect from the server)
+        --> Pass Message (":isousa PASS <password>")
+                Used to set a Connection Password.
+                Must be equal to the Server Password passed by Argument to Main.
+                Client can send this message multiple times but the last one is the one used to register. Can't be changed after. 
+        --> Nick Message
+        --> User Message
+
+        
