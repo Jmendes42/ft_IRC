@@ -1,71 +1,6 @@
 # FT_IRC
 <br>
 
-## TODO List
-
-- [ ] Main Funtion
-    - [ ] Args: Port + Password
-    - [ ] Infinite Loop
-    - [ ] Socket Creation
-- [x] Client Locator
-    - [x] Nickname
-    - [x] Host Username
-    - [x] Authenticate
-    - [x] Join Channel
-- [x] Message Relaying
-    - [ ] Reading from Server Socket
-    - [ ] Parsing Message
-    - [ ] Writing to Client Socket
-- [x] Channel Hosting and Management
-    - [ ] Create Channel
-    - [ ] Delete Channel
-    - [ ] Users List Management (Creating and Deleting Users)
-- [x] Classes
-    - [ ] Server
-        - [ ] Interpreter
-            - [ ] Create User
-            - [ ] Create Channel
-            - [ ] Sending Mensages
-        - [ ] Socket
-        - [ ] Users <vector>
-        - [ ] Channels <vector>
-    - [ ] User
-        - [ ] IP
-        - [ ] Port
-        - [ ] Host Username
-        - [ ] Nickname
-        - [ ] Password
-        - [ ] Channels ID <vector>
-    - [ ] Channel
-        - [ ] ID
-        - [ ] Name
-    - [ ] Message
-        - [ ] Source
-        - [ ] Dest
-        - [ ] Content
-<br>
-<br>
-
-## URLS
-
-[RFC](www.rfc-editor.org/rfc/rfc1459.html)
-
-[Socket class](https://www.educba.com/socket-programming-in-c-plus-plus/)
-
-#define _XOPEN_SOURCE_EXTENDED 1 // Needed for something related to socket()
-
-[socket()](https://www.ibm.com/docs/en/zos/2.3.0?topic=functions-socket-create-socket)
-
-[What is a Socket?](https://www.tutorialspoint.com/unix_sockets/what_is_socket.htm)
-
-[IRC Guide](https://medium.com/the-complete-guide-for-irc-network-i-e-freenode/irc-protocol-services-and-architecture-4e23da2db62)
-
-[IRC RFC](https://www.rfc-editor.org/rfc/rfc1459.html)
-
-Install WeeChat: 
-```sudo apt install weechat```
-<br>
-<br>
 ## Guidelines
 
 > The IRC protocol is a text-based protocol, with the simplest client being any socket program capable of connecting to the server.
@@ -125,4 +60,26 @@ Channel Operators (also referred to as a ***chop*** or ***chanop*** and identifi
     
     3. Command Parameters (MAX 15)
 
-        
+<br>
+<br>
+
+## URLS
+
+[RFC](www.rfc-editor.org/rfc/rfc1459.html)
+
+[Socket class](https://www.educba.com/socket-programming-in-c-plus-plus/)
+
+#define _XOPEN_SOURCE_EXTENDED 1 // Needed for something related to socket()
+
+[socket()](https://www.ibm.com/docs/en/zos/2.3.0?topic=functions-socket-create-socket)
+
+[What is a Socket?](https://www.tutorialspoint.com/unix_sockets/what_is_socket.htm)
+
+[IRC Guide](https://medium.com/the-complete-guide-for-irc-network-i-e-freenode/irc-protocol-services-and-architecture-4e23da2db62)
+
+[IRC RFC](https://www.rfc-editor.org/rfc/rfc1459.html)
+
+[IRC Message Examples](http://chi.cs.uchicago.edu/chirc/irc_examples.html)
+    
+Install WeeChat: 
+```sudo apt install weechat```
