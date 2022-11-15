@@ -17,7 +17,7 @@ class ClientHandler
 
         void    editClient(std::vector<std::string> &info);
         void    addClient(std::string const &msg);
-        void    rmvClient(std::string &msg);
+        void    rmvClient(std::string const &msg);
 
 };
 
@@ -45,6 +45,17 @@ void    ClientHandler::addClient(std::string const &msg)
         _clients.push_back(new Client(info[1]));
     else if (!info[0].compare("USER"))
         editClient(info);
+}
+
+// REMOVE BY NICK ! CHECK THE COMMAND TO REMOVE USER TO CHECK WHAT IS NEEDED
+void    ClientHandler::rmvClient(std::string const &msg)
+{
+    std::vector<Client *>::iterator it;
+    for (it = _clients.begin(); it != _clients.end(); it++)
+    {
+        if (!((*it)->getNick().compare(msg)))
+            _clients.erase(it);
+    }
 }
 
 #endif
