@@ -69,8 +69,6 @@ Channel Operators (also referred to as a ***chop*** or ***chanop*** and identifi
 
 [Socket class](https://www.educba.com/socket-programming-in-c-plus-plus/)
 
-#define _XOPEN_SOURCE_EXTENDED 1 // Needed for something related to socket()
-
 [socket()](https://www.ibm.com/docs/en/zos/2.3.0?topic=functions-socket-create-socket)
 
 [What is a Socket?](https://www.tutorialspoint.com/unix_sockets/what_is_socket.htm)
