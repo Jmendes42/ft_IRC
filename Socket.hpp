@@ -1,15 +1,7 @@
-#include <string>
-#include <iostream>
+#ifndef SOCKETCLASS_HPP
+# define SOCKETCLASS_HPP
 
-#include <netdb.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <arpa/inet.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
+# include "header.hpp"
 
 template<typename T>
 void	MSG(T msg) {
@@ -35,23 +27,15 @@ class Socket {
 	std::string		_message;
 
 	public:
-
+		Socket();
 		Socket(int port);				// Optionally it can also receive an IP if necessary
 
 		void	_chat();
 		void	_bind();
 		void	_clientSet();
-		/*inputStream getInputStream();	// Get input from user
-										// This input stream method will return the 
-										// InputStream representing the data attached to 
-										// this socket. It also throws an exception.
+		std::string &getMessage() { return _message; };
 
-		outputStream getOutputStream();	// Get output from user
-										// This output stream method will return the 
-										// OutputStream representing the data attached to 
-										// this socket. It also throws an exception.
-		// ^ Make sure the object must be returned every time you call the 
-		// above methods to avoid errors.*/
+		int		&getClientSocket() { return _clientSocket; };
 };
 
 
@@ -121,7 +105,7 @@ void	Socket::_clientSet() {
 
 }
 
-void	Socket::_chat() {
+/*void	Socket::_chat() {
 
 	std::string nick;
 	std::string user;
@@ -129,9 +113,6 @@ void	Socket::_chat() {
 	int	counter = 0;
 
 	while (true) {
-
-
-
 
 		// Clear the buffer
 		memset(buf, 0, 4096);
@@ -173,7 +154,7 @@ void	Socket::_chat() {
 	}
 	MSG(user);
 	close(_clientSocket);
-}
+}*/
 
 Socket::Socket(int port) {
 
@@ -186,12 +167,5 @@ Socket::Socket(int port) {
 	}
 }
 
-int	main() {
+#endif
 
-	Socket sock(54000);
-
-	sock._bind();
-	sock._clientSet();
-	sock._chat();
-	return 0;
-}
