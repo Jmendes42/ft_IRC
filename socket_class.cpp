@@ -147,15 +147,16 @@ void	Socket::_chat() {
 		}
 
 		if (counter == 2) {
-			send(_clientSocket, "jmendes!jmendes@0\n", 17 + 1, 0);
+			//send(_clientSocket, "jmendes!jmendes@0\n", 17 + 1, 0);
 			counter++;
 		}
 		else if (!strncmp(buf, "NICK ", 5)) {
 				nick = std::string(buf, 0, bytesRecv);
 				counter++;
 		}
-		else if (!strncmp(buf, "USER ", 5)) {
+		else if (!strncmp(buf, "USER", 4)) {
 				user = std::string(buf, 0, bytesRecv);
+				send(_clientSocket, buf, bytesRecv + 1, 0);				// Resend msg
 				counter++;
 		}
 		// Client message
@@ -167,9 +168,10 @@ void	Socket::_chat() {
 			MSG("The client has disconnected");
 			break;
 		}
-		send(_clientSocket, "001 RPL_WELCOME\n", 14 + 1, 0);
-		//send(_clientSocket, "Welcome to the internet Relay Network jmendes!jmendes@0\n",38 + 17 + 1, 0);
+		send(_clientSocket, "001 jmendes\n", 12 + 1, 0);
+		//send(_clientSocket, "jmendes!jmendes@0\n",18 + 1, 0);
 	}
+	MSG(user);
 	close(_clientSocket);
 }
 
