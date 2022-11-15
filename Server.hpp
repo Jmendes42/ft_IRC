@@ -8,9 +8,6 @@ class Server
     int                     _port;
     Socket                  _sock;
     std::string             _password;
-    //std::vector<Client *>   _clients;
-    // Interpreter 
-    // std::vector<Channels *> _channels;
 
     public:
         Server();
@@ -19,7 +16,6 @@ class Server
 
         void    _chat();
         void    _sockSet();
-        bool    _verPass(std::string);
         void    _interpreter(std::string);
 };
 
@@ -68,42 +64,12 @@ void	Server::_chat() {
 void    Server::_sockSet() {
     _sock._bind();
 	_sock._clientSet();
-	//_sock._chat();
 }
 
 
 void    Server::_interpreter(std::string msg) {
     std::string cmd = msg.substr(0, msg.find(' '));
 
-    if (cmd == "PASS") {
-        if (_verPass(msg)) {
-            MSG("Guuuut");
-        }
-        else {
-            MSG("Error: Wrong password");
-            exit(0);
-        }
-    }
-    else {
-        MSG("Error: No PASS command");
-        exit(0);
-    }
-}
-
-bool    Server::_verPass(std::string msg) {
-    //std::cout << msg << "--" << msg.length() << std::endl;
-    std::string pass = msg.substr(msg.find(' ') + 1, msg.length() - msg.find(' ') - 3);
-    // MSG("--------");
-    // MSG(pass.length());
-    // MSG(_password.length());
-    // MSG(pass);
-    // MSG(_password);
-    // MSG("--------");
-
-    if (pass != _password)
-        return 0;
-    else
-        return 1;
 }
 
 #endif
