@@ -15,17 +15,22 @@ class ClientHandler
 
     public:
 
-        void    editClient(std::vector<std::string> &info);
+        void    editClient(std::vector<std::string> &info, int control);
         void    addClient(std::string const &msg);
         void    rmvClient(std::string const &msg);
 
 };
 
-void    ClientHandler::editClient(std::vector<std::string> &info)
+void    ClientHandler::editClient(std::vector<std::string> &info, int control)
 {
-    _clients.back()->setUser(info[1]);
-    _clients.back()->setHost(info[2]);
-    _clients.back()->setReal(info[4]);
+    if (control == 0)
+        _clients.back()->setNick(info[1]);
+    else
+    {
+        _clients.back()->setUser(info[1]);
+        _clients.back()->setHost(info[2]);
+        _clients.back()->setReal(info[4]);
+    }
 }
 
 void    ClientHandler::addClient(std::string const &msg)
@@ -41,10 +46,12 @@ void    ClientHandler::addClient(std::string const &msg)
     pos = msg.length();
     info.push_back(msg.substr(start, pos));
 
-    if (!info[0].compare("NICK"))
-        _clients.push_back(new Client(info[1]));
+    if (!info[0].compare("PASS"))
+        _clients.push_back(new Client());
+    else if (!info[0].compare("NICK"))
+        editClient(info, 0);
     else if (!info[0].compare("USER"))
-        editClient(info);
+        editClient(info, 1);
 }
 
 // REMOVE BY NICK ! CHECK THE COMMAND TO REMOVE USER TO CHECK WHAT IS NEEDED

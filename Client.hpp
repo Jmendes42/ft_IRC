@@ -14,13 +14,11 @@ class Client
         std::string _username;
         std::string _hostname;
         std::string _realname;
-
-        //std::vector<Channels *> channels;
+        int _pass;
 
     public:
 
-        Client();
-        Client(std::string const &nick) : _nickname(nick) {} ;
+        Client() { _pass = 1;};
         ~Client() {};
 
         void setNick(std::string const &set) { _nickname = set; };
