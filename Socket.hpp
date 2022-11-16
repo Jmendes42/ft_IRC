@@ -5,7 +5,7 @@
 
 template<typename T>
 void	MSG(T msg) {
-	std::cout << msg << std::endl;
+	std::cout << "Message: " << msg << std::endl;
 }
 
 class Socket {

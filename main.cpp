@@ -3,7 +3,7 @@
 
 int	main() {
 
-    Server server(54000, "olaines");
+    Server server(54000, "012");
 
     server._sockSet();
     server._chat();

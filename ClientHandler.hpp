@@ -2,9 +2,7 @@
 #ifndef CLIENT_HANDLER_HPP
 # define CLIENT_HANDLER_HPP
 
-# include <iostream>
-#include  <vector>
-# include "Client.hpp"
+# include "header.hpp"
 
 
 class ClientHandler
@@ -16,7 +14,7 @@ class ClientHandler
     public:
 
         void    editClient(std::vector<std::string> &info, int control);
-        void    addClient(std::string const &msg);
+        void    addClient(std::string const &msg, std::string const &pass);
         void    rmvClient(std::string const &msg);
 
 };
@@ -33,7 +31,7 @@ void    ClientHandler::editClient(std::vector<std::string> &info, int control)
     }
 }
 
-void    ClientHandler::addClient(std::string const &msg)
+void    ClientHandler::addClient(std::string const &msg, std::string const &pass)
 {
     std::vector<std::string> info;
     int pos = 0;
@@ -44,10 +42,21 @@ void    ClientHandler::addClient(std::string const &msg)
         start = pos + 1;
     }
     pos = msg.length();
-    info.push_back(msg.substr(start, pos));
+    info.push_back(msg.substr(start, msg.find(' ') - 1));
 
-    if (!info[0].compare("PASS"))
-        _clients.push_back(new Client());
+    MSG(pos);
+
+    if (!info[0].compare("PASS")) {
+        if (!info[1].compare(pass)) {
+            MSG("Client Created");
+            _clients.push_back(new Client());
+        }
+        else {
+            MSG(info[1]);
+            MSG(pass);
+            exit(0);
+        }
+    }
     else if (!info[0].compare("NICK"))
         editClient(info, 0);
     else if (!info[0].compare("USER"))

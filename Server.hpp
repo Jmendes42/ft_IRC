@@ -8,6 +8,7 @@ class Server
     int                     _port;
     Socket                  _sock;
     std::string             _password;
+	ClientHandler			_handler;
 
     public:
         Server();
@@ -16,7 +17,7 @@ class Server
 
         void    _chat();
         void    _sockSet();
-        void    _interpreter(std::string);
+        void    _interpreter(std::string const &);
 };
 
 
@@ -67,8 +68,11 @@ void    Server::_sockSet() {
 }
 
 
-void    Server::_interpreter(std::string msg) {
+void    Server::_interpreter(std::string const &msg) {
     std::string cmd = msg.substr(0, msg.find(' '));
+
+	if (!cmd.compare("PASS") || !cmd.compare("NICK") || !cmd.compare("USER"))
+		_handler.addClient(msg, _password);
 
 }
 
