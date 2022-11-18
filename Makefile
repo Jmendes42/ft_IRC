@@ -2,8 +2,8 @@ CC = g++
 FLAGS = -Wall -Wextra -Werror -std=c++98
 RM = rm -f
 
-NAME = server
-SRCS = 
+NAME = ircerver
+SRCS = main.cpp 
 OBJS = $(SRCS:.cpp=.o)
 
 all = $(NAME)
