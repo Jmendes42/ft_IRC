@@ -1,10 +1,7 @@
-
-
 #ifndef CLIENT_HPP
 # define CLIENT_HPP
 
-# include <iostream>
-
+# include "Socket.hpp"
 
 class Client
 {
@@ -14,13 +11,11 @@ class Client
         std::string _username;
         std::string _hostname;
         std::string _realname;
-
-        //std::vector<Channels *> channels;
+        int _pass;
 
     public:
 
-        Client();
-        Client(std::string const &nick) : _nickname(nick) {} ;
+        Client() { _pass = 1;};
         ~Client() {};
 
         void setNick(std::string const &set) { _nickname = set; };
@@ -32,7 +27,6 @@ class Client
         std::string &getUser() { return (_username); };
         std::string &getHost() { return (_hostname); };
         std::string &getReal() { return (_realname); };
-
 };
 
 #endif

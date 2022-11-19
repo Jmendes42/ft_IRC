@@ -1,20 +1,10 @@
+# include "Server.hpp"
 
-#include "ClientHandler.hpp"
+int	main() {
 
-int main()
-{
-    ClientHandler handle;
+    Server server(54000, "012");
 
-    handle.addClient("NICK isousa");
-    handle.addClient("USER isousa 0 * :isousa");
-        handle.addClient("NICK jmendes");
-    handle.addClient("USER jmendes 0 * :jmendes");
-    handle.addClient("NICK ola");
-    handle.addClient("USER ola 0 * :ola");
-        handle.addClient("NICK adeus");
-    handle.addClient("USER adeus 0 * :adeus");
-
-    handle.rmvClient("ola");
-
-    return (0);
+    server._sockSet();
+    server._chat();
+	return 0;
 }
