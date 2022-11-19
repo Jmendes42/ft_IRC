@@ -7,11 +7,11 @@ class Client
 {
     private:
 
+        int         _pass;
         std::string _nickname;
         std::string _username;
         std::string _hostname;
         std::string _realname;
-        int _pass;
 
     public:
 

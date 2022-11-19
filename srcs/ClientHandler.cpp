@@ -27,24 +27,17 @@ void    ClientHandler::addClient(std::string const &msg, std::string const &pass
     info.push_back(msg.substr(start, pos - start - 2));
 
     if (!info[0].compare("PASS")) {
-        if (!info[1].compare(pass)) {
+        if (!info[1].compare(pass)) 
             _clients.push_back(new Client());
-            MSG(info[1]);
-    }
         else {
-            MSG(info[1]);
             MSG("Error: Wrong password!");
             exit(0);
         }
     }
-    else if (!info[0].compare("NICK")) {
-        MSG(info[1]);
+    else if (!info[0].compare("NICK"))
         editClient(info, 0);
-    }
-    else if (!info[0].compare("USER")) {
-        MSG(info[1]);
+    else if (!info[0].compare("USER"))
         editClient(info, 1);
-    }
 }
 
 // REMOVE BY NICK ! CHECK THE COMMAND TO REMOVE USER TO CHECK WHAT IS NEEDED
