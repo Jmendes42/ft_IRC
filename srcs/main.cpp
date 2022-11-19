@@ -1,4 +1,4 @@
-# include "../include/ChannelHandler.hpp"
+# include "../include/Server.hpp"
 
 
 int	main() 

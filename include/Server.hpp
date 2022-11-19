@@ -1,7 +1,7 @@
 #ifndef SERVERCLASS_HPP
 # define SERVERCLASS_HPP
 
-# include "ClientHandler.hpp"
+# include "ChannelHandler.hpp"
 
 class Server
 {

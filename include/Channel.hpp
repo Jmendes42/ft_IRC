@@ -2,7 +2,7 @@
 #ifndef CHANNEL_HPP
 # define CHANNEL_HPP
 
-# include "Server.hpp"
+# include "ClientHandler.hpp"
 
 // VERIFY: What happens if the CHOP leaves the channel??
 
