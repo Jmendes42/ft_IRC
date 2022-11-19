@@ -24,7 +24,7 @@ void	Server::_chat() {
 		msg = std::string(buf, 0, bytesRecv);
         _interpreter(msg);
 		std::cout << "Received: " << msg << std::endl;		// Display msg
-		send(clientSocket, "001 jmendes\n", 12 + 1, 0);
+		send(clientSocket, "001 RPL_WELCOME\n", 12 + 1, 0);
 	}
 	close(clientSocket);
 }
@@ -38,6 +38,7 @@ void    Server::_interpreter(std::string const &msg) {
     std::string cmd = msg.substr(0, msg.find(' '));
 
 	if (!cmd.compare("PASS") || !cmd.compare("NICK") || !cmd.compare("USER"))
-		_handler.addClient(msg, _password);
+		_clientHandler.addClient(msg, _password);
+	if (!cmd.compare("PRIVMSG"))
+		_clientHandler.privateMsg(msg);
 }
-

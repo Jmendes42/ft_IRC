@@ -2,14 +2,14 @@
 # define SERVERCLASS_HPP
 
 # include "ClientHandler.hpp"
-# include "Socket.hpp"
 
 class Server
 {
     int                     _port;
     Socket                  _sock;
-	ClientHandler			_handler;
     std::string             _password;
+	ClientHandler			_clientHandler;
+    //ChannelHandler          _channelHandler;
 
     public:
         Server() {};
