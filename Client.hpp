@@ -1,10 +1,7 @@
-
-
 #ifndef CLIENT_HPP
 # define CLIENT_HPP
 
-# include "header.hpp"
-
+# include "Socket.hpp"
 
 class Client
 {
@@ -30,7 +27,6 @@ class Client
         std::string &getUser() { return (_username); };
         std::string &getHost() { return (_hostname); };
         std::string &getReal() { return (_realname); };
-
 };
 
 #endif
