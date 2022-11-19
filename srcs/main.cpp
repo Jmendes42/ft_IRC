@@ -1,7 +1,8 @@
-# include "../include/Server.hpp"
+# include "../include/ChannelHandler.hpp"
 
-int	main() {
 
+int	main() 
+{
     Server server(54000, "012");
 
     server._sockSet();

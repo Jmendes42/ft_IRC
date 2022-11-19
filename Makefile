@@ -1,5 +1,5 @@
 CC = c++
-FLAGS = -Wall -Wextra -Werror -std=c++98
+FLAGS = -Wall -Wextra -Werror -std=c++98 #-fsanitize=address
 RM = rm -f
 
 NAME = ircerver
