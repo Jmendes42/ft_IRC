@@ -1,5 +1,20 @@
 #include "../include/ClientHandler.hpp"
 
+void    ClientHandler::privateMsg(std::string const &msg) {
+    std::vector<std::string> info;
+
+    int pos = 0;
+    int start = 0;
+    while ((pos = msg.find(" ", start)) > -1) {
+        info.push_back(msg.substr(start, pos - start));
+        start = pos + 1;
+    }
+    pos = msg.length();
+    info.push_back(msg.substr(start, pos - start - 2));
+    
+}
+
+
 void    ClientHandler::editClient(std::vector<std::string> &info, int control)
 {
     if (control == 0)
