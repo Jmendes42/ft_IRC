@@ -1,9 +1,9 @@
-CC = g++
+CC = c++
 FLAGS = -Wall -Wextra -Werror -std=c++98
 RM = rm -f
 
 NAME = ircerver
-SRCS = main.cpp 
+SRCS = $(wildcard ./srcs/*.cpp)
 OBJS = $(SRCS:.cpp=.o)
 
 all = $(NAME)
