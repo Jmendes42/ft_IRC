@@ -41,10 +41,9 @@ void    Server::_interpreter(std::string const &msg, int const &clientSocket) {
 		send(clientSocket, "001 jmendes\n", 13, 0);
 	}
 	if (!cmd.compare("JOIN")) {
-		// send(clientSocket, "331 #tardis", 12, 0);
-		send(clientSocket, "isousa!isousa@0 JOIN #tardis\n332 isousa #tardis :wooo\n353 isousa #tardis :@isousa\n366 isousa #tardis :End of NAMES list\n", 125, 0);
-		//send(clientSocket, "353 isousa #tardis :@isousa\n", 29, 0);
-		//send(clientSocket, "366 isousa #tardis :End of NAMES list\n", 39, 0);
+		send(clientSocket, ":jmendes!jmendes@localhost 353 jmendes = #tardiz :@jmendes\n"
+			":jmendes!jmendes@localhost 366 jmendes #tardiz :End of /NAMES list\n"
+			":jmendes!jmendes@localhost JOIN :#tardiz\n", 168, 0);
 		_channelHandler.addChannel(msg, new Client());
 	}
 	if (!cmd.compare("PRIVMSG"))
