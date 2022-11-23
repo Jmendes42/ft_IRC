@@ -78,6 +78,10 @@ Channel Operators (also referred to as a ***chop*** or ***chanop*** and identifi
 [IRC RFC](https://www.rfc-editor.org/rfc/rfc1459.html)
 
 [IRC Message Examples](http://chi.cs.uchicago.edu/chirc/irc_examples.html)
+
+[POLL()](https://www.ibm.com/docs/ja/i/7.3?topic=ssw_ibm_i_73/apis/poll.html)
+
+
     
 Install WeeChat: 
 ```sudo apt install weechat```
