@@ -14,7 +14,10 @@ void	Socket::_bind() {
 
 	_hint.sin_family = AF_INET;
 	_hint.sin_port = htons(_port);									// Little endian for intel processors (Host To Network Short)
-	inet_pton(AF_INET, "0.0.0.0", &_hint.sin_addr);					// Converts a string number to an array of ints. 0.0.0.0 stands for "any address"
+	// INADDR_ANY contains the IP address of the host. For 
+    // server code, this will always be the IP address of 
+    // the machine on which the server is running.
+	_hint.sin_addr.s_addr = htons(INADDR_ANY);
 	if (bind(_socketFd, (sockaddr *)&_hint, sizeof(_hint)) == -1) {
 		MSG("Can't bind int to IP/port");
 		exit(2);
@@ -23,6 +26,10 @@ void	Socket::_bind() {
 
 void	Socket::_clientSet() {
 
+	// The listen system call allows the process to listen 
+    // on the socket for connections. 
+    // The program will be stay idle here if there are no 
+    // incomming connections.
 	if (listen(_socketFd, SOMAXCONN) == -1) {						// SOMAXCON = max number of communications » 128
 		MSG("Can't listen!");
 		exit(3);
@@ -34,13 +41,6 @@ void	Socket::_clientSet() {
 		exit(4);
 	}
 	close(_socketFd);
-	memset(_host, 0, NI_MAXHOST);
-	memset(_svc, 0, NI_MAXSERV);
-	_result = getnameinfo((sockaddr *)&_client, sizeof(_client), _host, NI_MAXHOST, _svc, NI_MAXSERV, 0);
-	if (_result) 
-		std::cout <<_host << " connected on " << _svc << std::endl;
-	else {
-		inet_ntop(AF_INET, &_client.sin_addr, _host, NI_MAXHOST);
-		std::cout << _host << " connected on " << ntohs(_client.sin_port) << std::endl;
-	}
+	ft_memset(_host, 0, NI_MAXHOST);
+	ft_memset(_svc, 0, NI_MAXSERV);
 }

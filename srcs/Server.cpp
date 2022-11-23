@@ -9,7 +9,7 @@ void	Server::_chat() {
 	while (true) {
 
 		// Clear the buffer
-		memset(buf, 0, 4096);
+		ft_memset(buf, 0, 4096);
 		// Wait for a message
 		int bytesRecv = recv(clientSocket, buf, 4096, 0);
 		if (bytesRecv == -1) {

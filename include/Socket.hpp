@@ -44,6 +44,7 @@ class Socket {
 
 template<typename T>
 void	MSG(T msg) { std::cout << "Message: " << msg << std::endl; };
+void	*ft_memset(void *, int, size_t);
 
 #endif
 
