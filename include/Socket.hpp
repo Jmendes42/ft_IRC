@@ -34,7 +34,7 @@ class Socket {
 		Socket();
 		Socket(int port);				// Optionally it can also receive an IP if necessary
 
-		void		_chat();
+		//void		_chat();
 		void		_bind();
 		void		_clientSet();
 		
