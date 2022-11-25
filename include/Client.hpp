@@ -1,20 +1,17 @@
-
-
 #ifndef CLIENT_HPP
 # define CLIENT_HPP
 
-# include <iostream>
-
+# include "Socket.hpp"
 
 class Client
 {
     private:
 
+        int         _pass;
         std::string _nickname;
         std::string _username;
         std::string _hostname;
         std::string _realname;
-        int _pass;
 
     public:
 
@@ -30,7 +27,6 @@ class Client
         std::string &getUser() { return (_username); };
         std::string &getHost() { return (_hostname); };
         std::string &getReal() { return (_realname); };
-
 };
 
 #endif

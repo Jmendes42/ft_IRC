@@ -1,25 +1,19 @@
+#include "../include/ClientHandler.hpp"
 
-#ifndef CLIENT_HANDLER_HPP
-# define CLIENT_HANDLER_HPP
+void    ClientHandler::privateMsg(std::string const &msg) {
+    std::vector<std::string> info;
 
-# include <iostream>
-#include  <vector>
-# include "Client.hpp"
+    int pos = 0;
+    int start = 0;
+    while ((pos = msg.find(" ", start)) > -1) {
+        info.push_back(msg.substr(start, pos - start));
+        start = pos + 1;
+    }
+    pos = msg.length();
+    info.push_back(msg.substr(start, pos - start - 2));
+    
+}
 
-
-class ClientHandler
-{
-    private:
-
-        std::vector<Client *> _clients;
-
-    public:
-
-        void    editClient(std::vector<std::string> &info, int control);
-        void    addClient(std::string const &msg);
-        void    rmvClient(std::string const &msg);
-
-};
 
 void    ClientHandler::editClient(std::vector<std::string> &info, int control)
 {
@@ -30,10 +24,11 @@ void    ClientHandler::editClient(std::vector<std::string> &info, int control)
         _clients.back()->setUser(info[1]);
         _clients.back()->setHost(info[2]);
         _clients.back()->setReal(info[4]);
+        MSG("Client Created");
     }
 }
 
-void    ClientHandler::addClient(std::string const &msg)
+void    ClientHandler::addClient(std::string const &msg, std::string const &pass)
 {
     std::vector<std::string> info;
     int pos = 0;
@@ -44,10 +39,16 @@ void    ClientHandler::addClient(std::string const &msg)
         start = pos + 1;
     }
     pos = msg.length();
-    info.push_back(msg.substr(start, pos));
+    info.push_back(msg.substr(start, pos - start - 2));
 
-    if (!info[0].compare("PASS"))
-        _clients.push_back(new Client());
+    if (!info[0].compare("PASS")) {
+        if (!info[1].compare(pass)) 
+            _clients.push_back(new Client());
+        else {
+            MSG("Error: Wrong password!");
+            exit(0);
+        }
+    }
     else if (!info[0].compare("NICK"))
         editClient(info, 0);
     else if (!info[0].compare("USER"))
@@ -64,5 +65,3 @@ void    ClientHandler::rmvClient(std::string const &msg)
             _clients.erase(it);
     }
 }
-
-#endif
