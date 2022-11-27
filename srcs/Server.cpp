@@ -40,10 +40,10 @@ void    Server::_interpreter(std::string const &msg, int const &clientSocket) {
 		_clientHandler.addClient(msg, _password);
 		send(clientSocket, "001 jmendes\n", 13, 0);
 	}
-	if (!cmd.compare("JOIN")) {
-		send(clientSocket, "332 jmendes\n", 13, 0);
-		_channelHandler.addChannel(msg, new Client());
-	}
+	// if (!cmd.compare("JOIN")) {
+	// 	send(clientSocket, "332 jmendes\n", 13, 0);
+	// 	_channelHandler.addChannel(msg, new Client());
+	// }
 	if (!cmd.compare("PRIVMSG"))
 		_clientHandler.privateMsg(msg);
 }
