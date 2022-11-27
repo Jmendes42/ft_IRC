@@ -1,7 +1,7 @@
 #ifndef SERVERCLASS_HPP
 # define SERVERCLASS_HPP
 
-# include "ClientHandler.hpp"
+# include "ChannelHandler.hpp"
 
 class Server
 {
@@ -9,7 +9,7 @@ class Server
     Socket                  _sock;
     std::string             _password;
 	ClientHandler			_clientHandler;
-    // ChannelHandler          _channelHandler;
+    ChannelHandler          _channelHandler;
 
     public:
         Server() {};

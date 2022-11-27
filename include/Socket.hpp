@@ -34,7 +34,7 @@ class Socket {
 		Socket();
 		Socket(int port);				// Optionally it can also receive an IP if necessary
 
-		void		_chat();
+		//void		_chat();
 		void		_bind();
 		void		_clientSet();
 		
@@ -44,6 +44,7 @@ class Socket {
 
 template<typename T>
 void	MSG(T msg) { std::cout << "Message: " << msg << std::endl; };
+void	*ft_memset(void *, int, size_t);
 
 #endif
 

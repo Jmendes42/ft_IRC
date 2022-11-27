@@ -33,6 +33,7 @@ void    ClientHandler::addClient(std::string const &msg, std::string const &pass
     std::vector<std::string> info;
     int pos = 0;
     int start = 0;
+    MSG(pass);
     while ((pos = msg.find(" ", start)) > -1)
     {
         info.push_back(msg.substr(start, pos - start));
@@ -42,8 +43,10 @@ void    ClientHandler::addClient(std::string const &msg, std::string const &pass
     info.push_back(msg.substr(start, pos - start - 2));
 
     if (!info[0].compare("PASS")) {
-        if (!info[1].compare(pass)) 
+            MSG(info[1]);
+        if (!info[1].compare(pass)) {
             _clients.push_back(new Client());
+        }
         else {
             MSG("Error: Wrong password!");
             exit(0);

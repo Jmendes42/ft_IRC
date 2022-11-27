@@ -6,7 +6,6 @@ int	main(int argc, char **argv)
 {
     int port;
     std::string password;
-
  
     // REPLACE THIS WITH AN ERROR MESSAGE (Just here for testing purpose)
     if (argc != 3)

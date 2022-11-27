@@ -8,6 +8,7 @@ class ClientHandler
     private:
 
         std::vector<Client *> _clients;
+        
     public:
 
         ClientHandler() {};
