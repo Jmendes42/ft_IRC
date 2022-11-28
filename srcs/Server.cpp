@@ -37,8 +37,12 @@ void    Server::_interpreter(std::string const &msg, int const &clientSocket) {
     std::string cmd = msg.substr(0, msg.find(' '));
 
 	if (!cmd.compare("PASS") || !cmd.compare("NICK") || !cmd.compare("USER")) {
+
 		_clientHandler.addClient(msg, _password);
-		send(clientSocket, "001 jmendes\n", 13, 0);
+		if (!cmd.compare("NICK")) {
+			std::string nick = "001 " + msg.substr(4, msg.find('\n'));
+			send(clientSocket, nick.c_str(), nick.length(), 0);
+		}
 	}
 	if (!cmd.compare("JOIN")) {
 		send(clientSocket, ":jmendes!jmendes@localhost 353 jmendes = #tardiz :@jmendes\n"
@@ -46,6 +50,7 @@ void    Server::_interpreter(std::string const &msg, int const &clientSocket) {
 			":jmendes!jmendes@localhost JOIN :#tardiz\n", 168, 0);
 		_channelHandler.addChannel(msg, new Client());
 	}
-	if (!cmd.compare("PRIVMSG"))
+	if (!cmd.compare("PRIVMSG")) {
 		_clientHandler.privateMsg(msg);
+	}
 }

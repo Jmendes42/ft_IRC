@@ -33,7 +33,6 @@ void    ClientHandler::addClient(std::string const &msg, std::string const &pass
     std::vector<std::string> info;
     int pos = 0;
     int start = 0;
-    MSG(pass);
     while ((pos = msg.find(" ", start)) > -1)
     {
         info.push_back(msg.substr(start, pos - start));
