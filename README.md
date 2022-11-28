@@ -81,7 +81,12 @@ Channel Operators (also referred to as a ***chop*** or ***chanop*** and identifi
 
 [POLL()](https://www.ibm.com/docs/ja/i/7.3?topic=ssw_ibm_i_73/apis/poll.html)
 
+#### NICK
 
+     /nick <nick>                                - set nick on current server
+     /set irc.server_default.nicks <nick>        - set default nick dor every server
+     /set irc.server.[SERVER_NAME].nicks <nick>  - set default nick for target server
+     
     
 Install WeeChat: 
 ```sudo apt install weechat```
