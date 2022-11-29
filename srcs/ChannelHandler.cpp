@@ -16,22 +16,28 @@ void    ChannelHandler::addChannel(std::string const &msg, Client *chop)
     std::vector<Channel *>::iterator it;
     for (it = _channels.begin(); it != _channels.end(); it++)
     {
+        // THIS SHOULD BE AN EXCEPTION
         if (!((*it)->getName().compare(info[1])))
         {
             (*it)->addUser(chop);
-            return ;
+            return ;                                
         }
     }
     _channels.push_back(new Channel(info[1], chop));
 }
 
 // REMOVE BY NICK ! CHECK THE COMMAND TO REMOVE USER TO CHECK WHAT IS NEEDED
-void    ChannelHandler::rmvClient(std::string const &msg)
+void    ChannelHandler::rmvClient(std::string const &nick)
 {
     std::vector<Channel *>::iterator it;
     for (it = _channels.begin(); it != _channels.end(); it++)
     {
-        if (!((*it)->getName().compare(msg)))
+        if (!((*it)->getName().compare(nick)))
+        {
             _channels.erase(it);
+            return ;
+        }
     }
+    // THIS SHOULD BE AN EXCEPTION
+    std::cout << "THIS CLIENT IS NOT IN THE CHANNEL" << std::endl;
 }
