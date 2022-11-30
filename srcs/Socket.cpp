@@ -86,16 +86,14 @@ void	Socket::activity()
 	//then its an incoming connection
 	if (FD_ISSET(_socketFd, &readfds))
 	{
-		if ((new_socket = accept(_socketFd,
-				(struct sockaddr *)&_hint, (socklen_t*)&_clientSize))<0)
+		if ((new_socket = accept(_socketFd, (struct sockaddr *)&_hint, (socklen_t*)&_clientSize)) < 0)
 		{
 			MSG("Accepting Error");
 			exit(2);
 		}
 		
 		//inform user of socket number - used in send and receive commands
-		printf("New connection , socket fd is %d , ip is : %s , port : %d\n" , new_socket , inet_ntoa(_hint.sin_addr) , ntohs
-			(_hint.sin_port));
+		printf("New connection , socket fd is %d , ip is : %s , port : %d\n" , new_socket , inet_ntoa(_hint.sin_addr) , ntohs(_hint.sin_port));
 	
 		//send new connection greeting message
 		if( send(new_socket, message, strlen(message), 0) != strlen(message) )
@@ -126,10 +124,8 @@ void	Socket::activity()
 			if ((valread = read( sd , buffer, 1024)) == 0)
 			{
 				//Somebody disconnected , get his details and print
-				getpeername(sd , (struct sockaddr*)&_hint , \
-					(socklen_t*)&_clientSize);
-				printf("Host disconnected , ip %s , port %d \n" ,
-					inet_ntoa(_hint.sin_addr) , ntohs(_hint.sin_port));
+				getpeername(sd , (struct sockaddr*)&_hint , (socklen_t*)&_clientSize);
+				printf("Host disconnected , ip %s , port %d \n" , inet_ntoa(_hint.sin_addr) , ntohs(_hint.sin_port));
 					
 				//Close the socket and mark as 0 in list for reuse
 				close( sd );

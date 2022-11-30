@@ -10,29 +10,13 @@
 # include <string.h>
 # include <stdlib.h>
 # include <unistd.h>
- #include <sys/poll.h>
+# include <sys/poll.h>
 # include <arpa/inet.h>
 # include <sys/types.h>
 # include <sys/socket.h>
 # include <netinet/in.h>
-
-#include <sstream>
-#include<string>
-
-#include <stdio.h>
-#include <string.h> //strlen
-#include <stdlib.h>
-#include <errno.h>
-#include <unistd.h> //close
-#include <arpa/inet.h> //close
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <sys/time.h> //FD_SET, FD_ISSET, FD_ZERO macros
-
-#define TRUE 1
-#define FALSE 0
-#define PORT 8888
+# include <errno.h>
+# include <sys/time.h> // FD_SET, FD_ISSET, FD_ZERO macros
 
 class Socket {
 
@@ -73,8 +57,6 @@ class Socket {
 		std::string	&getMessage()		{ return _message; };
 		int			&getClientSocket()	{ return _clientSocket; };
 		int			&getMaxClients()	{ return max_clients; };
-		int			&getSocketFd()	{ return _socketFd; };
-
 
 };
 
