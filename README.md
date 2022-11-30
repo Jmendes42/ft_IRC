@@ -83,6 +83,8 @@ Channel Operators (also referred to as a ***chop*** or ***chanop*** and identifi
 
 [SELECT()](https://www.geeksforgeeks.org/socket-programming-in-cc-handling-multiple-clients-on-server-without-multi-threading/)
 
+[MORE SELECT()](https://www.scottklement.com/rpg/socktut/proxy.html
+
 #### NICK
 
      /nick <nick>                                - set nick on current server
