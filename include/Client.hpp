@@ -12,7 +12,7 @@ class Client
         std::string _username;
         std::string _hostname;
         std::string _realname;
-        std::vector<Channel *> _channels;
+        // std::vector<Channel *> _channels;
 
     public:
 
@@ -29,8 +29,8 @@ class Client
         std::string &getHost() { return (_hostname); };
         std::string &getReal() { return (_realname); };
 
-        void addChannel(Channel *add);
-        void rmvChannel(std::string &name);
+        // void addChannel(Channel *add);
+        // void rmvChannel(std::string &name);
 };
 
 #endif

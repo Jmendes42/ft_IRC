@@ -29,8 +29,11 @@ void	Server::_chat() {
 }
 
 void    Server::_sockSet() {
+
+	_sock.init_sockets();
     _sock._bind();
-	_sock._clientSet();
+
+	// _sock._clientSet();
 }
 
 void    Server::_interpreter(std::string const &msg, int const &clientSocket) {

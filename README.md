@@ -81,6 +81,8 @@ Channel Operators (also referred to as a ***chop*** or ***chanop*** and identifi
 
 [POLL()](https://www.ibm.com/docs/ja/i/7.3?topic=ssw_ibm_i_73/apis/poll.html)
 
+[SELECT()](https://www.geeksforgeeks.org/socket-programming-in-cc-handling-multiple-clients-on-server-without-multi-threading/)
+
 #### NICK
 
      /nick <nick>                                - set nick on current server

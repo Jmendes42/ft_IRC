@@ -6,7 +6,7 @@
 class Server
 {
     int                     _port;
-    Socket                  _sock;
+    // Socket                  _sock;
     std::string             _password;
 	ClientHandler			_clientHandler;
     ChannelHandler          _channelHandler;
@@ -19,6 +19,8 @@ class Server
         void    _chat();
         void    _sockSet();
         void    _interpreter(std::string const &, int const &);
+    Socket                  _sock;
+
 };
 
 #endif
