@@ -18,6 +18,7 @@ class Server
 
         void    _chat();
         void    _sockSet();
+		void	activity();
         void    _interpreter(std::string const &, int const &);
     Socket                  _sock;
 

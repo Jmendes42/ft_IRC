@@ -3,7 +3,7 @@ CC = c++
 FLAGS = -Wall -Wextra -Werror -std=c++98 #-fsanitize=address
 RM = rm -f
 
-NAME = ircerver
+NAME = ircServer
 SRCS = $(wildcard ./srcs/*.cpp)
 OBJS = $(SRCS:.cpp=.o)
 
