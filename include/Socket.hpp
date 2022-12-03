@@ -27,7 +27,6 @@ class Socket {
 
 	sockaddr_in		_client;
 	socklen_t		_clientSize;
-	//int				_clientSocket;
 	char			_svc[NI_MAXSERV];
 	char			_host[NI_MAXHOST];
 
