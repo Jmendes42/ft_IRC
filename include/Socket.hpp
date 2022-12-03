@@ -46,18 +46,13 @@ class Socket {
 		Socket();
 		Socket(int port);				// Optionally it can also receive an IP if necessary
 
-		void 		init_sockets();
-		//void		_chat();
-		void		_bind();
-		void		_clientSet();
-
-
 		void		sets();
-		
+		void		clientSet();
+		void		bindSocket();
+		void 		initSockets();
 
-		socklen_t	&getClientSize()				{return _clientSize;};
-		sockaddr_in	&getHint()						{return _hint;};
 		int			&getSd()						{return _sd;};
+		sockaddr_in	&getHint()						{return _hint;};
 		int			&getMaxSd()						{return _max_sd;};
 		std::string	&getMessage()					{return _message;};
 		int			&getValRead()					{return _valRead;};
@@ -65,14 +60,52 @@ class Socket {
 		int			&getSocketFd()					{return _socketFd;};
 		int			&getActivity()					{return _activity;};
 		int			&getNewSocket()					{return _newSocket;};
+		socklen_t	&getClientSize()				{return _clientSize;};
 		int			&getMaxClients()				{return _max_clients;};
 		int			&getClientSocket(const int &i)	{return _clientSocket[i];};
 
 		void	setSd(const int &sd)							{_sd = sd;};
 		void	setValRead(const int &val)						{_valRead = val;};
 		void	setNewSocket(const int &ns)						{_newSocket = ns;};
+		void	setActivity(const int &act)						{ _activity = act;};
 		void	setClientSocket(const int &i, const int &sock)	{_clientSocket[i] = sock;};
 
+};
+
+class MultipleConnectionsException : public std::exception
+{
+	public:
+			virtual const char *what() const throw()
+			{
+				return "Error: Multiconnection failed";
+			}
+};
+
+class BindException : public std::exception
+{
+	public:
+			virtual const char *what() const throw()
+			{
+				return "Error: Bind failed";
+			}
+};
+
+class ListenException : public std::exception
+{
+	public:
+			virtual const char *what() const throw()
+			{
+				return "Error: Listen failed";
+			}
+};
+
+class ConnectionException : public std::exception
+{
+	public:
+			virtual const char *what() const throw()
+			{
+				return "Error: Connection failed";
+			}
 };
 
 template<typename T>

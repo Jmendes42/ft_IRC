@@ -3,13 +3,13 @@
 void	Server::activity()
 {
 	char		buffer[1024];
-	std::string message = "001 isousa \r\n";
+	std::string message;
 
-	_sock.getActivity() = select(_sock.getMaxSd() + 1 , &_sock.getReadFds() , NULL , NULL , NULL);
+	_sock.setActivity(select(_sock.getMaxSd() + 1 , &_sock.getReadFds() , NULL , NULL , NULL));
 	if ((_sock.getActivity() < 0) && (errno != EINTR))
 	{
 		MSG("Select Error");
-		exit(2);
+		throw ConnectionException();
 	}
 	// If something happened on the master socket,
 	// then its an incoming connection
@@ -19,18 +19,18 @@ void	Server::activity()
 		if (_sock.getNewSocket() < 0)
 		{
 			MSG("Accepting Error");
-			exit(2);
+			throw ConnectionException();
 		}
 		// Inform user of socket number - used in send and receive commands
 		std::cout << "New connection , socket fd is " << _sock.getNewSocket() 
 			<< ", IP is: " << inet_ntoa(_sock.getHint().sin_addr) 
 				<< ", port: " << ntohs(_sock.getHint().sin_port) << std::endl;
 		// Send new connection greeting message
-		if (send(_sock.getNewSocket(), message.c_str(), strlen(message.c_str()), 0) != strlen(message.c_str()))
+		/*if (send(_sock.getNewSocket(), message.c_str(), strlen(message.c_str()), 0) != strlen(message.c_str()))
 		{
 			MSG("Sending Message Error");
-			exit(2);
-		}
+			throw ConnectionException();
+		}*/
 		// Add new socket to array of sockets
 		for (int i = 0; i < _sock.getMaxClients(); i++)
 		{
@@ -58,59 +58,28 @@ void	Server::activity()
 				// Somebody disconnected , get his details and print
 				getpeername(_sock.getSd(), (struct sockaddr*)&_sock.getHint(), (socklen_t*)&_sock.getClientSize());
 				printf("Host disconnected , ip %s , port %d \n", inet_ntoa(_sock.getHint().sin_addr), ntohs(_sock.getHint().sin_port));
-					
 				// Close the socket and mark as 0 in list for reuse
 				close(_sock.getSd());
 				_sock.setClientSocket(i, 0);
 			}
 			// Echo back the message that came in
-			else
-			{
-				_interpreter(std::string(buffer, 0, _sock.getValRead()), _sock.getSd());
-				/*MSG(_sock.getSd());
-				send(_sock.getSd(), ":jmendes!jmendes@localhost 353 jmendes = #tardiz :@jmendes\n"
-				":jmendes!jmendes@localhost 366 jmendes #tardiz :End of /NAMES list\n"
-				":jmendes!jmendes@localhost JOIN :#tardiz\n", 168, 0);*/
+			else {
+				try
+				{
+					_interpreter(std::string(buffer, 0, _sock.getValRead()), _sock.getSd());
+				}
+				catch(std::exception &error)
+				{
+					MSG(error.what());
+				}
 			}
 		}
 	}
 }
 
-/*void	Server::_chat() {
-
-    int clientSocket = _sock.getClientSocket();
-    std::string msg = _sock.getMessage();
-	char buf[4096];
-
-	while (true) {
-
-		MSG("Loop");
-		// Clear the buffer
-		ft_memset(buf, 0, 4096);
-		// Wait for a message
-		int bytesRecv = recv(clientSocket, buf, 4096, 0);
-		if (bytesRecv == -1) {
-			MSG("There was a connection issue!");
-			break;
-		}
-		if (bytesRecv == 0) {
-			MSG("The client has disconnected");
-			break;
-		}
-		// Client message
-		msg = std::string(buf, 0, bytesRecv);
-        _interpreter(msg, clientSocket);
-		std::cout << "Received: " << msg << std::endl;		// Display msg
-	}
-	close(clientSocket);
-}*/
-
 void    Server::_sockSet() {
-
-	_sock.init_sockets();
-    _sock._bind();
-
-	// _sock._clientSet();
+	_sock.initSockets();
+    _sock.bindSocket();
 }
 
 void    Server::_interpreter(std::string const &msg, int const &clientSocket) {
