@@ -1,5 +1,24 @@
 #include "../include/ClientHandler.hpp"
 
+Client *ClientHandler::finder(const int &fd, const std::string &nick) {
+    if (!fd) {
+        for (_it = _clients.begin(); _it != _clients.end(); _it++) {
+            MSG("Nick to search " + (*_it)->getNick() + "+" + nick + "+");
+            if ((*_it)->getNick() == nick) {
+
+                return (*_it);
+            }
+        }
+    }
+    else {
+        for (_it = _clients.begin(); _it != _clients.end(); _it++) {
+            if ((*_it)->getFd() == fd)
+                return (*_it);
+        }
+    }
+    return NULL;
+}
+
 void    ClientHandler::privateMsg(std::string const &msg) {
     std::vector<std::string> info;
 
@@ -14,7 +33,6 @@ void    ClientHandler::privateMsg(std::string const &msg) {
     
 }
 
-
 void    ClientHandler::editClient(std::vector<std::string> &info, int control)
 {
     if (control == 0)
@@ -28,7 +46,7 @@ void    ClientHandler::editClient(std::vector<std::string> &info, int control)
     }
 }
 
-void    ClientHandler::addClient(std::string const &msg, std::string const &pass)
+void    ClientHandler::addClient(std::string const &msg, std::string const &pass, const int &fd)
 {
     std::vector<std::string> info;
     int pos = 0;
@@ -44,17 +62,17 @@ void    ClientHandler::addClient(std::string const &msg, std::string const &pass
     if (!info[0].compare("PASS")) {
             MSG(info[1]);
         if (!info[1].compare(pass)) {
-            _clients.push_back(new Client());
+            _clients.push_back(new Client(fd));
         }
         else {
             MSG("Error: Wrong password!");
-            exit(0);
+            exit(0);                                        // Missing exception
         }
     }
-    else if (!info[0].compare("NICK"))
+    /*else if (!info[0].compare("NICK"))
         editClient(info, 0);
     else if (!info[0].compare("USER"))
-        editClient(info, 1);
+        editClient(info, 1);*/
 }
 
 // REMOVE BY NICK ! CHECK THE COMMAND TO REMOVE USER TO CHECK WHAT IS NEEDED
