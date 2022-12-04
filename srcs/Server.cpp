@@ -44,7 +44,6 @@ void	Server::activity()
 		}
 	}
 	// Else its some IO operation on some other socket
-	MSG(_sock.getMaxClients());
 	for (int i = 0; i < _sock.getMaxClients(); i++)
 	{
 		_sock.setSd(_sock.getClientSocket(i));
@@ -66,7 +65,6 @@ void	Server::activity()
 			else {
 				try
 				{
-					MSG(buffer);
 					_interpreter(std::string(buffer, 0, _sock.getValRead()), _sock.getSd());
 				}
 				catch(std::exception &error)
@@ -91,10 +89,6 @@ void    Server::_interpreter(std::string const &msg, int const &sockFd) {
 		_clientHandler.addClient(msg, _password, sockFd);
 	else if (!cmd.compare("NICK")) {
 		std::string	nick = msg.substr(5, msg.find('\0', 5));
-		MSG("LEN");
-		MSG(nick.length());
-		MSG("Original nick " + nick + "PP");
-
 		nick.erase(nick.find('\r'), 2);
 		_clientHandler.finder(sockFd, "")->setNick(nick);
 		nick = "001 " + nick + "\n";
@@ -105,22 +99,24 @@ void    Server::_interpreter(std::string const &msg, int const &sockFd) {
 		_clientHandler.finder(sockFd, "")->setUser(user);
 	}
 	else if (!cmd.compare("JOIN")) {
-		send(sockFd, ":jmendes!jmendes@localhost 353 jmendes = #tardiz :@jmendes\n"
-			":jmendes!jmendes@localhost 366 jmendes #tardiz :End of /NAMES list\n"
-			":jmendes!jmendes@localhost JOIN :#tardiz\n", 168, 0);
-		_channelHandler.addChannel(msg, _clientHandler.finder(sockFd, ""));
+		send(sockFd, ":isousa!isousa@localhost 353 isousa = #tardiz :@isousa\n"
+			":isousa!isousa@localhost 366 isousa #tardiz :End of /NAMES list\n"
+			":isousa!isousa@localhost JOIN :#tardiz\n", 168, 0);
+		std::string	nick = msg;
+		nick.erase(nick.find('\r'), 2);
+		_channelHandler.addChannel(nick, _clientHandler.finder(sockFd, ""));
 	}
 	else if (!cmd.compare("PRIVMSG")) {
-		// Here private msg
-	std::string sendMsg;
-	sendMsg = ":ines!ines@localhost 413 " + msg;
-
-
-
-		MSG("+" + msg.substr(8, msg.find(' ', 8) - 8) + "+");
+		std::string sendMsg;
+		sendMsg = ":ines!ines@localhost 413 " + msg;
 		int fd = _clientHandler.finder(0, msg.substr(8, msg.find(' ', 8) - 8))->getFd();
-		MSG(sendMsg);
 		send(fd,":ines!ines@localhost 413 ines Ola\n" , 35, 0);
 		_clientHandler.privateMsg(msg);
+	}
+	else if (!cmd.compare("TOPIC"))
+	{
+		std::string	nick = msg;
+		nick.erase(nick.find('\r'), 2);
+		_channelHandler.opCommands(nick, _clientHandler.finder(sockFd, ""), TOPIC);
 	}
 }

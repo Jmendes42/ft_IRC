@@ -1,7 +1,9 @@
 #include "../include/Channel.hpp"
 
-Channel::Channel(std::string const &name, Client *chop) : _name(name), _chop(chop)
+Channel::Channel(std::string const &name, Client *chop) : _name(name), _chop(chop), _topic("NoTopic")
 {
+    MSG("OLA");
+    MSG(_chop->getNick());
     addUser(chop);
     initFlags();
 }
@@ -34,7 +36,6 @@ void    Channel::rmvUser(std::string const &nickname)
     }
 }
 
-
 //NOT TESTED!!! 
 //This Flags are needed to implement the MODE command
 void Channel::initFlags()
@@ -66,12 +67,18 @@ void Channel::initFlags()
 
 // }
 
+//NOT TESTED. For now, Topic can't be changed because <t> flag is always false
 void Channel::cmdTopic(std::string const &topic, Client *client)
 {
     if (topic.empty())
-        send(client->getFd(), topic.c_str(), topic.length(), 0);
-    std::map<char, bool>::iterator it = _flags.find('t');
-    if (_chop == client && (it->second == true))
-        setTopic(topic);
-
+        MSG("TOPIC = " + _topic);
+        //send(client->getFd(), topic.c_str(), topic.length(), 0);
+    else 
+    {
+        std::map<char, bool>::iterator it = _flags.find('t');
+        if (!(_chop->getNick().compare(client->getNick())) && (it->second == true))
+            setTopic(topic);
+        else
+            MSG("Flag <t> is false");
+    }
 }

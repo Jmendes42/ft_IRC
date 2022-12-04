@@ -44,14 +44,13 @@ void    ChannelHandler::rmvClient(std::string const &nick)
 
 
 // TOPIC #tardiz :ola
-void    ChannelHandler::opCommands(std::string &msg, Client *chop, chopCommand cmd)
+void    ChannelHandler::opCommands(std::string const &msg, Client *chop, chopCommand cmd)
 {
+
     std::vector<std::string> info = ft_split(msg);
 
-    info[1].erase(0, 1);
     if (info.size() == 3)
         info[2].erase(0, 1);
-    
 
     Channel *channel = findChannel(info[1]);
 
@@ -75,7 +74,9 @@ void    ChannelHandler::opCommands(std::string &msg, Client *chop, chopCommand c
         case TOPIC:
         {
             if (info.size() == 3)
-                channel->cmdTopic(info[2].erase(0, 1), chop);
+            {
+                channel->cmdTopic(info[2], chop);
+            }
             else
                 channel->cmdTopic("", chop);
             break;
@@ -91,6 +92,9 @@ Channel *ChannelHandler::findChannel(std::string const &name)
     for (it = _channels.begin(); it != _channels.end(); it++)
     {
         if (!((*it)->getName().compare(name)))
+        {
             return (*it);
+        }
     }
+    return NULL;
 }
