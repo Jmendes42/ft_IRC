@@ -41,7 +41,7 @@ class Channel
         //operators
         void        initFlags();
         // void        cmdKick(std::string const &topic, Client *client);
-        // void        cmdMode(std::string const &topic, Client *client);
+        void        cmdMode(std::string const &flags, std::string const &args, Client *client);
         // void        cmdInvite(std::string const &topic, Client *client);
         void        cmdTopic(std::string const &topic, Client *client);
 };

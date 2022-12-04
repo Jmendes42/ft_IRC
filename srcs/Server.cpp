@@ -119,4 +119,10 @@ void    Server::_interpreter(std::string const &msg, int const &sockFd) {
 		nick.erase(nick.find('\r'), 2);
 		_channelHandler.opCommands(nick, _clientHandler.finder(sockFd, ""), TOPIC);
 	}
+	else if (!cmd.compare("MODE"))
+	{
+		std::string	nick = msg;
+		nick.erase(nick.find('\r'), 2);
+		_channelHandler.opCommands(nick, _clientHandler.finder(sockFd, ""), MODE);
+	}
 }

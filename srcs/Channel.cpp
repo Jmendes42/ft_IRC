@@ -58,10 +58,62 @@ void Channel::initFlags()
 // {
 
 // }
-// void Channel::cmdMode(std::string const &topic, Client *client)
-// {
 
-// }
+
+// FLAGS THAT NEED ARGS
+// o- give/take channel operator privileges;
+// l - set the user limit to channel;
+// b - set a ban mask to keep users out;
+// v - give/take the ability to speak on a moderated channel;
+// k - set a channel key (password).
+
+// SIMPLE FLAGS
+// p - private channel flag;
+// s - secret channel flag;
+// i - invite-only channel flag;
+// t - topic settable by channel operator only flag;
+// n - no messages to channel from clients on the outside;
+// m - moderated channel;
+
+int checkFlag(std::string const &flags, int i)
+{
+    if (flags[i] == 'p' || flags[i] == 's' || flags[i] == 'i' || flags[i] == 't' || flags[i] == 'n' || flags[i] == 'm')
+        return (1);
+    return (0);
+}
+
+void Channel::cmdMode(std::string const &flags, std::string const &args, Client *client)
+{
+    if (flags.empty())
+    {
+        MSG("No flags for MODE Command");
+        return ;
+    }
+    char set = flags[0];
+    std::map<char, bool>::iterator it;
+    for (int i = 1; i < flags.length(); i++)
+    {
+        it = _flags.find(flags[i]);
+        if (checkFlag(flags, i))                // In case of "simple" flags, just change state of flag
+        {
+            if (set == '+' && it->second == false)
+                it->second = true;
+            else if (set == '-' && it->second == true)
+                it->second = false;
+            else
+                MSG("FLAG already set"); 
+        }
+        else                                    // In case it needs to use args to change state of channel
+        {
+            
+        }
+
+    }
+    // MSG("Flags = " + flags);
+
+}
+
+
 // void Channel::cmdInvite(std::string const &topic, Client *client)
 // {
 
