@@ -16,6 +16,10 @@ class ChannelHandler
 
         void    rmvClient(std::string const &msg);
         void    addChannel(std::string const &msg, Client *chop);
+
+        //operators
+        void    opCommands(std::string &msg, Client *chop, chopCommand cmd);
+        Channel *ChannelHandler::findChannel(std::string const &name);
 };
 
 #endif

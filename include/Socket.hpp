@@ -2,6 +2,7 @@
 # define SOCKETCLASS_HPP
 
 # include <vector>
+# include <map>
 # include <string>
 # include <iostream>
 
