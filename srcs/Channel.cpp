@@ -1,8 +1,7 @@
 #include "../include/Channel.hpp"
 
-Channel::Channel(std::string const &name, Client *chop) : _name(name), _chop(chop), _topic("NoTopic")
+Channel::Channel(std::string const &name, Client *chop) : _name(name), _chop(chop), _topic("")
 {
-    MSG("OLA");
     MSG(_chop->getNick());
     addUser(chop);
     initFlags();
@@ -44,7 +43,7 @@ void Channel::initFlags()
     _flags.insert(std::pair<char, bool>('p', false));
     _flags.insert(std::pair<char, bool>('s', false));
     _flags.insert(std::pair<char, bool>('i', false));
-    _flags.insert(std::pair<char, bool>('t', false));
+    _flags.insert(std::pair<char, bool>('t', true));
     _flags.insert(std::pair<char, bool>('n', false));
     _flags.insert(std::pair<char, bool>('m', false));
     _flags.insert(std::pair<char, bool>('l', false));
@@ -75,43 +74,43 @@ void Channel::initFlags()
 // n - no messages to channel from clients on the outside;
 // m - moderated channel;
 
-int checkFlag(std::string const &flags, int i)
-{
-    if (flags[i] == 'p' || flags[i] == 's' || flags[i] == 'i' || flags[i] == 't' || flags[i] == 'n' || flags[i] == 'm')
-        return (1);
-    return (0);
-}
+// int checkFlag(std::string const &flags, int i)
+// {
+//     if (flags[i] == 'p' || flags[i] == 's' || flags[i] == 'i' || flags[i] == 't' || flags[i] == 'n' || flags[i] == 'm')
+//         return (1);
+//     return (0);
+// }
 
-void Channel::cmdMode(std::string const &flags, std::string const &args, Client *client)
-{
-    if (flags.empty())
-    {
-        MSG("No flags for MODE Command");
-        return ;
-    }
-    char set = flags[0];
-    std::map<char, bool>::iterator it;
-    for (int i = 1; i < flags.length(); i++)
-    {
-        it = _flags.find(flags[i]);
-        if (checkFlag(flags, i))                // In case of "simple" flags, just change state of flag
-        {
-            if (set == '+' && it->second == false)
-                it->second = true;
-            else if (set == '-' && it->second == true)
-                it->second = false;
-            else
-                MSG("FLAG already set"); 
-        }
-        else                                    // In case it needs to use args to change state of channel
-        {
+// void Channel::cmdMode(std::string const &flags, std::string const &args, Client *client)
+// {
+//     if (flags.empty())
+//     {
+//         MSG("No flags for MODE Command");
+//         return ;
+//     }
+//     char set = flags[0];
+//     std::map<char, bool>::iterator it;
+//     for (int i = 1; i < flags.length(); i++)
+//     {
+//         it = _flags.find(flags[i]);
+//         if (checkFlag(flags, i))                // In case of "simple" flags, just change state of flag
+//         {
+//             if (set == '+' && it->second == false)
+//                 it->second = true;
+//             else if (set == '-' && it->second == true)
+//                 it->second = false;
+//             else
+//                 MSG("FLAG already set"); 
+//         }
+//         else                                    // In case it needs to use args to change state of channel
+//         {
             
-        }
+//         }
 
-    }
-    // MSG("Flags = " + flags);
+//     }
+//     // MSG("Flags = " + flags);
 
-}
+// }
 
 
 // void Channel::cmdInvite(std::string const &topic, Client *client)
@@ -120,11 +119,20 @@ void Channel::cmdMode(std::string const &flags, std::string const &args, Client 
 // }
 
 //NOT TESTED. For now, Topic can't be changed because <t> flag is always false
+// send(fd,":ines!ines@localhost 413 ines Ola\n" , 35, 0);
 void Channel::cmdTopic(std::string const &topic, Client *client)
 {
     if (topic.empty())
-        MSG("TOPIC = " + _topic);
-        //send(client->getFd(), topic.c_str(), topic.length(), 0);
+    {
+        if (_topic.empty())
+        {
+        MSG("OLA");
+            send(client->getFd(), "331 isousa #tardiz\n", 20, 0);     // NOTOPICSET
+
+        }
+        else
+            send(client->getFd(), "332 isousa #tardiz :ola\n", 25, 0);     // TOPICSET
+    }
     else 
     {
         std::map<char, bool>::iterator it = _flags.find('t');
