@@ -63,10 +63,10 @@ void    ChannelHandler::opCommands(std::string const &msg, Client *chop, chopCom
         }
         case MODE:
         {
-            // std::string args = "";
-            // for (int i = 3; i < info.size(); i++)
-            //     args += info[i] + " ";
-            // channel->cmdMode(info[2], args, chop);
+            std::string args = "";
+            for (int i = 3; i < info.size(); i++)
+                args += info[i] + " ";
+            channel->cmdMode(info[2], args, chop);
             break;
         }
         case INVITE:
