@@ -18,9 +18,11 @@ class Server
 
         void    _sockSet();
 		void	activity();
+        void    privMsg(const std::string &, const int &);
         void    interpreter(std::string const &, int const &);
+        void    joinChannel(const std::string &, const int &);
         void    setClientNick(const std::string &, const int &);
-
+        void    setClientUser(const std::string &, const int &);
         Socket  &getSocket()    {return _sock;};
 
 };
