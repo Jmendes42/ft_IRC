@@ -5,10 +5,8 @@
 
 class ChannelHandler
 {
-    private:
-
-        std::vector<Channel *> _channels;
-
+    std::vector<Channel *> _channels;
+    std::vector<Channel *>::iterator _it;
     public:
 
         ChannelHandler() {};
@@ -16,6 +14,8 @@ class ChannelHandler
 
         void    rmvClient(std::string const &msg);
         void    addChannel(std::string const &msg, Client *chop);
+
+        Channel *finder(const std::string &);
 };
 
 #endif

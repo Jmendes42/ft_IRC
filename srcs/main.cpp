@@ -34,7 +34,7 @@ int	main(int argc, char **argv)
 	}
     while (true)
     {
-        server._sock.sets();
+        server.getSocket().sets();
         try
         {
 		    server.activity();

@@ -1,29 +1,8 @@
 #include "../include/ChannelHandler.hpp"
 
-void    ChannelHandler::addChannel(std::string const &msg, Client *chop)
+void    ChannelHandler::addChannel(std::string const &channelName, Client *chop)
 {
-    std::vector<std::string> info;
-    int pos = 0;
-    int start = 0;
-    while ((pos = msg.find(" ", start)) > -1)
-    {
-        info.push_back(msg.substr(start, pos - start));
-        start = pos + 1;
-    }
-    pos = msg.length();
-    info.push_back(msg.substr(start, pos - start));
-
-    std::vector<Channel *>::iterator it;
-    for (it = _channels.begin(); it != _channels.end(); it++)
-    {
-        // THIS SHOULD BE AN EXCEPTION
-        if (!((*it)->getName().compare(info[1])))
-        {
-            (*it)->addUser(chop);
-            return ;                                
-        }
-    }
-    _channels.push_back(new Channel(info[1], chop));
+    _channels.push_back(new Channel(channelName, chop));
 }
 
 // REMOVE BY NICK ! CHECK THE COMMAND TO REMOVE USER TO CHECK WHAT IS NEEDED
@@ -38,6 +17,14 @@ void    ChannelHandler::rmvClient(std::string const &nick)
             return ;
         }
     }
-    // THIS SHOULD BE AN EXCEPTION
+    // THIS SHOULD BE AN EXCEPTION Exception
     std::cout << "THIS CLIENT IS NOT IN THE CHANNEL" << std::endl;
+}
+
+Channel *ChannelHandler::finder(const std::string &channelName) {
+    for (_it = _channels.begin(); _it != _channels.end(); _it++) {
+        if (!(*_it)->getName().compare(channelName))
+            return (*_it);
+    }
+    return NULL;
 }

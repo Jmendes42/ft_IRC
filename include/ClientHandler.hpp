@@ -16,9 +16,8 @@ class ClientHandler
         ~ClientHandler() {};
 
         void    rmvClient(std::string const &);
-        void    privateMsg(std::string const &);
-        void    editClient(std::vector<std::string> &, int);
-        void    addClient(std::string const &, std::string const &, const int &);
+        void    addClient(std::string const &, std::string const &, const int &,
+                            const std::string &);
 
         Client * finder(const int &, const std::string &);
 

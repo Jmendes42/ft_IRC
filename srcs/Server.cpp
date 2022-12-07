@@ -44,7 +44,6 @@ void	Server::activity()
 		}
 	}
 	// Else its some IO operation on some other socket
-	MSG(_sock.getMaxClients());
 	for (int i = 0; i < _sock.getMaxClients(); i++)
 	{
 		_sock.setSd(_sock.getClientSocket(i));
@@ -66,8 +65,7 @@ void	Server::activity()
 			else {
 				try
 				{
-					MSG(buffer);
-					_interpreter(std::string(buffer, 0, _sock.getValRead()), _sock.getSd());
+					interpreter(std::string(buffer, 0, _sock.getValRead()), _sock.getSd());
 				}
 				catch(std::exception &error)
 				{
@@ -83,44 +81,98 @@ void    Server::_sockSet() {
     _sock.bindSocket();
 }
 
-void    Server::_interpreter(std::string const &msg, int const &sockFd) {
+void    Server::interpreter(std::string const &msg, int const &sockFd) {
+	// Change stuff to separate functions
     std::string cmd = msg.substr(0, msg.find(' '));
 
 	MSG(msg);
 	if (!cmd.compare("PASS"))
-		_clientHandler.addClient(msg, _password, sockFd);
-	else if (!cmd.compare("NICK")) {
-		std::string	nick = msg.substr(5, msg.find('\0', 5));
-		MSG("LEN");
-		MSG(nick.length());
-		MSG("Original nick " + nick + "PP");
-
-		nick.erase(nick.find('\r'), 2);
-		_clientHandler.finder(sockFd, "")->setNick(nick);
-		nick = "001 " + nick + "\n";
-		send(sockFd, nick.c_str(), nick.length(), 0);
-	}
+		_clientHandler.addClient(msg, _password, sockFd, std::string(inet_ntoa(_sock.getHint().sin_addr)));
+	else if (!cmd.compare("NICK"))
+		setClientNick(msg, sockFd);
 	else if (!cmd.compare("USER")) {
-		std::string	user = msg.substr(5, msg.find('\n'));
+		std::string	user = msg.substr(msg.find(':') + 1);
+
+		user.erase(user.find('\r'), 2);
 		_clientHandler.finder(sockFd, "")->setUser(user);
 	}
 	else if (!cmd.compare("JOIN")) {
-		send(sockFd, ":jmendes!jmendes@localhost 353 jmendes = #tardiz :@jmendes\n"
-			":jmendes!jmendes@localhost 366 jmendes #tardiz :End of /NAMES list\n"
-			":jmendes!jmendes@localhost JOIN :#tardiz\n", 168, 0);
-		_channelHandler.addChannel(msg, _clientHandler.finder(sockFd, ""));
+		// JOIN can come with multiple channels. Parse the message in order to not create a channel 
+		// wich has a name with all the names compiled -> split JOIN #c,#b,#c,#b,#c,#b,#c,#b
+
+		// If a channel has more than one operator? 
+
+		// See codes 403, 404, 405 --- 651
+
+		//When a user nickname changes, update on the participants list
+		std::string channelMsg;			// Confirm message user/nick
+		std::string channelName = msg.substr(5, msg.find('\0', 5));
+		std::string ip = _clientHandler.finder(sockFd, "")->getIp();
+		std::string nick = _clientHandler.finder(sockFd, "")->getNick();
+		std::string user = _clientHandler.finder(sockFd, "")->getUser();
+
+		MSG(user);
+		channelName.erase(channelName.find('\r'), 2);
+		if (channelName[0] != '#')
+			channelName = "#" + channelName;
+		if (_channelHandler.finder(channelName) != NULL) {
+			std::vector<Client *>::iterator	it;
+			std::vector<Client *>			users;
+			std::string						joinMsg;
+
+			users = _channelHandler.finder(channelName)->getUsers();
+			joinMsg = ':' + nick + '!' + user + '@' + ip + " JOIN " + channelName + '\n';
+			for (it = users.begin(); it != users.end(); it++) {
+				int fd = (*it)->getFd();
+				send(fd, joinMsg.c_str(), joinMsg.length(), 0);	// Send message to all users that there is a new member
+			}
+			_channelHandler.finder(channelName)->addUser(_clientHandler.finder(sockFd, ""));
+		}
+		else
+			_channelHandler.addChannel(channelName, _clientHandler.finder(sockFd, ""));
+
+		channelMsg = ":" + nick + "!" + user + "@" + ip + " JOIN :" + channelName + "\n";
+		channelMsg += "353 " + nick + " = " + channelName + " :@";
+		channelMsg += _channelHandler.finder(channelName)->getUsersString() + "\n";		// Send list of users. What if there are multiple operators?
+		channelMsg += "366 " + nick + " " + channelName + " :End of /NAMES list\n";
+
+		send(sockFd, channelMsg.c_str(), channelMsg.length(), 0);
 	}
 	else if (!cmd.compare("PRIVMSG")) {
-		// Here private msg
-	std::string sendMsg;
-	sendMsg = ":ines!ines@localhost 413 " + msg;
+		// If nick not found Exception
+		// See codes - 412, 717, 
+		std::string sendMsg;
 
+		if (msg.find('#') != std::string::npos) {
+			std::string channelName = msg.substr(msg.find('#'), msg.find(':') - msg.find('#') - 1);
 
+			if (_channelHandler.finder(channelName) != NULL) {
+				std::vector<Client *>::iterator	it;
+				std::string						client = _clientHandler.finder(sockFd, "")->getNick();
+				std::vector<Client *>			users = _channelHandler.finder(channelName)->getUsers();
 
-		MSG("+" + msg.substr(8, msg.find(' ', 8) - 8) + "+");
-		int fd = _clientHandler.finder(0, msg.substr(8, msg.find(' ', 8) - 8))->getFd();
-		MSG(sendMsg);
-		send(fd,":ines!ines@localhost 413 ines Ola\n" , 35, 0);
-		_clientHandler.privateMsg(msg);
+				sendMsg = ':' + client + " PRIVMSG " + channelName + ' ' + msg.substr(msg.find(':'));
+				for (it = users.begin(); it != users.end(); it++) {
+					int fd = (*it)->getFd();
+					if ((*it)->getNick().compare(client))
+						send(fd, sendMsg.c_str(), sendMsg.length(), 0);
+				}
+			}
+		}
+		else if (_clientHandler.finder(0, msg.substr(8, msg.find(' ', 8) - 8)) != NULL) {
+			int fd = _clientHandler.finder(0, msg.substr(8, msg.find(' ', 8) - 8))->getFd();
+			sendMsg = ":" + _clientHandler.finder(sockFd, "")->getNick() + " PRIVMSG ";
+			sendMsg += _clientHandler.finder(fd, "")->getNick() + ' ' + msg.substr(msg.find(':'));
+			send(fd, sendMsg.c_str(), sendMsg.length(), 0);
+		}
 	}
+}
+
+void    Server::setClientNick(const std::string &msg, const int &sockFd) {
+	std::string	nick = msg.substr(5, msg.find('\0', 5));
+
+	nick.erase(nick.find('\r'), 2);
+	_clientHandler.finder(sockFd, "")->setNick(nick);
+	nick = "001 " + nick + "\n";
+	send(sockFd, nick.c_str(), nick.length(), 0);
 }
