@@ -45,7 +45,8 @@ void    Channel::addChopp(std::string const &nickname)
 {
     std::vector<Client *>::iterator it_chop;
     std::vector<Client *>::iterator it_clients;
-
+, _clientHandler.finder(sockFd, ""), TOPIC);
+	}
     for (it_chop = _sec_chops.begin(); it_chop != _sec_chops.end(); it_chop++)
     {
         if (!((*it_chop)->getNick().compare(nickname)))
@@ -91,7 +92,7 @@ void Channel::initFlags()
     _flags.insert(std::pair<char, bool>('p', false));
     _flags.insert(std::pair<char, bool>('s', false));
     _flags.insert(std::pair<char, bool>('i', false));
-    _flags.insert(std::pair<char, bool>('t', true));
+    _flags.insert(std::pair<char, bool>('t', false));
     _flags.insert(std::pair<char, bool>('n', false));
     _flags.insert(std::pair<char, bool>('m', false));
     _flags.insert(std::pair<char, bool>('l', false));
