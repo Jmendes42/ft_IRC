@@ -22,14 +22,13 @@ void    ChannelHandler::rmvClient(std::string const &nick)
 }
 
 // TOPIC #tardiz :ola
-void    ChannelHandler::opCommands(std::string &msg, Client *chop, chopCommand cmd)
+void    ChannelHandler::opCommands(std::string const &msg, Client *chop, chopCommand cmd)
 {
+
     std::vector<std::string> info = ft_split(msg);
 
-    info[1].erase(0, 1);
     if (info.size() == 3)
         info[2].erase(0, 1);
-    
 
     Channel *channel = findChannel(info[1]);
 
@@ -42,7 +41,10 @@ void    ChannelHandler::opCommands(std::string &msg, Client *chop, chopCommand c
         }
         case MODE:
         {
-            std::cout << "MODE\n";   
+            std::string args = "";
+            for (int i = 3; i < info.size(); i++)
+                args += info[i] + " ";
+            channel->cmdMode(info[2], args, chop);
             break;
         }
         case INVITE:
@@ -53,7 +55,9 @@ void    ChannelHandler::opCommands(std::string &msg, Client *chop, chopCommand c
         case TOPIC:
         {
             if (info.size() == 3)
-                channel->cmdTopic(info[2].erase(0, 1), chop);
+            {
+                channel->cmdTopic(info[2], chop);
+            }
             else
                 channel->cmdTopic("", chop);
             break;
@@ -63,11 +67,23 @@ void    ChannelHandler::opCommands(std::string &msg, Client *chop, chopCommand c
 }
 
 // UTIL ChannelHandler
+<<<<<<< Updated upstream
 
 Channel *ChannelHandler::finder(const std::string &channelName) {
     for (_it = _channels.begin(); _it != _channels.end(); _it++) {
         if (!(*_it)->getName().compare(channelName))
             return (*_it);
+=======
+Channel *ChannelHandler::findChannel(std::string const &name)
+{
+	std::vector<Channel *>::iterator it;
+    for (it = _channels.begin(); it != _channels.end(); it++)
+    {
+        if (!((*it)->getName().compare(name)))
+        {
+            return (*it);
+        }
+>>>>>>> Stashed changes
     }
     return NULL;
 }

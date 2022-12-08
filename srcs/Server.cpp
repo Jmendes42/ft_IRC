@@ -65,7 +65,11 @@ void	Server::activity()
 			else {
 				try
 				{
+<<<<<<< Updated upstream
 					interpreter(std::string(buffer, 0, _sock.getValRead()), _sock.getSd());
+=======
+					_interpreter(std::string(buffer, 0, _sock.getValRead()), _sock.getSd());
+>>>>>>> Stashed changes
 				}
 				catch(std::exception &error)
 				{
@@ -85,6 +89,7 @@ void    Server::interpreter(std::string const &msg, int const &sockFd) {
     std::string cmd = msg.substr(0, msg.find(' '));
 
 	MSG(msg);
+<<<<<<< Updated upstream
 	if (!cmd.compare("NICK"))
 		setClientNick(msg, sockFd);
 	else if (!cmd.compare("USER"))
@@ -166,6 +171,47 @@ void    Server::privMsg(const std::string &msg, const int &sockFd) {
 		sendMsg = ":" + _clientHandler.finder(sockFd, "")->getNick() + " PRIVMSG ";
 		sendMsg += _clientHandler.finder(fd, "")->getNick() + ' ' + msg.substr(msg.find(':'));
 		send(fd, sendMsg.c_str(), sendMsg.length(), 0);
+=======
+	if (!cmd.compare("PASS"))
+		_clientHandler.addClient(msg, _password, sockFd);
+	else if (!cmd.compare("NICK")) {
+		std::string	nick = msg.substr(5, msg.find('\0', 5));
+		nick.erase(nick.find('\r'), 2);
+		_clientHandler.finder(sockFd, "")->setNick(nick);
+		nick = "001 " + nick + "\n";
+		send(sockFd, nick.c_str(), nick.length(), 0);
+	}
+	else if (!cmd.compare("USER")) {
+		std::string	user = msg.substr(5, msg.find('\n'));
+		_clientHandler.finder(sockFd, "")->setUser(user);
+	}
+	else if (!cmd.compare("JOIN")) {
+		send(sockFd, ":isousa!isousa@localhost 353 isousa = #tardiz :@isousa\n"
+			":isousa!isousa@localhost 366 isousa #tardiz :End of /NAMES list\n"
+			":isousa!isousa@localhost JOIN :#tardiz\n", 168, 0);
+		std::string	nick = msg;
+		nick.erase(nick.find('\r'), 2);
+		_channelHandler.addChannel(nick, _clientHandler.finder(sockFd, ""));
+	}
+	else if (!cmd.compare("PRIVMSG")) {
+		std::string sendMsg;
+		sendMsg = ":ines!ines@localhost 413 " + msg;
+		int fd = _clientHandler.finder(0, msg.substr(8, msg.find(' ', 8) - 8))->getFd();
+		send(fd,":ines!ines@localhost 413 ines Ola\n" , 35, 0);
+		_clientHandler.privateMsg(msg);
+>>>>>>> Stashed changes
+	}
+	else if (!cmd.compare("TOPIC"))
+	{
+		std::string	nick = msg;
+		nick.erase(nick.find('\r'), 2);
+		_channelHandler.opCommands(nick, _clientHandler.finder(sockFd, ""), TOPIC);
+	}
+	else if (!cmd.compare("MODE"))
+	{
+		std::string	nick = msg;
+		nick.erase(nick.find('\r'), 2);
+		_channelHandler.opCommands(nick, _clientHandler.finder(sockFd, ""), MODE);
 	}
 }
 

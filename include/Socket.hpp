@@ -19,6 +19,8 @@
 # include <errno.h>
 # include <sys/time.h> // FD_SET, FD_ISSET, FD_ZERO macros
 
+enum chopCommand { KICK, MODE, INVITE, TOPIC };
+
 class Socket {
 
 
@@ -111,5 +113,6 @@ class ConnectionException : public std::exception
 template<typename T>
 void	MSG(T msg) { std::cout << "Message: " << msg << std::endl; };
 void	*ft_memset(void *, int, size_t);
+std::vector<std::string> ft_split(std::string const &msg);
 
 #endif
