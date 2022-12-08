@@ -197,6 +197,7 @@ void Channel::changePassword(char set, std::string const &args)
 **/
 void Channel::setLimit(char set, std::string const &args)
 {
+    std::cout << "Pass = " << _user_limit << std::endl;
     if (set == '-')
         _user_limit = 0;
     else if (!args.empty())
