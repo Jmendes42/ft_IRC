@@ -58,6 +58,7 @@ class Channel
         void changeSimpleFlag(char set, char flag);
         void changeModePS(char set, char flag);
         void changePassword(char set, std::string const &args);
+        void setLimit(char set, std::string const &args);
 };
 
 #endif

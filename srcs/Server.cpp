@@ -84,7 +84,7 @@ void    Server::_sockSet() {
 void    Server::interpreter(std::string const &msg, int const &sockFd) {
     std::string cmd = msg.substr(0, msg.find(' '));
 
-	MSG(msg);
+	//MSG(msg);
 	if (!cmd.compare("NICK"))
 		setClientNick(msg, sockFd);
 	else if (!cmd.compare("USER"))

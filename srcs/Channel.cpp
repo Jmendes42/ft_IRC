@@ -124,7 +124,11 @@ void Channel::initFlags()
 int checkFlag(char flag)
 {
     if (flag == 'p' || flag == 's')
+    {
+        std::cout << "FLAG = " << flag << std::endl;
         return (1);
+
+    }
     else if (flag == 'i' || flag == 't' || flag == 'n' || flag == 'm')
         return (2);
     else if (flag == 'o' || flag == 'l' || flag == 'b' || flag == 'v' || flag == 'k')
@@ -157,7 +161,8 @@ void Channel::changeModePS(char set, char flag)
 {
     std::map<char, bool>::iterator it = _flags.find(flag);
     std::map<char, bool>::iterator temp;
-    (it->second == 'p') ? temp = _flags.find('s') : temp = _flags.find('p');
+    
+    temp = (it->first == 'p') ?  _flags.find('s') : _flags.find('p');
     if (set == '+' && it->second == false)
     {
         it->second = true;
@@ -165,49 +170,54 @@ void Channel::changeModePS(char set, char flag)
             temp->second = false;
     }
     else if (set == '-' && it->second == true)
-    {
         it->second = false;
-        if (temp->second == false)
-            temp->second = true;
-    }
     else
         MSG("FLAG already set");
 }
 
+/**
+ * @brief Set the password of the Channel.
+ * @param set control if the function will set or unset the password
+ * @param args the new password for the channel.
+**/
 void Channel::changePassword(char set, std::string const &args)
 {
-
-
-
+    if (set == '-')
+        _password.clear();
+    else if (!args.empty())
+        _password = args;
+    else
+        MSG("ERROR: MISSING ARGS TO SET THE PASSWORD OF THE CHANNEL");
 }
 
-
-
+/**
+ * @brief Set the User limit of the Channel.
+ * @param set control if the function will set or unset the limit 
+ * @param args the new password for the channel.
+**/
+void Channel::setLimit(char set, std::string const &args)
+{
+    if (set == '-')
+        _user_limit = 0;
+    else if (!args.empty())
+        _user_limit = atoi(args.c_str());
+    else
+        MSG("ERROR: MISSING ARGS TO SET THE LIMIT OF THE CHANNEL");
+}
 
 void Channel::cmdMode(std::string const &flags, std::string const &args, Client *client)
 {
-    std::vector<Client *>::iterator it;
-    for (it = _sec_chops.begin(); it != _sec_chops.end(); it++)
-    {
-        if (!((*it)->getNick().compare(client->getNick())))
-        {
-            _sec_chops.erase(it);
-            return ;
-        }
-    }
-    std::cout << "ERROR: This User is not a CHOPP" << std::endl;
+    //check if client is a chop
 
-
-    if (flags.empty())
-    {
-        MSG("No flags for MODE Command");
-        return ;
-    }
     char set = flags[0];
     for (int i = 1; i < flags.length(); i++)
     {
-        if (checkFlag(flags[i]) == 1)                               // In case of P or S ! Only one can be set at a time
+        // In case of P or S ! Only one can be set at a time
+        if (checkFlag(flags[i]) == 1)
+        {
             changeModePS(set, flags[i]);
+            return ;            
+        }                               
         else if (checkFlag(flags[i]) == 2)                          // In case of "simple" flags, just change state of flag
             changeSimpleFlag(set, flags[i]);
         else                                                        // In case it needs to use args to change state of channel
@@ -218,12 +228,16 @@ void Channel::cmdMode(std::string const &flags, std::string const &args, Client 
                     (set == '+') ? addChopp(args) : rmvChop(args); 
                     break;
                 case 'l':                                           // Set the user limit to the Channel
+                    setLimit(set, args);
                     break;
                 case 'b':                                           // Set a ban mask to keep users out
+                    MSG("Set a ban mask to keep users out");
                     break;
-                case 'v':                                           // give/take the ability to speak on a moderated channel;
+                case 'v':                                           // give/take the ability to speak on a moderated channel
+                    MSG("give/take the ability to speak on a moderated channel");
                     break;
                 case 'k':                                           // set a channel key (password).
+                    changePassword(set, args);
                     break;               
                 default:
                     send(client->getFd(), "672 flags :Unknown Flags\n", 26, 0); 

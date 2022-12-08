@@ -24,13 +24,8 @@ void    ChannelHandler::rmvClient(std::string const &nick)
 // TOPIC #tardiz :ola
 void    ChannelHandler::opCommands(std::string const &msg, Client *chop, chopCommand cmd)
 {
-
     std::vector<std::string> info = ft_split(msg);
-
-    if (info.size() == 3)
-        info[2].erase(0, 1);
-
-    Channel *channel = findChannel(info[1]);
+    Channel *channel = finder(info[1]);
 
     switch(cmd)
     {
@@ -41,9 +36,15 @@ void    ChannelHandler::opCommands(std::string const &msg, Client *chop, chopCom
         }
         case MODE:
         {
+            if (info.size() == 2)
+            {
+                MSG("No flags for MODE Command");
+                return ;
+            }
             std::string args = "";
             for (int i = 3; i < info.size(); i++)
                 args += info[i] + " ";
+
             channel->cmdMode(info[2], args, chop);
             break;
         }
@@ -56,6 +57,7 @@ void    ChannelHandler::opCommands(std::string const &msg, Client *chop, chopCom
         {
             if (info.size() == 3)
             {
+                info[2].erase(0, 1);
                 channel->cmdTopic(info[2], chop);
             }
             else
@@ -73,4 +75,5 @@ Channel *ChannelHandler::finder(const std::string &channelName) {
         if (!(*_it)->getName().compare(channelName))
             return (*_it);
     }
+    return (NULL);
 }
