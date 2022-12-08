@@ -41,7 +41,6 @@ class Channel
         void        addUser(Client *user);
         void        rmvUser(std::string const &nickname);
 
-
         //operators
         void        addChopp(std::string const &nickname);
         void        rmvChop(std::string const &nickname);
@@ -52,7 +51,6 @@ class Channel
         // void        cmdInvite(std::string const &topic, Client *client);
         void        cmdTopic(std::string const &topic, Client *client);
 
-
         std::string getUsersString();
 
         std::vector<Client *>   &getUsers() {return _users;};
@@ -60,7 +58,6 @@ class Channel
         void changeSimpleFlag(char set, char flag);
         void changeModePS(char set, char flag);
         void changePassword(char set, std::string const &args);
-
 };
 
 #endif

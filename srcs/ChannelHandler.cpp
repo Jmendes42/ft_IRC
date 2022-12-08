@@ -67,23 +67,10 @@ void    ChannelHandler::opCommands(std::string const &msg, Client *chop, chopCom
 }
 
 // UTIL ChannelHandler
-<<<<<<< Updated upstream
 
 Channel *ChannelHandler::finder(const std::string &channelName) {
     for (_it = _channels.begin(); _it != _channels.end(); _it++) {
         if (!(*_it)->getName().compare(channelName))
             return (*_it);
-=======
-Channel *ChannelHandler::findChannel(std::string const &name)
-{
-	std::vector<Channel *>::iterator it;
-    for (it = _channels.begin(); it != _channels.end(); it++)
-    {
-        if (!((*it)->getName().compare(name)))
-        {
-            return (*it);
-        }
->>>>>>> Stashed changes
     }
-    return NULL;
 }
