@@ -21,9 +21,10 @@ class Client
 
         Client() {};
         ~Client() {};
-        Client(const int &fd):_fd(fd), _pass(1) {};
+        Client(const int &fd, const std::string &ip):_fd(fd), _ip(ip), _pass(1) {};
 
         int         &getFd()    { return (_fd); };
+        std::string &getIp()    { return (_ip); };
         std::string &getNick()  { return (_nickname); };
         std::string &getUser()  { return (_username); };
         std::string &getHost()  { return (_hostname); };

@@ -6,15 +6,21 @@ Channel::Channel(std::string const &name, Client *chop) : _name(name), _chop(cho
     initFlags();
 }
 
+std::string Channel::getUsersString() {
+    std::string users;
+
+    for (_it = _users.begin(); _it != _users.end(); _it++)
+        users += " " + (*_it)->getNick();
+    return users.erase(0, 1);
+}
+
 void    Channel::addUser(Client *user)
 {
-    std::vector<Client *>::iterator it;
-
-    for (it = _users.begin(); it != _users.end(); it++)
+    for (_it = _users.begin(); _it != _users.end(); _it++)
     {
-        if (!((*it)->getNick().compare(user->getNick())))
+        if (!((*_it)->getNick().compare(user->getNick())))
         {
-            std::cout << "ERROR: This User is already in the Channel" << std::endl;
+            std::cout << "ERROR: This User is already in the Channel" << std::endl; // Exception
             return ;
         }
     }
@@ -23,12 +29,11 @@ void    Channel::addUser(Client *user)
 
 void    Channel::rmvUser(std::string const &nickname)
 {
-    std::vector<Client *>::iterator it;
-    for (it = _users.begin(); it != _users.end(); it++)
+    for (_it = _users.begin(); _it != _users.end(); _it++)
     {
-        if (!((*it)->getNick().compare(nickname)))
+        if (!((*_it)->getNick().compare(nickname)))
         {
-            _users.erase(it);
+            _users.erase(_it);
             return ;
         }
     }
