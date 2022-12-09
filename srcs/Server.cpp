@@ -1,4 +1,14 @@
+# include <vector>
+# include <string>
+# include <iostream>
+
+#include "../include/Client.hpp"
 #include "../include/Server.hpp"
+#include "../include/Socket.hpp"
+#include "../include/Channel.hpp"
+#include "../include/ClientHandler.hpp"
+#include "../include/ChannelHandler.hpp"
+
 
 void	Server::activity()
 {
@@ -96,12 +106,23 @@ void    Server::interpreter(std::string const &msg, int const &sockFd) {
 		privMsg(msg, sockFd);
 	else if (!cmd.compare("MODE"))
 		_channelHandler.opMode(copy, _clientHandler.finder(sockFd, ""));
-	else if (!cmd.compare("KICK"))
+	else if (!cmd.compare("KICK")) // TAKE OUT FROM THE VECTOR OF CLIENTS
 		_channelHandler.opKick(copy, _clientHandler.finder(sockFd, ""));
 	else if (!cmd.compare("TOPIC"))
 		_channelHandler.opTopic(copy, _clientHandler.finder(sockFd, ""));
 	else if (!cmd.compare("INVITE"))
-		_channelHandler.opInvite(copy, _clientHandler.finder(sockFd, ""));
+	{
+		// SEGFAULT IF USER NOT FOUND
+		std::vector<std::string> info = ft_split(copy);
+		Channel *channel = _channelHandler.finder(info[2]);
+		MSG("IM HERE " + info[2] + ".");
+
+		// std::cout << channel->getName();
+    	if (channel != NULL) {
+			std::cout << "INVITE\n"; 
+			channel->cmdInvite(_clientHandler.finder(sockFd, ""), _clientHandler.finder(0, info[1]));
+		}
+	}
 	else if (!cmd.compare("PASS"))
 		_clientHandler.addClient(msg, _password, sockFd, std::string(inet_ntoa(_sock.getHint().sin_addr)));
 }

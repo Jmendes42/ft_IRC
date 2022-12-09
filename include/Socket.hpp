@@ -19,8 +19,6 @@
 # include <errno.h>
 # include <sys/time.h> // FD_SET, FD_ISSET, FD_ZERO macros
 
-#include "Client.hpp"
-
 class Client;
 
 class Socket {
@@ -111,6 +109,12 @@ class ConnectionException : public std::exception
 				return "Error: Connection failed";
 			}
 };
+
+// template<typename T>
+// T   findert(std::vector<T> &vec, std::string search);
+
+/*template<typename T>
+T   finder(std::vector<T> vec, int search);	*/
 
 template<typename T>
 void	MSG(T msg) { std::cout << "Message: " << msg << std::endl; };

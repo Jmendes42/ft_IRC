@@ -1,7 +1,12 @@
 #ifndef CHANNEL_HANDLER_HPP
 # define CHANNEL_HANDLER_HPP
 
-# include "Channel.hpp"
+# include <vector>
+# include <string>
+# include <iostream>
+
+class Client;
+class Channel;
 
 class ChannelHandler
 {
@@ -20,7 +25,8 @@ class ChannelHandler
         void opTopic(std::string const &msg, Client *chop);
         void opMode(std::string const &msg, Client *chop);
         void opKick(std::string const &msg, Client *chop);
-        void opInvite(std::string const &msg, Client *chop);
+
+        std::vector<Channel *>  &getChannels()  {return _channels;};
 
 
 };

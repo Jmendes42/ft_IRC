@@ -1,6 +1,33 @@
 #include "../include/Socket.hpp"
 #include "../include/Client.hpp"
+#include "../include/Server.hpp"
+#include "../include/Channel.hpp"
+#include "../include/ChannelHandler.hpp"
+#include "../include/ClientHandler.hpp"
 
+
+
+// template<typename T>
+// T   findert(std::vector<T> &vec, std::string search) {
+//     typename std::vector<T>::iterator it;
+
+//     for (it = vec.begin(); it != vec.end(); it++) {
+//         if (!(*it)->getNick().compare(search))
+//             return (*it);
+//     }
+//     return NULL;
+// }
+
+/*template<typename T>
+T   finder(std::vector<T> &vec, int search) {
+    typename std::vector<T>::iterator it;
+
+    for (it = vec.begin(); it != vec.end(); it++) {
+        if (!(*it)->getFd() == search)
+            return (*it);
+    }
+    return NULL;
+}*/
 
 void	*ft_memset(void *s, int c, size_t n)
 {

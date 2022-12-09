@@ -1,4 +1,7 @@
 #include "../include/Channel.hpp"
+#include "../include/Socket.hpp"
+#include "../include/Client.hpp"
+
 
 Channel::Channel(std::string const &name, Client *chop) : _name(name), _chop(chop), _topic("")
 {
@@ -54,23 +57,6 @@ void Channel::initFlags()
     _flags.insert(std::pair<char, bool>('b', false));
     _flags.insert(std::pair<char, bool>('v', false));
     _flags.insert(std::pair<char, bool>('k', false));
-}
-
-// LOOK AT CODES: 377, 470, 485, 495
-void Channel::cmdKick(std::string const &nickname, Client *client)
-{
-    std::vector<Client *>::iterator it_clients;
-    std::string msgSend;
-    for (it_clients = _users.begin(); it_clients != _users.end(); it_clients++)
-    {
-        if (!((*it_clients)->getNick().compare(nickname)))
-        {
-            msgSend =":" + client->getNick() + " KICK " + getName() + ' ' + (*it_clients)->getNick() + '\n';
-            send((*it_clients)->getFd(), msgSend.c_str(), msgSend.length(), 0);
-            return ;
-        }
-    }
-    std::cout << "ERROR: This User is not in the Channel" << std::endl;
 }
 
 /**
@@ -236,4 +222,29 @@ void Channel::cmdTopic(std::string const &topic, Client *client)
         else
             MSG("Flag <t> is false");
     }
+}
+
+// LOOK AT CODES: 377, 470, 485, 495
+void Channel::cmdKick(std::string const &nickname, Client *client)
+{
+    std::string msgSend;
+    std::vector<Client *>::iterator it_clients;
+
+    for (it_clients = _users.begin(); it_clients != _users.end(); it_clients++)
+    {
+        if (!((*it_clients)->getNick().compare(nickname)))
+        {
+            msgSend =":" + client->getNick() + " KICK " + getName() + ' ' + (*it_clients)->getNick() + '\n';
+            send((*it_clients)->getFd(), msgSend.c_str(), msgSend.length(), 0);
+            return ;
+        }
+    }
+    std::cout << "ERROR: This User is not in the Channel" << std::endl;
+}
+
+void        Channel::cmdInvite(Client *client, Client *toInv)
+{
+    std::string msgSend;
+    msgSend =":" + client->getNick() + " INVITE " + toInv->getNick() + ' ' + getName() + '\n';
+    send(toInv->getFd(), msgSend.c_str(), msgSend.length(), 0);
 }

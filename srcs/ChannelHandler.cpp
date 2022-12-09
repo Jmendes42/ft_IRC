@@ -1,4 +1,7 @@
+#include "../include/Channel.hpp"
 #include "../include/ChannelHandler.hpp"
+#include "../include/Socket.hpp"
+
 
 void    ChannelHandler::addChannel(std::string const &channelName, Client *chop)
 {
@@ -53,16 +56,10 @@ void ChannelHandler::opMode(std::string const &msg, Client *chop)
 void ChannelHandler::opKick(std::string const &msg, Client *chop)
 {
     std::vector<std::string> info = ft_split(msg);
+
     Channel *channel = finder(info[1]);
     std::cout << "KICK\n"; 
     channel->cmdKick(info[2], chop);
-}
-
-void ChannelHandler::opInvite(std::string const &msg, Client *chop)
-{
-    std::vector<std::string> info = ft_split(msg);
-    Channel *channel = finder(info[1]);
-    std::cout << "INVITE\n";   
 }
 
 Channel *ChannelHandler::finder(const std::string &channelName) {

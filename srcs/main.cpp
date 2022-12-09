@@ -1,4 +1,9 @@
 # include "../include/Server.hpp"
+# include "../include/Socket.hpp"
+# include "../include/Client.hpp"
+# include "../include/ClientHandler.hpp"
+# include "../include/ChannelHandler.hpp"
+# include "../include/Channel.hpp"
 #include <sstream>
 #include <string>
 

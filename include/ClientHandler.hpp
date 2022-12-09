@@ -1,7 +1,14 @@
 #ifndef CLIENT_HANDLER_HPP
 # define CLIENT_HANDLER_HPP
 
-# include "Client.hpp"
+# include <vector>
+# include <string>
+# include <iostream>
+
+#include "Client.hpp"
+#include "Socket.hpp"
+
+class Client;
 
 class ClientHandler
 {

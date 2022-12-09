@@ -2,8 +2,15 @@
 #ifndef CHANNEL_HPP
 # define CHANNEL_HPP
 
-# include "ClientHandler.hpp"
+# include <map>
+# include <vector>
+# include <string>
+# include <iostream>
 
+# include <sys/types.h>
+# include <sys/socket.h>
+
+#include "Client.hpp"
 // VERIFY: What happens if the CHOP leaves the channel??
 
 class Channel
@@ -55,7 +62,7 @@ class Channel
         void        initFlags();
         void        cmdKick(std::string const &nickname, Client *client);
         void        cmdMode(std::string const &flags, std::string const &args, Client *client);
-        // void        cmdInvite(std::string const &topic, Client *client);
+        void        cmdInvite(Client *client, Client *toInv);
         void        cmdTopic(std::string const &topic, Client *client);
 
         std::string getUsersString();
