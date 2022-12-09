@@ -1,3 +1,4 @@
+#include "../include/Client.hpp"
 #include "../include/Channel.hpp"
 
 Channel::Channel(std::string const &name, Client *chop) : _name(name), _chop(chop)

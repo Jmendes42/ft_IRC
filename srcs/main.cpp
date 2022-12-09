@@ -1,6 +1,12 @@
-# include "../include/Server.hpp"
 #include <sstream>
 #include <string>
+#include "../include/Utils.hpp"
+#include "../include/Server.hpp"
+#include "../include/Socket.hpp"
+#include "../include/Client.hpp"
+#include "../include/Channel.hpp"
+#include "../include/ClientHandler.hpp"
+#include "../include/ChannelHandler.hpp"
 
 
 int	main(int argc, char **argv) 

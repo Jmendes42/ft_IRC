@@ -2,10 +2,9 @@
 #ifndef CHANNEL_HPP
 # define CHANNEL_HPP
 
-# include "ClientHandler.hpp"
+# include "Client.hpp"
 
 // VERIFY: What happens if the CHOP leaves the channel??
-
 class Channel
 {
     private:

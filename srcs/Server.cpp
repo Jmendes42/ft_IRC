@@ -1,4 +1,9 @@
 #include "../include/Server.hpp"
+#include "../include/Socket.hpp"
+#include "../include/Client.hpp"
+#include "../include/Channel.hpp"
+#include "../include/ClientHandler.hpp"
+#include "../include/ChannelHandler.hpp"
 
 void	Server::activity()
 {
@@ -65,7 +70,7 @@ void	Server::activity()
 			else {
 				try
 				{
-					interpreter(std::string(buffer, 0, _sock.getValRead()), _sock.getSd());
+					interpreter(std::string(buffer, _sock.getValRead()), _sock.getSd());
 				}
 				catch(std::exception &error)
 				{
@@ -108,11 +113,10 @@ void    Server::joinChannel(const std::string &msg, const int &sockFd) {
 	//When a user nickname changes, update on the participants list
 	std::string channelMsg;			// Confirm message user/nick
 	std::string channelName = msg.substr(5, msg.find('\0', 5));
-	std::string ip = _clientHandler.finder(sockFd, "")->getIp();
-	std::string nick = _clientHandler.finder(sockFd, "")->getNick();
-	std::string user = _clientHandler.finder(sockFd, "")->getUser();
+	std::string ip = _clientHandler.finder(sockFd)->getIp();
+	std::string nick = _clientHandler.finder(sockFd)->getNick();
+	std::string user = _clientHandler.finder(sockFd)->getUser();
 
-	MSG(user);
 	channelName.erase(channelName.find('\r'), 2);
 	if (channelName[0] != '#')
 		channelName = "#" + channelName;
@@ -121,22 +125,22 @@ void    Server::joinChannel(const std::string &msg, const int &sockFd) {
 		std::vector<Client *>			users;
 		std::string						joinMsg;
 
-		users = _channelHandler.finder(channelName)->getUsers();
-		joinMsg = ':' + nick + '!' + user + '@' + ip + " JOIN " + channelName + '\n';
-		for (it = users.begin(); it != users.end(); it++) {
-			int fd = (*it)->getFd();
-			send(fd, joinMsg.c_str(), joinMsg.length(), 0);	// Send message to all users that there is a new member
-		}
-		_channelHandler.finder(channelName)->addUser(_clientHandler.finder(sockFd, ""));
+		
+			users = _channelHandler.finder(channelName)->getUsers();
+			joinMsg = ':' + nick + '!' + user + '@' + ip + " JOIN " + channelName + '\n';
+			for (it = users.begin(); it != users.end(); it++)
+				send((*it)->getFd(), joinMsg.c_str(), joinMsg.length(), 0);	// Send message to all users that there is a new member
+			_channelHandler.finder(channelName)->addUser(_clientHandler.finder(sockFd));
+		
 	}
-	else
-		_channelHandler.addChannel(channelName, _clientHandler.finder(sockFd, ""));
-
+	else {
+		_channelHandler.addChannel(channelName, _clientHandler.finder(sockFd));
+		_clientHandler.finder(sockFd)->addChannel(_channelHandler.finder(channelName));
+	}
 	channelMsg = ":" + nick + "!" + user + "@" + ip + " JOIN :" + channelName + "\n";
 	channelMsg += "353 " + nick + " = " + channelName + " :@";
 	channelMsg += _channelHandler.finder(channelName)->getUsersString() + "\n";		// Send list of users. What if there are multiple operators?
 	channelMsg += "366 " + nick + " " + channelName + " :End of /NAMES list\n";
-
 	send(sockFd, channelMsg.c_str(), channelMsg.length(), 0);
 }
 
@@ -150,21 +154,20 @@ void    Server::privMsg(const std::string &msg, const int &sockFd) {
 
 		if (_channelHandler.finder(channelName) != NULL) {
 			std::vector<Client *>::iterator	it;
-			std::string						client = _clientHandler.finder(sockFd, "")->getNick();
+			std::string						client = _clientHandler.finder(sockFd)->getNick();
 			std::vector<Client *>			users = _channelHandler.finder(channelName)->getUsers();
 
 			sendMsg = ':' + client + " PRIVMSG " + channelName + ' ' + msg.substr(msg.find(':'));
 			for (it = users.begin(); it != users.end(); it++) {
-				int fd = (*it)->getFd();
 				if ((*it)->getNick().compare(client))
-					send(fd, sendMsg.c_str(), sendMsg.length(), 0);
+					send((*it)->getFd(), sendMsg.c_str(), sendMsg.length(), 0);
 			}
 		}
 	}
-	else if (_clientHandler.finder(0, msg.substr(8, msg.find(' ', 8) - 8)) != NULL) {
-		int fd = _clientHandler.finder(0, msg.substr(8, msg.find(' ', 8) - 8))->getFd();
-		sendMsg = ":" + _clientHandler.finder(sockFd, "")->getNick() + " PRIVMSG ";
-		sendMsg += _clientHandler.finder(fd, "")->getNick() + ' ' + msg.substr(msg.find(':'));
+	else if (_clientHandler.finder(msg.substr(8, msg.find(' ', 8) - 8)) != NULL) {
+		int fd = _clientHandler.finder(msg.substr(8, msg.find(' ', 8) - 8))->getFd();
+		sendMsg = ":" + _clientHandler.finder(sockFd)->getNick() + " PRIVMSG ";
+		sendMsg += _clientHandler.finder(fd)->getNick() + ' ' + msg.substr(msg.find(':'));
 		send(fd, sendMsg.c_str(), sendMsg.length(), 0);
 	}
 }
@@ -173,7 +176,7 @@ void    Server::setClientNick(const std::string &msg, const int &sockFd) {
 	std::string	nick = msg.substr(5, msg.find('\0', 5));
 
 	nick.erase(nick.find('\r'), 2);
-	_clientHandler.finder(sockFd, "")->setNick(nick);
+	_clientHandler.finder(sockFd)->setNick(nick);
 	nick = "001 " + nick + "\n";
 	send(sockFd, nick.c_str(), nick.length(), 0);
 }
@@ -182,5 +185,5 @@ void    Server::setClientUser(const std::string &msg, const int &sockFd) {
 	std::string	user = msg.substr(msg.find(':') + 1);
 
 	user.erase(user.find('\r'), 2);
-	_clientHandler.finder(sockFd, "")->setUser(user);
+	_clientHandler.finder(sockFd)->setUser(user);
 }

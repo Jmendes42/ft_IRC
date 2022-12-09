@@ -1,3 +1,5 @@
+#include "../include/Client.hpp"
+#include "../include/Channel.hpp"
 #include "../include/ChannelHandler.hpp"
 
 void    ChannelHandler::addChannel(std::string const &channelName, Client *chop)
