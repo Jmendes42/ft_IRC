@@ -1,6 +1,7 @@
-#include "../include/Client.hpp"
 #include "../include/Channel.hpp"
 #include "../include/ChannelHandler.hpp"
+#include "../include/Socket.hpp"
+
 
 void    ChannelHandler::addChannel(std::string const &channelName, Client *chop)
 {
@@ -23,53 +24,48 @@ void    ChannelHandler::rmvClient(std::string const &nick)
     std::cout << "THIS CLIENT IS NOT IN THE CHANNEL" << std::endl;
 }
 
-// TOPIC #tardiz :ola
-void    ChannelHandler::opCommands(std::string &msg, Client *chop, chopCommand cmd)
+void ChannelHandler::opTopic(std::string const &msg, Client *chop)
+{
+    std::vector<std::string> info = ft_split(msg);
+    Channel *channel = finder(info[1]);
+    if (info.size() == 3)
+    {
+        info[2].erase(0, 1);
+        channel->cmdTopic(info[2], chop);
+    }
+    else
+        channel->cmdTopic("", chop);
+}
+
+void ChannelHandler::opMode(std::string const &msg, Client *chop)
+{
+    std::vector<std::string> info = ft_split(msg);
+    Channel *channel = finder(info[1]);
+    if (info.size() == 2)
+    {
+        MSG("No flags for MODE Command");
+        return ;
+    }
+    std::string args = "";
+    for (int i = 3; i < info.size(); i++)
+        args += info[i] + " ";
+    args.pop_back();
+    channel->cmdMode(info[2], args, chop);
+}
+
+void ChannelHandler::opKick(std::string const &msg, Client *chop)
 {
     std::vector<std::string> info = ft_split(msg);
 
-    info[1].erase(0, 1);
-    if (info.size() == 3)
-        info[2].erase(0, 1);
-    
-
-    Channel *channel = findChannel(info[1]);
-
-    switch(cmd)
-    {
-        case KICK:
-        {
-            std::cout << "KICK\n";   
-            break;
-        }
-        case MODE:
-        {
-            std::cout << "MODE\n";   
-            break;
-        }
-        case INVITE:
-        {
-            std::cout << "INVITE\n";   
-            break;
-        }
-        case TOPIC:
-        {
-            if (info.size() == 3)
-                channel->cmdTopic(info[2].erase(0, 1), chop);
-            else
-                channel->cmdTopic("", chop);
-            break;
-        }
-    }
-
+    Channel *channel = finder(info[1]);
+    std::cout << "KICK\n"; 
+    channel->cmdKick(info[2], chop);
 }
-
-// UTIL ChannelHandler
 
 Channel *ChannelHandler::finder(const std::string &channelName) {
     for (_it = _channels.begin(); _it != _channels.end(); _it++) {
         if (!(*_it)->getName().compare(channelName))
             return (*_it);
     }
-    return NULL;
+    return (NULL);
 }

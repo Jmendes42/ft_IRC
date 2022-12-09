@@ -2,6 +2,7 @@
 # define CHANNEL_HANDLER_HPP
 
 # include <vector>
+# include <string>
 # include <iostream>
 
 class Client;
@@ -19,10 +20,15 @@ class ChannelHandler
         void    rmvClient(std::string const &msg);
         void    addChannel(std::string const &msg, Client *chop);
 
-
         //operators
-        void    opCommands(std::string &msg, Client *chop, chopCommand cmd);
         Channel *finder(const std::string &);
+        void opTopic(std::string const &msg, Client *chop);
+        void opMode(std::string const &msg, Client *chop);
+        void opKick(std::string const &msg, Client *chop);
+
+        std::vector<Channel *>  &getChannels()  {return _channels;};
+
+
 };
 
 #endif

@@ -35,6 +35,9 @@ Channel Operators (also referred to as a ***chop*** or ***chanop*** and identifi
 
         KICK    - Eject a client from the channel
         MODE    - Change the channel's mode
+
+                > About -p and -s : "Both can’t be set together. And uppon setting one mode, the other one is automatically unset." 
+        
         INVITE  - Invite a client to an invite-only channel (mode +i)
         TOPIC   - Change the channel topic in a mode +t channel
 
@@ -84,6 +87,12 @@ Channel Operators (also referred to as a ***chop*** or ***chanop*** and identifi
 [SELECT()](https://www.geeksforgeeks.org/socket-programming-in-cc-handling-multiple-clients-on-server-without-multi-threading/)
 
 [MORE SELECT()](https://www.scottklement.com/rpg/socktut/proxy.html
+
+[Difference between private and secret channel](https://ircnet.barfooze.de/articles/secretmode/)
+
+[OPER GUIDE]()
+
+[OPER block](https://www.unrealircd.org/docs/Oper_block)
 
 #### NICK
 

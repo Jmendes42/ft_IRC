@@ -19,6 +19,8 @@
 # include <sys/socket.h>
 # include <netinet/in.h>
 
+class Client;
+
 class Socket {
 
 
@@ -107,6 +109,5 @@ class ConnectionException : public std::exception
 				return "Error: Connection failed";
 			}
 };
-
 
 #endif
