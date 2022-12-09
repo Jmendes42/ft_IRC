@@ -74,6 +74,7 @@ void	Server::activity()
 					interpreter(std::string(buffer, _sock.getValRead()), _sock.getSd());
 				}
 				catch(std::exception &error)
+<<<<<<< HEAD
 				{
 					MSG(error.what());
 				}
@@ -189,6 +190,7 @@ void    Server::privMsg(const std::string &msg, const int &sockFd) {
 		int fd = _clientHandler.finder(msg.substr(8, msg.find(' ', 8) - 8))->getFd();
 		sendMsg = ":" + _clientHandler.finder(sockFd)->getNick() + " PRIVMSG ";
 		sendMsg += _clientHandler.finder(fd)->getNick() + ' ' + msg.substr(msg.find(':'));
+
 
 		send(fd, sendMsg.c_str(), sendMsg.length(), 0);
 	}

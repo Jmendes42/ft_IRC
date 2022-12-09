@@ -2,7 +2,6 @@
 #ifndef CHANNEL_HPP
 # define CHANNEL_HPP
 
-# include "Client.hpp"
 # include <map>
 # include <vector>
 # include <string>
@@ -13,6 +12,7 @@
 
 #include "Client.hpp"
 // VERIFY: What happens if the CHOP leaves the channel??
+
 class Channel
 {
     private:

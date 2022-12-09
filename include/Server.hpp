@@ -1,10 +1,14 @@
 #ifndef SERVERCLASS_HPP
 # define SERVERCLASS_HPP
 
-# include "Utils.hpp"
-# include "Socket.hpp"
-# include "ClientHandler.hpp"
-# include "ChannelHandler.hpp"
+# include <vector>
+# include <string>
+# include <iostream>
+
+#include "Socket.hpp"
+#include "ClientHandler.hpp"
+#include "ChannelHandler.hpp"
+>>>>>>> dc5e2b398202aedfd1815e6a100324cc8e880533
 
 class Server
 {
