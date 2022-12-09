@@ -14,14 +14,15 @@ class Channel
         std::string                     _name;
         Client                          *_chop;
         std::vector<Client *>           _users;
-        std::vector<Client *> _sec_chops;
+        std::vector<Client *>           _sec_chops;
+        std::vector<Client *>           _ban_users;
+        std::vector<Client *>           _muted_users;
 
         //operators
         std::string _topic;
         std::map<char, bool> _flags;
         std::string _password;
         int _user_limit;
-
 
     public:
 
@@ -43,10 +44,16 @@ class Channel
 
         //operators
         void        addChopp(std::string const &nickname);
+        void        addBan(std::string const &nickname);
+        void        addMute(std::string const &nickname);
+
+
         void        rmvChop(std::string const &nickname);
+        void        rmvBan(std::string const &nickname);
+        void        rmvMute(std::string const &nickname);
 
         void        initFlags();
-        // void        cmdKick(std::string const &topic, Client *client);
+        void        cmdKick(std::string const &nickname, Client *client);
         void        cmdMode(std::string const &flags, std::string const &args, Client *client);
         // void        cmdInvite(std::string const &topic, Client *client);
         void        cmdTopic(std::string const &topic, Client *client);
@@ -59,6 +66,7 @@ class Channel
         void changeModePS(char set, char flag);
         void changePassword(char set, std::string const &args);
         void setLimit(char set, std::string const &args);
+        int checkChop(std::string const &nickname);
 };
 
 #endif

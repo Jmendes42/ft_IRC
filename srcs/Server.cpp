@@ -83,7 +83,8 @@ void    Server::_sockSet() {
 
 void    Server::interpreter(std::string const &msg, int const &sockFd) {
     std::string cmd = msg.substr(0, msg.find(' '));
-
+	std::string copy = msg;
+	copy.erase(msg.find('\r'), 2);
 	//MSG(msg);
 	if (!cmd.compare("NICK"))
 		setClientNick(msg, sockFd);
@@ -93,20 +94,16 @@ void    Server::interpreter(std::string const &msg, int const &sockFd) {
 		joinChannel(msg, sockFd);
 	else if (!cmd.compare("PRIVMSG"))
 		privMsg(msg, sockFd);
+	else if (!cmd.compare("MODE"))
+		_channelHandler.opMode(copy, _clientHandler.finder(sockFd, ""));
+	else if (!cmd.compare("KICK"))
+		_channelHandler.opKick(copy, _clientHandler.finder(sockFd, ""));
+	else if (!cmd.compare("TOPIC"))
+		_channelHandler.opTopic(copy, _clientHandler.finder(sockFd, ""));
+	else if (!cmd.compare("INVITE"))
+		_channelHandler.opInvite(copy, _clientHandler.finder(sockFd, ""));
 	else if (!cmd.compare("PASS"))
 		_clientHandler.addClient(msg, _password, sockFd, std::string(inet_ntoa(_sock.getHint().sin_addr)));
-	else if (!cmd.compare("TOPIC"))
-	{
-		std::string	nick = msg;
-		nick.erase(nick.find('\r'), 2);
-		_channelHandler.opCommands(nick, _clientHandler.finder(sockFd, ""), TOPIC);
-	}
-	else if (!cmd.compare("MODE"))
-	{
-		std::string	nick = msg;
-		nick.erase(nick.find('\r'), 2);
-		_channelHandler.opCommands(nick, _clientHandler.finder(sockFd, ""), MODE);
-	}
 }
 
 void    Server::joinChannel(const std::string &msg, const int &sockFd) {

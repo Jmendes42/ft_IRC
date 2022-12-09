@@ -16,8 +16,11 @@ class ChannelHandler
         void    addChannel(std::string const &msg, Client *chop);
 
         //operators
-        void    opCommands(std::string const &msg, Client *chop, chopCommand cmd);
         Channel *finder(const std::string &);
+        void opTopic(std::string const &msg, Client *chop);
+        void opMode(std::string const &msg, Client *chop);
+        void opKick(std::string const &msg, Client *chop);
+        void opInvite(std::string const &msg, Client *chop);
 
 
 };

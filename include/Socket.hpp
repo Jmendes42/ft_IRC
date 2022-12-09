@@ -19,8 +19,6 @@
 # include <errno.h>
 # include <sys/time.h> // FD_SET, FD_ISSET, FD_ZERO macros
 
-enum chopCommand { KICK, MODE, INVITE, TOPIC };
-
 class Socket {
 
 

@@ -21,52 +21,51 @@ void    ChannelHandler::rmvClient(std::string const &nick)
     std::cout << "THIS CLIENT IS NOT IN THE CHANNEL" << std::endl;
 }
 
-// TOPIC #tardiz :ola
-void    ChannelHandler::opCommands(std::string const &msg, Client *chop, chopCommand cmd)
+void ChannelHandler::opTopic(std::string const &msg, Client *chop)
 {
     std::vector<std::string> info = ft_split(msg);
     Channel *channel = finder(info[1]);
-
-    switch(cmd)
+    if (info.size() == 3)
     {
-        case KICK:
-        {
-            std::cout << "KICK\n";   
-            break;
-        }
-        case MODE:
-        {
-            if (info.size() == 2)
-            {
-                MSG("No flags for MODE Command");
-                return ;
-            }
-            std::string args = "";
-            for (int i = 3; i < info.size(); i++)
-                args += info[i] + " ";
-
-            channel->cmdMode(info[2], args, chop);
-            break;
-        }
-        case INVITE:
-        {
-            std::cout << "INVITE\n";   
-            break;
-        }
-        case TOPIC:
-        {
-            if (info.size() == 3)
-            {
-                info[2].erase(0, 1);
-                channel->cmdTopic(info[2], chop);
-            }
-            else
-                channel->cmdTopic("", chop);
-            break;
-        }
+        info[2].erase(0, 1);
+        channel->cmdTopic(info[2], chop);
     }
-
+    else
+        channel->cmdTopic("", chop);
 }
+
+void ChannelHandler::opMode(std::string const &msg, Client *chop)
+{
+    std::vector<std::string> info = ft_split(msg);
+    Channel *channel = finder(info[1]);
+    if (info.size() == 2)
+    {
+        MSG("No flags for MODE Command");
+        return ;
+    }
+    std::string args = "";
+    for (int i = 3; i < info.size(); i++)
+        args += info[i] + " ";
+    args.pop_back();
+    channel->cmdMode(info[2], args, chop);
+}
+
+void ChannelHandler::opKick(std::string const &msg, Client *chop)
+{
+    std::vector<std::string> info = ft_split(msg);
+    Channel *channel = finder(info[1]);
+    std::cout << "KICK\n"; 
+    channel->cmdKick(info[2], chop);
+}
+
+void ChannelHandler::opInvite(std::string const &msg, Client *chop)
+{
+    std::vector<std::string> info = ft_split(msg);
+    Channel *channel = finder(info[1]);
+    std::cout << "INVITE\n";   
+}
+
+
 
 // UTIL ChannelHandler
 
