@@ -90,6 +90,10 @@ Channel Operators (also referred to as a ***chop*** or ***chanop*** and identifi
 
 [Difference between private and secret channel](https://ircnet.barfooze.de/articles/secretmode/)
 
+[OPER GUIDE]()
+
+[OPER block](https://www.unrealircd.org/docs/Oper_block)
+
 #### NICK
 
      /nick <nick>                                - set nick on current server

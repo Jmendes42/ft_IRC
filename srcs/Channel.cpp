@@ -40,169 +40,7 @@ void    Channel::rmvUser(std::string const &nickname)
     }
 }
 
-//NOT TESTED!!
 
-/**
- * @brief Add User to the vector of Ban users. Checks if the User exists in the Channel and if it is not a Chop already. (CHOP = Channel Operator)
- * @param nickname Nickname of the user to be added. 
-**/
-void    Channel::addMute(std::string const &nickname)
-{
-    if (nickname.empty())
-    {
-        std::cout << "ERROR: NO NICKNAME" << std::endl;
-        return ;
-    }
-    std::vector<Client *>::iterator it_chop;
-    std::vector<Client *>::iterator it_clients;
-
-    for (it_chop = _muted_users.begin(); it_chop != _muted_users.end(); it_chop++)
-    {
-
-        if (!((*it_chop)->getNick().compare(nickname)))
-        {
-            std::cout << "ERROR: Banned User" << std::endl;
-            return ;
-        }
-    }
-    for (it_clients = _users.begin(); it_clients != _users.end(); it_clients++)
-    {
-        if (!((*it_clients)->getNick().compare(nickname)))
-        {
-            std::cout << "Banning user" << std::endl;
-            _muted_users.push_back((*it_clients));
-            return ;
-        }
-    }
-    std::cout << "ERROR: This User is not in the Channel" << std::endl;
-}
-
-/**
- * @brief Add User to the vector of Ban users. Checks if the User exists in the Channel and if it is not a Chop already. (CHOP = Channel Operator)
- * @param nickname Nickname of the user to be added. 
-**/
-void    Channel::addBan(std::string const &nickname)
-{
-    if (nickname.empty())
-    {
-        std::cout << "ERROR: NO NICKNAME" << std::endl;
-        return ;
-    }
-    std::vector<Client *>::iterator it_chop;
-    std::vector<Client *>::iterator it_clients;
-
-    for (it_chop = _ban_users.begin(); it_chop != _ban_users.end(); it_chop++)
-    {
-
-        if (!((*it_chop)->getNick().compare(nickname)))
-        {
-            std::cout << "ERROR: Banned User" << std::endl;
-            return ;
-        }
-    }
-    for (it_clients = _users.begin(); it_clients != _users.end(); it_clients++)
-    {
-        if (!((*it_clients)->getNick().compare(nickname)))
-        {
-            std::cout << "Banning user" << std::endl;
-            _ban_users.push_back((*it_clients));
-            return ;
-        }
-    }
-    std::cout << "ERROR: This User is not in the Channel" << std::endl;
-}
-
-/**
- * @brief Add User to the vector of Secundary Chops. Checks if the User exists in the Channel and if it is not a Chop already. (CHOP = Channel Operator)
- * @param nickname Nickname of the user to be added. 
-**/
-void    Channel::addChopp(std::string const &nickname)
-{
-    if (nickname.empty())
-    {
-        std::cout << "ERROR: NO NICKNAME" << std::endl;
-        return ;
-    }
-    std::vector<Client *>::iterator it_chop;
-    std::vector<Client *>::iterator it_clients;
-
-    for (it_chop = _sec_chops.begin(); it_chop != _sec_chops.end(); it_chop++)
-    {
-
-        if (!((*it_chop)->getNick().compare(nickname)))
-        {
-            std::cout << "ERROR: This chop is already in the Channel" << std::endl;
-            return ;
-        }
-    }
-    for (it_clients = _users.begin(); it_clients != _users.end(); it_clients++)
-    {
-        if (!((*it_clients)->getNick().compare(nickname)))
-        {
-            std::cout << "Adding CHOP" << std::endl;
-            _sec_chops.push_back((*it_clients));
-            return ;
-        }
-    }
-    std::cout << "ERROR: This User is not in the Channel" << std::endl;
-}
-
-/**
- * @brief Remove User from the vector of Secundary Chops., if it exists. (CHOP = Channel Operator)
- * @param nickname Nickname of the user to be removed. 
-**/
-void    Channel::rmvChop(std::string const &nickname)
-{
-    std::vector<Client *>::iterator it;
-    for (it = _sec_chops.begin(); it != _sec_chops.end(); it++)
-    {
-        if (!((*it)->getNick().compare(nickname)))
-        {
-            _sec_chops.erase(it);
-            return ;
-        }
-    }
-    std::cout << "ERROR: This User is not a CHOPP" << std::endl;
-}
-
-/**
- * @brief Remove User from the vector of Secundary Chops., if it exists. (CHOP = Channel Operator)
- * @param nickname Nickname of the user to be removed. 
-**/
-void    Channel::rmvBan(std::string const &nickname)
-{
-    std::vector<Client *>::iterator it;
-    for (it = _ban_users.begin(); it != _ban_users.end(); it++)
-    {
-        if (!((*it)->getNick().compare(nickname)))
-        {
-            _ban_users.erase(it);
-            return ;
-        }
-    }
-    std::cout << "ERROR: This User is not Banned" << std::endl;
-}
-
-/**
- * @brief Remove User from the vector of Secundary Chops., if it exists. (CHOP = Channel Operator)
- * @param nickname Nickname of the user to be removed. 
-**/
-void    Channel::rmvMute(std::string const &nickname)
-{
-    std::vector<Client *>::iterator it;
-    for (it = _muted_users.begin(); it != _muted_users.end(); it++)
-    {
-        if (!((*it)->getNick().compare(nickname)))
-        {
-            _muted_users.erase(it);
-            return ;
-        }
-    }
-    std::cout << "ERROR: This User is not Banned" << std::endl;
-}
-
-//NOT TESTED!!! 
-//This Flags are needed to implement the MODE command
 void Channel::initFlags()
 {
     _flags.insert(std::pair<char, bool>('o', false));
@@ -218,7 +56,6 @@ void Channel::initFlags()
     _flags.insert(std::pair<char, bool>('k', false));
 }
 
-//NOT TESTED!!! Need merge for getFD()
 // LOOK AT CODES: 377, 470, 485, 495
 void Channel::cmdKick(std::string const &nickname, Client *client)
 {
@@ -236,14 +73,6 @@ void Channel::cmdKick(std::string const &nickname, Client *client)
     std::cout << "ERROR: This User is not in the Channel" << std::endl;
 }
 
-// SIMPLE FLAGS
-// p - private channel flag;
-// s - secret channel flag;
-// i - invite-only channel flag;
-// t - topic settable by channel operator only flag;
-// n - no messages to channel from clients on the outside;
-// m - moderated channel;
-
 /**
  * @brief Checks if the flag is Simple, PS or Complex
  * @param flag to be checked
@@ -254,7 +83,6 @@ int checkFlag(char flag)
     {
         std::cout << "FLAG = " << flag << std::endl;
         return (1);
-
     }
     else if (flag == 'i' || flag == 't' || flag == 'n' || flag == 'm')
         return (2);
@@ -359,25 +187,25 @@ void Channel::cmdMode(std::string const &flags, std::string const &args, Client 
         // In case of P or S ! Only one can be set at a time
         if (checkFlag(flags[i]) == 1)
             changeModePS(set, flags[i]);
-        else if (checkFlag(flags[i]) == 2)                          // In case of "simple" flags, just change state of flag
+        else if (checkFlag(flags[i]) == 2)                          
             changeSimpleFlag(set, flags[i]);
-        else                                                        // In case it needs to use args to change state of channel
+        else                                                    
         {
             switch (flags[i])
             {
-                case 'o':                                           // Give/Take channel operator privileges
-                    (set == '+') ? addChopp(args) : rmvChop(args); 
+                case 'o':                                          
+                    (set == '+') ? addToVector(args, _sec_chops, _users) : rmvFromVector(args, _sec_chops); 
                     break;
-                case 'l':                                           // Set the user limit to the Channel
+                case 'l':                                           
                     setLimit(set, args);
                     break;
-                case 'b':                                           // Set a ban mask to keep users out
-                    (set == '+') ? addBan(args) : rmvBan(args);
+                case 'b':                                       
+                    (set == '+') ? addToVector(args, _ban_users, _users) : rmvFromVector(args, _ban_users);
                     break;
-                case 'v':                                           // give/take the ability to speak on a moderated channel
-                    (set == '+') ? addMute(args) : rmvMute(args);
+                case 'v':                                      
+                    (set == '+') ? addToVector(args, _muted_users, _users) : rmvFromVector(args, _muted_users);
                     break;
-                case 'k':                                           // set a channel key (password).
+                case 'k':                                   
                     changePassword(set, args);
                     break;               
                 default:
@@ -388,14 +216,6 @@ void Channel::cmdMode(std::string const &flags, std::string const &args, Client 
     }
 }
 
-
-// void Channel::cmdInvite(std::string const &topic, Client *client)
-// {
-
-// }
-
-//NOT TESTED. For now, Topic can't be changed because <t> flag is always false
-// send(fd,":ines!ines@localhost 413 ines Ola\n" , 35, 0);
 void Channel::cmdTopic(std::string const &topic, Client *client)
 {
     if (topic.empty())

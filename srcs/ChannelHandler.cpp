@@ -65,10 +65,6 @@ void ChannelHandler::opInvite(std::string const &msg, Client *chop)
     std::cout << "INVITE\n";   
 }
 
-
-
-// UTIL ChannelHandler
-
 Channel *ChannelHandler::finder(const std::string &channelName) {
     for (_it = _channels.begin(); _it != _channels.end(); _it++) {
         if (!(*_it)->getName().compare(channelName))
