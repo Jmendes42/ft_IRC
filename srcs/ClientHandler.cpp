@@ -1,17 +1,19 @@
+#include "../include/Utils.hpp"
+#include "../include/Client.hpp"
 #include "../include/ClientHandler.hpp"
 
-Client *ClientHandler::finder(const int &fd, const std::string &nick) { // create overload
-    if (!fd) {
-        for (_it = _clients.begin(); _it != _clients.end(); _it++) {
-            if (!(*_it)->getNick().compare(nick))
-                return (*_it);
-        }
+Client *ClientHandler::finder(const std::string &nick) {
+    for (_it = _clients.begin(); _it != _clients.end(); _it++) {
+        if (!(*_it)->getNick().compare(nick))
+            return (*_it);
     }
-    else {
-        for (_it = _clients.begin(); _it != _clients.end(); _it++) {
-            if ((*_it)->getFd() == fd)
-                return (*_it);
-        }
+    return NULL;
+}
+
+Client *ClientHandler::finder(const int &fd) {
+    for (_it = _clients.begin(); _it != _clients.end(); _it++) {
+        if ((*_it)->getFd() == fd)
+            return (*_it);
     }
     return NULL;
 }

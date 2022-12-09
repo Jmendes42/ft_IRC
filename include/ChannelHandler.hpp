@@ -1,7 +1,11 @@
 #ifndef CHANNEL_HANDLER_HPP
 # define CHANNEL_HANDLER_HPP
 
-# include "Channel.hpp"
+# include <vector>
+# include <iostream>
+
+class Client;
+class Channel;
 
 class ChannelHandler
 {

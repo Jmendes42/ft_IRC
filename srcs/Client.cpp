@@ -1,34 +1,35 @@
+#include "../include/Client.hpp"
+#include "../include/Channel.hpp"
 
-// #include "Client.hpp"
-// // #include "Channel.hpp" // ?? check this include
+Channel *Client::findChannel(const std::string &channelName) {
+    for (_it = _channels.begin(); _it != _channels.end(); _it++) {
+        if (!(*_it)->getName().compare(channelName))
+            return (*_it);
+    }
+    return NULL;
+}
 
-// void Client::addChannel(Channel *add)
-// {
-//     std::vector<Channel *>::iterator it;
-//     for (it = _channels.begin(); it != _channels.end(); it++)
-//     {
-//         //  THIS SHOULD BE AN EXCEPTION
-//         if (!((*it)->getName().compare(add->getName())))
-//         {
-//             std::cout <<  "This Client is already in this Channel!" << std::endl;
-//             return ;                                
-//         }
-//     }
-//     _channels.push_back(add);
-// }
 
-// void Client::rmvChannel(std::string &name)
-// {
-//     std::vector<Channel *>::iterator it;
-//     for (it = _channels.begin(); it != _channels.end(); it++)
-//     {
-//         //  THIS SHOULD BE AN EXCEPTION
-//         if (!((*it)->getName().compare(name)))
-//         {
-//             _channels.erase(it);
-//             return ;                               
-//         }
-//     }
-//     // THIS SHOULD BE AN EXCEPTION
-//     std::cout << "THIS CLIENT IS NOT IN THE CHANNEL" << std::endl;
-// }
+bool Client::addChannel(Channel *add) {
+    if (findChannel(add->getName()) != NULL) {                                  // Exception
+        std::cout <<  "This Client is already in this Channel!" << std::endl;
+        return false;
+    }
+    _channels.push_back(add);
+    return true;
+}
+
+void Client::rmvChannel(const std::string &name)
+{
+    for (_it = _channels.begin(); _it != _channels.end(); _it++)
+    {
+        //  THIS SHOULD BE AN EXCEPTION
+        if (!((*_it)->getName().compare(name)))
+        {
+            _channels.erase(_it);
+            return ;                               
+        }
+    }
+    // THIS SHOULD BE AN EXCEPTION
+    std::cout << "THIS CLIENT IS NOT IN THE CHANNEL" << std::endl;
+}

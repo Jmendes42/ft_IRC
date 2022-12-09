@@ -7,17 +7,17 @@
 # include <iostream>
 
 # include <netdb.h>
+# include <errno.h>
 # include <stdio.h>
 # include <string.h>
 # include <stdlib.h>
 # include <unistd.h>
 # include <sys/poll.h>
+# include <sys/time.h> // FD_SET, FD_ISSET, FD_ZERO macros
 # include <arpa/inet.h>
 # include <sys/types.h>
 # include <sys/socket.h>
 # include <netinet/in.h>
-# include <errno.h>
-# include <sys/time.h> // FD_SET, FD_ISSET, FD_ZERO macros
 
 class Socket {
 
@@ -108,8 +108,5 @@ class ConnectionException : public std::exception
 			}
 };
 
-template<typename T>
-void	MSG(T msg) { std::cout << "Message: " << msg << std::endl; };
-void	*ft_memset(void *, int, size_t);
 
 #endif

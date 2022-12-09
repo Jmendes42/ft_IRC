@@ -1,4 +1,4 @@
-#include "../include/Socket.hpp"
+#include "../include/Utils.hpp"
 
 void	*ft_memset(void *s, int c, size_t n)
 {
@@ -13,12 +13,14 @@ void	*ft_memset(void *s, int c, size_t n)
 	return (s);
 }
 
+
 std::vector<std::string> ft_split(std::string const &msg)
 {
 	std::vector<std::string> info;
     int pos = 0;
     int start = 0;
     while ((pos = msg.find(" ", start)) > -1)
+
     {
         info.push_back(msg.substr(start, pos - start));
         start = pos + 1;
@@ -28,3 +30,4 @@ std::vector<std::string> ft_split(std::string const &msg)
 
 	return (info);
 }
+

@@ -1,21 +1,26 @@
 #ifndef CLIENT_HPP
 # define CLIENT_HPP
 
-# include "Socket.hpp"
+# include <string>
+# include <vector>
+# include <iostream>
+
+class Channel;
 
 class Client
 {
     private:
 
-        std::string _ip;
-        int         _fd;
-        int         _pass;
-        int         _port;
-        std::string _nickname;
-        std::string _username;
-        std::string _hostname;
-        std::string _realname;
-        // std::vector<Channel *> _channels;
+        std::vector<Channel *>::iterator    _it;
+        std::string                         _ip;
+        int                                 _fd;
+        int                                 _pass;
+        int                                 _port;
+        std::string                         _nickname;
+        std::string                         _username;
+        std::string                         _hostname;
+        std::string                         _realname;
+        std::vector<Channel *>              _channels;
 
     public:
 
@@ -36,8 +41,9 @@ class Client
         void    setHost(std::string const &set) { _hostname = set; };
         void    setReal(std::string const &set) { _realname = set; };
 
-        // void addChannel(Channel *add);
-        // void rmvChannel(std::string &name);
+        bool    addChannel(Channel *);
+        void    rmvChannel(const std::string &);
+        Channel *findChannel(const std::string &);
 };
 
 #endif
