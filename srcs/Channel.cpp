@@ -292,3 +292,21 @@ void        Channel::cmdInvite(Client *client, Client *toInv) {
     msgSend =":" + client->getNick() + " INVITE " + toInv->getNick() + ' ' + getName() + '\n';
     send(toInv->getFd(), msgSend.c_str(), msgSend.length(), 0);
 }
+
+/**
+ * @brief Leave the Channel (using PART Command)
+ * @param client a Pointer to the client that wants to leave the Channel
+**/
+void Channel::partChannel(Client *client)
+{
+    std::string msgSend;
+
+    if (finder(_users, client->getNick()) || finder(_sec_chops, client->getNick())) {
+        msgSend = ":" + client->getNick() + "!" + client->getUser() + "@" + client->getIp() + " PART :" + _name + "\r\n";
+        send(client->getFd(), msgSend.c_str(), msgSend.length(), 0);
+        sendMsgToUsers(msgSend);
+        rmvClient(client->getNick());
+        return ;
+    }
+    std::cout << "ERROR: This User is not in the Channel" << std::endl;
+}

@@ -28,7 +28,6 @@ class ChannelHandler
 
         std::vector<Channel *>  &getChannels()  {return _channels;};
 
-
 };
 
 #endif

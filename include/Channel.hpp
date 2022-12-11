@@ -72,6 +72,9 @@ class Channel
         void    sendMsgToUsers(const std::string &, const int &);
         
         Client  *finder(std::vector<Client *> &, const std::string &);
+
+        void partChannel(Client *client);
+
 };
 
 #endif

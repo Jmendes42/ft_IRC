@@ -101,6 +101,11 @@ void    Server::interpreter(std::string const &msg, int const &sockFd) {
 		setClientUser(msg, sockFd);
 	else if (!cmd.compare("JOIN"))
 		joinChannel(msg, sockFd);
+	else if (!cmd.compare("PART"))
+	{
+		std::vector<std::string> info = ft_split(copy);
+		_channelHandler.finder(info[1])->partChannel(_clientHandler.finder(sockFd));
+	}
 	else if (!cmd.compare("PRIVMSG"))
 		privMsg(msg, sockFd);
 	else if (!cmd.compare("MODE"))
