@@ -194,11 +194,19 @@ void Channel::changePassword(char set, std::string const &args)
 **/
 void Channel::setLimit(char set, std::string const &args)
 {
-    std::cout << "Pass = " << _user_limit << std::endl;
+    std::map<char, bool>::iterator it = _flags.find('l');
     if (set == '-')
+    {
         _user_limit = 0;
-    else if (!args.empty())
+        if (it->second == true)
+            it->second == false;
+    }
+    else if (set == '+' && !args.empty())
+    {
         _user_limit = atoi(args.c_str());
+       if (it->second == false)
+            it->second = true;
+    }
     else
         MSG("ERROR: MISSING ARGS TO SET THE LIMIT OF THE CHANNEL");
 }
@@ -309,4 +317,10 @@ void Channel::partChannel(Client *client)
     }
     msgSend =  "403 " +  _name + " :You're not on that channel\r\n";
     send(client->getFd(), msgSend.c_str(), msgSend.length(), 0);
-} 
+}
+
+bool Channel::retStateFlag(char flag)
+{
+    std::map<char, bool>::iterator it = _flags.find(flag);
+    return (it->second);
+}

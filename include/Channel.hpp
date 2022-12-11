@@ -62,6 +62,10 @@ class Channel
         std::vector<Client *>   &getUsers() {return _users;};
         std::vector<Client *>   &getChops() {return _sec_chops;};
         std::vector<Client *>   &getMuted() {return _muted_users;};
+        int                     getLimit()  {return _user_limit;};
+        int                     getUsersTotal()  {return (_users.size() + _sec_chops.size());};
+
+
 
         void changeSimpleFlag(char set, char flag);
         void changeModePS(char set, char flag);
@@ -74,6 +78,7 @@ class Channel
         Client  *finder(std::vector<Client *> &, const std::string &);
 
         void partChannel(Client *client);
+        bool retStateFlag(char flag);
 
 };
 

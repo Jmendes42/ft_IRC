@@ -170,7 +170,19 @@ void    Server::joinChannel(const std::string &msg, const int &sockFd) {
 		channelName.insert(0, 1, '#');
 	if (Channel *channel = _channelHandler.finder(channelName)) {
 		std::string	joinMsg;
-		
+		if (channel->retStateFlag('i'))
+		{
+			joinMsg =  "473 " +  channel->getName() + " :Cannot join channel (+i)\r\n";
+			send(sockFd, joinMsg.c_str(), joinMsg.length(), 0);
+			return ;
+		}
+		else if (channel->retStateFlag('l') && ((channel->getUsersTotal() + 1) > channel->getLimit()))
+		{
+
+			joinMsg =  "471 " +  channel->getName() + " :Cannot join channel (+l)\r\n";
+			send(sockFd, joinMsg.c_str(), joinMsg.length(), 0);
+			return ;
+		}
 		joinMsg = ':' + nick + '!' + user + '@' + ip + " JOIN " + channelName + '\n';
 		channel->sendMsgToUsers(joinMsg);
 		channel->addUser(_clientHandler.finder(sockFd));
