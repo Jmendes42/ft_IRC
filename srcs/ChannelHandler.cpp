@@ -24,7 +24,7 @@ void    ChannelHandler::rmvClient(std::string const &nick)
     std::cout << "THIS CLIENT IS NOT IN THE CHANNEL" << std::endl;
 }
 
-void ChannelHandler::opTopic(std::string const &msg, Client *chop)
+/*void ChannelHandler::opTopic(std::string const &msg, Client *chop)
 {
     std::vector<std::string> info = ft_split(msg);
     Channel *channel = finder(info[1]);
@@ -35,7 +35,7 @@ void ChannelHandler::opTopic(std::string const &msg, Client *chop)
     }
     else
         channel->cmdTopic("", chop);
-}
+}*/
 
 void ChannelHandler::opMode(std::string const &msg, Client *chop)
 {
@@ -53,13 +53,9 @@ void ChannelHandler::opMode(std::string const &msg, Client *chop)
     channel->cmdMode(info[2], args, chop);
 }
 
-void ChannelHandler::opKick(std::string const &msg, Client *chop)
-{
+void ChannelHandler::opKick(const std::string &msg, const std::string &chop) {
     std::vector<std::string> info = ft_split(msg);
-
-    Channel *channel = finder(info[1]);
-    std::cout << "KICK\n"; 
-    channel->cmdKick(info[2], chop);
+    finder(info[1])->cmdKick(info[2], chop);
 }
 
 Channel *ChannelHandler::finder(const std::string &channelName) {

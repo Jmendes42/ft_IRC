@@ -6,6 +6,7 @@
 # include <vector>
 # include <iostream>
 
+class Client;
 
 // template<typename T>
 // T   findert(std::vector<T> &vec, std::string search);

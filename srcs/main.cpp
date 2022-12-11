@@ -1,5 +1,5 @@
-
 #include <string>
+#include <sstream>
 #include "../include/Utils.hpp"
 #include "../include/Server.hpp"
 #include "../include/Socket.hpp"
@@ -31,7 +31,7 @@ int	main(int argc, char **argv)
 
     try
     {
-	    server._sockSet();
+	    server.sockSet();
     }
 	catch(std::exception &error)
 	{

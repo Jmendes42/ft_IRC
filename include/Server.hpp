@@ -8,7 +8,6 @@
 #include "Socket.hpp"
 #include "ClientHandler.hpp"
 #include "ChannelHandler.hpp"
->>>>>>> dc5e2b398202aedfd1815e6a100324cc8e880533
 
 class Server
 {
@@ -23,13 +22,14 @@ class Server
         Server(const int &port, const std::string &password):
             _port(port), _sock(_port), _password(password) {};
 
-        void    _sockSet();
+        void    sockSet();
 		void	activity();
         void    privMsg(const std::string &, const int &);
         void    interpreter(const std::string  &, int const &);
         void    joinChannel(const std::string &, const int &);
         void    setClientNick(const std::string &, const int &);
         void    setClientUser(const std::string &, const int &);
+        
         Socket  &getSocket()    {return _sock;};
 
 };

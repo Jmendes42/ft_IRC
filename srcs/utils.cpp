@@ -1,4 +1,5 @@
 #include "../include/Utils.hpp"
+#include "../include/Client.hpp"
 
 
 
@@ -99,8 +100,4 @@ void  addToVector(std::string const &nickname, std::vector<Client *> &vec, std::
         }
     }
     std::cout << "ERROR: This User is not in the Channel" << std::endl;
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> dc5e2b398202aedfd1815e6a100324cc8e880533

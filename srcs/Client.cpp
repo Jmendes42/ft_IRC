@@ -28,7 +28,7 @@ void Client::rmvChannel(const std::string &name)
         {
             _channels.erase(_it);
             return ;                               
-        }
+        } 
     }
     // THIS SHOULD BE AN EXCEPTION
     std::cout << "THIS CLIENT IS NOT IN THE CHANNEL" << std::endl;

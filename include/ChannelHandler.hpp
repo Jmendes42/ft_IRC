@@ -22,9 +22,9 @@ class ChannelHandler
 
         //operators
         Channel *finder(const std::string &);
-        void opTopic(std::string const &msg, Client *chop);
+        //void opTopic(std::string const &msg, Client *chop);
         void opMode(std::string const &msg, Client *chop);
-        void opKick(std::string const &msg, Client *chop);
+        void opKick(const std::string &, const std::string &);
 
         std::vector<Channel *>  &getChannels()  {return _channels;};
 

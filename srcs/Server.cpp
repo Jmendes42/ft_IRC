@@ -2,7 +2,9 @@
 # include <string>
 # include <iostream>
 
+#include "../include/Utils.hpp"
 #include "../include/Client.hpp"
+#include "../include/Channel.hpp"
 #include "../include/Server.hpp"
 #include "../include/Socket.hpp"
 
@@ -74,7 +76,6 @@ void	Server::activity()
 					interpreter(std::string(buffer, _sock.getValRead()), _sock.getSd());
 				}
 				catch(std::exception &error)
-<<<<<<< HEAD
 				{
 					MSG(error.what());
 				}
@@ -83,7 +84,7 @@ void	Server::activity()
 	}
 }
 
-void    Server::_sockSet() {
+void    Server::sockSet() {
 	_sock.initSockets();
     _sock.bindSocket();
 }
@@ -91,8 +92,9 @@ void    Server::_sockSet() {
 void    Server::interpreter(std::string const &msg, int const &sockFd) {
     std::string cmd = msg.substr(0, msg.find(' '));
 	std::string copy = msg;
+
 	copy.erase(msg.find('\r'), 2);
-	//MSG(msg);
+	MSG(msg);
 	if (!cmd.compare("NICK"))
 		setClientNick(msg, sockFd);
 	else if (!cmd.compare("USER"))
@@ -102,22 +104,29 @@ void    Server::interpreter(std::string const &msg, int const &sockFd) {
 	else if (!cmd.compare("PRIVMSG"))
 		privMsg(msg, sockFd);
 	else if (!cmd.compare("MODE"))
-		_channelHandler.opMode(copy, _clientHandler.finder(sockFd, ""));
-	else if (!cmd.compare("KICK")) // TAKE OUT FROM THE VECTOR OF CLIENTS
-		_channelHandler.opKick(copy, _clientHandler.finder(sockFd, ""));
-	else if (!cmd.compare("TOPIC"))
-		_channelHandler.opTopic(copy, _clientHandler.finder(sockFd, ""));
+		_channelHandler.opMode(copy, _clientHandler.finder(sockFd));
+	else if (!cmd.compare("KICK")) 												// TAKE OUT FROM THE VECTOR OF CLIENTS
+		_channelHandler.opKick(copy, _clientHandler.finder(sockFd)->getNick());
+	/*else if (!cmd.compare("TOPIC"))
+		_channelHandler.opTopic(copy, _clientHandler.finder(sockFd));*/
 	else if (!cmd.compare("INVITE"))
 	{
 		// SEGFAULT IF USER NOT FOUND
-		std::vector<std::string> info = ft_split(copy);
-		Channel *channel = _channelHandler.finder(info[2]);
-		MSG("IM HERE " + info[2] + ".");
+		Channel						*channel;
+		std::vector<std::string>	info = ft_split(copy);
+		Client						*invited = _clientHandler.finder(info[1]);
 
-		// std::cout << channel->getName();
-    	if (channel != NULL) {
-			std::cout << "INVITE\n"; 
-			channel->cmdInvite(_clientHandler.finder(sockFd, ""), _clientHandler.finder(0, info[1]));
+		if (info[2][0] != '#')
+			info[2].insert(0, 1, '#');
+		channel = _channelHandler.finder(info[2]);
+    	if (invited != NULL) {
+
+			if (channel == NULL) {
+				joinChannel("JOIN " + info[2] + "\r\n", sockFd);
+				channel = _channelHandler.finder(info[2]);
+			}
+			std::cout << "INVITE\n";
+			channel->cmdInvite(_clientHandler.finder(sockFd), invited);
 		}
 	}
 	else if (!cmd.compare("PASS"))
@@ -130,7 +139,7 @@ void    Server::joinChannel(const std::string &msg, const int &sockFd) {
 
 	// If a channel has more than one operator? 
 
-	// See codes 403, 404, 405 --- 651
+	// See codes 403, 404, 405 --- 651 -- 366
 
 	//When a user nickname changes, update on the participants list
 	std::string channelMsg;			// Confirm message user/nick
@@ -141,28 +150,21 @@ void    Server::joinChannel(const std::string &msg, const int &sockFd) {
 
 	channelName.erase(channelName.find('\r'), 2);
 	if (channelName[0] != '#')
-		channelName = "#" + channelName;
-	if (_channelHandler.finder(channelName) != NULL) {
-		std::vector<Client *>::iterator	it;
-		std::vector<Client *>			users;
-		std::string						joinMsg;
-
+		channelName.insert(0, 1, '#');
+	if (_channelHandler.finder(channelName)) {
+		std::string	joinMsg;
 		
-			users = _channelHandler.finder(channelName)->getUsers();
-			joinMsg = ':' + nick + '!' + user + '@' + ip + " JOIN " + channelName + '\n';
-			for (it = users.begin(); it != users.end(); it++)
-				send((*it)->getFd(), joinMsg.c_str(), joinMsg.length(), 0);	// Send message to all users that there is a new member
-			_channelHandler.finder(channelName)->addUser(_clientHandler.finder(sockFd));
-		
+		joinMsg = ':' + nick + '!' + user + '@' + ip + " JOIN " + channelName + '\n';
+		_channelHandler.finder(channelName)->sendMsgToUsers(joinMsg);
+		_channelHandler.finder(channelName)->addUser(_clientHandler.finder(sockFd));
 	}
 	else {
 		_channelHandler.addChannel(channelName, _clientHandler.finder(sockFd));
 		_clientHandler.finder(sockFd)->addChannel(_channelHandler.finder(channelName));
 	}
 	channelMsg = ":" + nick + "!" + user + "@" + ip + " JOIN :" + channelName + "\n";
-	channelMsg += "353 " + nick + " = " + channelName + " :@";
+	channelMsg += "353 " + nick + " = " + channelName + " :";
 	channelMsg += _channelHandler.finder(channelName)->getUsersString() + "\n";		// Send list of users. What if there are multiple operators?
-	channelMsg += "366 " + nick + " " + channelName + " :End of /NAMES list\n";
 	send(sockFd, channelMsg.c_str(), channelMsg.length(), 0);
 }
 
@@ -180,6 +182,7 @@ void    Server::privMsg(const std::string &msg, const int &sockFd) {
 			std::vector<Client *>			users = _channelHandler.finder(channelName)->getUsers();
 
 			sendMsg = ':' + client + " PRIVMSG " + channelName + ' ' + msg.substr(msg.find(':'));
+			//_channelHandler.finder(channelName)->sendMsgToUsers(sendMsg);
 			for (it = users.begin(); it != users.end(); it++) {
 				if ((*it)->getNick().compare(client))
 					send((*it)->getFd(), sendMsg.c_str(), sendMsg.length(), 0);
