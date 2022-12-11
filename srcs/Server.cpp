@@ -176,10 +176,16 @@ void    Server::joinChannel(const std::string &msg, const int &sockFd) {
 			send(sockFd, joinMsg.c_str(), joinMsg.length(), 0);
 			return ;
 		}
-		else if (channel->retStateFlag('l') && ((channel->getUsersTotal() + 1) > channel->getLimit()))
+		if (channel->retStateFlag('l') && ((channel->getUsersTotal() + 1) > channel->getLimit()))
 		{
 
 			joinMsg =  "471 " +  channel->getName() + " :Cannot join channel (+l)\r\n";
+			send(sockFd, joinMsg.c_str(), joinMsg.length(), 0);
+			return ;
+		}
+		if (channel->checkBan(nick))
+		{
+			joinMsg =  "474 " +  channel->getName() + " :Cannot join channel (+b)\r\n";
 			send(sockFd, joinMsg.c_str(), joinMsg.length(), 0);
 			return ;
 		}

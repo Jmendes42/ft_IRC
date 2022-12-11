@@ -324,3 +324,11 @@ bool Channel::retStateFlag(char flag)
     std::map<char, bool>::iterator it = _flags.find(flag);
     return (it->second);
 }
+
+bool Channel::checkBan(std::string const &nick)
+{
+    if (!finder(_ban_users, nick))
+        return (false);
+    return (true);
+}
+

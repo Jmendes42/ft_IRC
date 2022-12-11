@@ -79,6 +79,7 @@ class Channel
 
         void partChannel(Client *client);
         bool retStateFlag(char flag);
+        bool checkBan(std::string const &nick);
 
 };
 
