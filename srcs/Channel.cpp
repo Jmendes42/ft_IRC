@@ -179,10 +179,20 @@ void Channel::changeModePS(char set, char flag)
 **/
 void Channel::changePassword(char set, std::string const &args)
 {
+    std::map<char, bool>::iterator it = _flags.find('k');
+
     if (set == '-')
+    {
         _password.clear();
+        if (it->second == true)
+            it->second == false;
+    }
     else if (!args.empty())
+    {
         _password = args;
+        if (it->second == false)
+            it->second = true;
+    }
     else
         MSG("ERROR: MISSING ARGS TO SET THE PASSWORD OF THE CHANNEL");
 }
@@ -195,6 +205,7 @@ void Channel::changePassword(char set, std::string const &args)
 void Channel::setLimit(char set, std::string const &args)
 {
     std::map<char, bool>::iterator it = _flags.find('l');
+
     if (set == '-')
     {
         _user_limit = 0;

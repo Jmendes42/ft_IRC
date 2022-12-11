@@ -159,13 +159,21 @@ void    Server::joinChannel(const std::string &msg, const int &sockFd) {
 	// See codes 403, 404, 405 --- 651 -- 366
 
 	//When a user nickname changes, update on the participants list
+	std::string copy = msg;
+	copy.erase(msg.find('\r'), 2);
+	std::vector<std::string> info = ft_split(copy);
 	std::string channelMsg;			// Confirm message user/nick
-	std::string channelName = msg.substr(5, msg.find('\0', 5));
+	if (info.size() < 2)
+	{
+		channelMsg =  "461 JOIN :Not enough parameters\r\n";
+		send(sockFd, channelMsg.c_str(), channelMsg.length(), 0);
+		return ;
+	}
+	std::string channelName = info[1];
 	std::string ip = _clientHandler.finder(sockFd)->getIp();
 	std::string nick = _clientHandler.finder(sockFd)->getNick();
 	std::string user = _clientHandler.finder(sockFd)->getUser();
 
-	channelName.erase(channelName.find('\r'), 2);
 	if (channelName[0] != '#')
 		channelName.insert(0, 1, '#');
 	if (Channel *channel = _channelHandler.finder(channelName)) {
@@ -188,6 +196,21 @@ void    Server::joinChannel(const std::string &msg, const int &sockFd) {
 			joinMsg =  "474 " +  channel->getName() + " :Cannot join channel (+b)\r\n";
 			send(sockFd, joinMsg.c_str(), joinMsg.length(), 0);
 			return ;
+		}
+		if (channel->retStateFlag('k'))
+		{
+			if (info.size() < 3)
+			{
+				joinMsg =  "461 JOIN :Not enough parameters\r\n";
+				send(sockFd, joinMsg.c_str(), joinMsg.length(), 0);
+				return ;
+			}
+			if (info[2] != channel->getPass())
+			{
+				joinMsg =  "475 " + channel->getName() + " :Cannot join channel (+k)\r\n";
+				send(sockFd, joinMsg.c_str(), joinMsg.length(), 0);
+				return ;
+			}
 		}
 		joinMsg = ':' + nick + '!' + user + '@' + ip + " JOIN " + channelName + '\n';
 		channel->sendMsgToUsers(joinMsg);

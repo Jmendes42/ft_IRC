@@ -43,7 +43,9 @@ class Channel
 
         std::string             &getName() { return (_name); };
         std::string             &getTopic() { return (_topic); };
+        std::string             &getPass() { return (_password); };
         std::vector<Client *>   &getChop() { return (_sec_chops); };
+        
 
         void    addUser(Client *);
         void    addChop(Client *);
