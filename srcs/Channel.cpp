@@ -226,7 +226,8 @@ void Channel::cmdMode(std::string const &flags, std::string const &args, Client 
 {
     if (!finder(_sec_chops, client->getNick()))
     {
-        std::cout << "ERROR: This client is not a CHOP, can't use MODE command" << std::endl;
+        std::string toSend =  "482 " + getName() + " :You're not channel operator\r\n";
+        send(client->getFd(), toSend.c_str(), toSend.length(), 0);
         return ;
     }
     char set = flags[0];
