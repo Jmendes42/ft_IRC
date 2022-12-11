@@ -86,7 +86,7 @@ Channel Operators (also referred to as a ***chop*** or ***chanop*** and identifi
 
 [SELECT()](https://www.geeksforgeeks.org/socket-programming-in-cc-handling-multiple-clients-on-server-without-multi-threading/)
 
-[MORE SELECT()](https://www.scottklement.com/rpg/socktut/proxy.html
+[MORE SELECT()](https://www.scottklement.com/rpg/socktut/proxy.html)
 
 [Difference between private and secret channel](https://ircnet.barfooze.de/articles/secretmode/)
 

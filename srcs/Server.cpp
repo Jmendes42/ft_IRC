@@ -104,7 +104,19 @@ void    Server::interpreter(std::string const &msg, int const &sockFd) {
 	else if (!cmd.compare("PART"))
 	{
 		std::vector<std::string> info = ft_split(copy);
-		_channelHandler.finder(info[1])->partChannel(_clientHandler.finder(sockFd));
+		if (info.size() < 2)
+		{
+			std::string toSend = "461 PART :Not enough parameters\r\n";
+			send(sockFd, toSend.c_str(), toSend.length(), 0);
+		}
+		Channel *channel = _channelHandler.finder(info[1]);
+		if (!channel)
+		{
+			std::string toSend =  "403 " +  info[1] + " :No such channel\r\n";
+			send(sockFd, toSend.c_str(), toSend.length(), 0);
+		}
+		else
+			channel->partChannel(_clientHandler.finder(sockFd));
 	}
 	else if (!cmd.compare("PRIVMSG"))
 		privMsg(msg, sockFd);

@@ -303,10 +303,10 @@ void Channel::partChannel(Client *client)
 
     if (finder(_users, client->getNick()) || finder(_sec_chops, client->getNick())) {
         msgSend = ":" + client->getNick() + "!" + client->getUser() + "@" + client->getIp() + " PART :" + _name + "\r\n";
-        send(client->getFd(), msgSend.c_str(), msgSend.length(), 0);
         sendMsgToUsers(msgSend);
         rmvClient(client->getNick());
         return ;
     }
-    std::cout << "ERROR: This User is not in the Channel" << std::endl;
-}
+    msgSend =  "403 " +  _name + " :You're not on that channel\r\n";
+    send(client->getFd(), msgSend.c_str(), msgSend.length(), 0);
+} 
