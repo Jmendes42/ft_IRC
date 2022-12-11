@@ -24,18 +24,14 @@ void    ChannelHandler::rmvClient(std::string const &nick)
     std::cout << "THIS CLIENT IS NOT IN THE CHANNEL" << std::endl;
 }
 
-/*void ChannelHandler::opTopic(std::string const &msg, Client *chop)
-{
+void ChannelHandler::opTopic(std::string const &msg, Client *client) {
     std::vector<std::string> info = ft_split(msg);
-    Channel *channel = finder(info[1]);
-    if (info.size() == 3)
-    {
-        info[2].erase(0, 1);
-        channel->cmdTopic(info[2], chop);
-    }
+    
+    if (msg.find(':') == std::string::npos)
+        finder(info[1])->sendTopic(client);
     else
-        channel->cmdTopic("", chop);
-}*/
+        finder(info[1])->cmdTopic(msg.substr(msg.find(':')), client);
+}
 
 void ChannelHandler::opMode(std::string const &msg, Client *chop)
 {

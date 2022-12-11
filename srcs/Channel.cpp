@@ -19,6 +19,9 @@ Client  *Channel::finder(std::vector<Client *> &vec, const std::string &nick) {
     return NULL;
 }
 
+/**
+ * @brief   Get a string with the nicks of all the clients present in the channel with the respective indicator
+**/
 std::string Channel::getUsersString() {
     std::string users;
 
@@ -31,6 +34,10 @@ std::string Channel::getUsersString() {
     return users.erase(0, 1);
 }
 
+/**
+ * @brief       Send message to every client in channel
+ * @param msg   msg to send
+**/
 void    Channel::sendMsgToUsers(const std::string &msg) {
     for (_it = _sec_chops.begin(); _it != _sec_chops.end(); _it++)
         send((*_it)->getFd(), msg.c_str(), msg.length(), 0);
@@ -38,6 +45,29 @@ void    Channel::sendMsgToUsers(const std::string &msg) {
         send((*_it)->getFd(), msg.c_str(), msg.length(), 0);
     for (_it = _muted_users.begin(); _it != _muted_users.end(); _it++)
         send((*_it)->getFd(), msg.c_str(), msg.length(), 0);
+}
+
+/**
+ * @brief       Send message to every client in channel excluding one fd
+ * @param fd    fd to exclude
+ * @param msg   msg to send
+**/
+void    Channel::sendMsgToUsers(const std::string &msg, const int &fd) {
+    for (_it = _sec_chops.begin(); _it != _sec_chops.end(); _it++) {
+        if ((*_it)->getFd() == fd)
+            continue;
+        send((*_it)->getFd(), msg.c_str(), msg.length(), 0);
+    }
+    for (_it = _users.begin(); _it != _users.end(); _it++) {
+        if ((*_it)->getFd() == fd)
+            continue;        
+        send((*_it)->getFd(), msg.c_str(), msg.length(), 0);
+    }
+    for (_it = _muted_users.begin(); _it != _muted_users.end(); _it++) {
+        if ((*_it)->getFd() == fd)
+            continue;
+        send((*_it)->getFd(), msg.c_str(), msg.length(), 0);
+    }
 }
 
 void    Channel::addChop(Client *chop) {
@@ -52,14 +82,22 @@ void    Channel::addUser(Client *user) {
 
 void    Channel::addMute(Client *mute) {
     if (finder(_users, mute->getNick())) {
-        rmvUser(mute->getNick());
+        rmvClient(mute->getNick());
         _muted_users.push_back(mute);
     }
 }
 
-void    Channel::rmvUser(const std::string &nickname) {
-    if (finder(_users, nickname))
+/**
+ * @brief       Searches all the client groups for the nick and removes it from the channel vectors
+ * @param nick  Nick to search 
+ */
+void    Channel::rmvClient(const std::string &nick) {
+    if (finder(_users, nick))
         _users.erase(_it);
+    if (finder(_sec_chops, nick))
+        _sec_chops.erase(_it);
+    if (finder(_muted_users, nick))
+        _muted_users.erase(_it);
 }
 
 void Channel::initFlags()
@@ -165,19 +203,6 @@ void Channel::setLimit(char set, std::string const &args)
         MSG("ERROR: MISSING ARGS TO SET THE LIMIT OF THE CHANNEL");
 }
 
-/*int Channel::checkChop(std::string const &nickname)
-{
-    if (!nickname.compare(_chop->getNick()))
-            return 1;
-    std::vector<Client *>::iterator it;
-    for (it = _sec_chops.begin(); it != _sec_chops.end(); it++)
-    {
-        if (!((*it)->getNick().compare(nickname)))
-            return 1;
-    }
-    return 0;
-}*/
-
 void Channel::cmdMode(std::string const &flags, std::string const &args, Client *client)
 {
     if (!finder(_sec_chops, client->getNick()))
@@ -220,24 +245,29 @@ void Channel::cmdMode(std::string const &flags, std::string const &args, Client 
     }
 }
 
-/*void Channel::cmdTopic(std::string const &topic, Client *client)
-{
-    if (topic.empty())
-    {
-        if (_topic.empty())
-            send(client->getFd(), "331 isousa #tardiz\n", 20, 0);     // NOTOPICSET
-        else
-            send(client->getFd(), "332 isousa #tardiz :ola\n", 25, 0);     // TOPICSET
+void Channel::sendTopic(Client *client) {
+    std::string msg;
+
+    if (_topic.empty()) {
+        msg = "331 " + client->getNick() + ' ' + _name + '\n';
+        send(client->getFd(), msg.c_str(), msg.length(), 0);     // NOTOPICSET
     }
-    else 
-    {
-        std::map<char, bool>::iterator it = _flags.find('t');(*_it)->getNick()
-        if (!(_chop->getNick().compare(client->getNick())) && (it->second == true))
+    else {
+        msg = "332 " + client->getNick() + ' ' + _name + ' ' + _topic + '\n';
+        send(client->getFd(), msg.c_str(), msg.length(), 0);     // TOPICSET
+    }
+}
+
+void Channel::cmdTopic(const std::string &topic, Client *client) {
+        //std::map<char, bool>::iterator it = _flags.find('t');  && (it->second == true)
+        if (finder(_sec_chops, client->getNick())) {
             setTopic(topic);
+            sendTopic(client);
+        }
         else
-            MSG("Flag <t> is false");
-    }
-}*/
+            MSG(client->getNick() + " is not a channel operator");
+            // MSG("Flag <t> is false");
+}
 
 // LOOK AT CODES: 377, 470, 485, 495
 void Channel::cmdKick(std::string const &nickname, const std::string &kicker) {
@@ -247,19 +277,18 @@ void Channel::cmdKick(std::string const &nickname, const std::string &kicker) {
         MSG(kicker + " is not channel operator");                                       // Exception
         return ;
     }
-    if (finder(_users, nickname)) {                                                     // See muted? I think the command mute is to do silent commands....
+    if (finder(_users, nickname)) {                                                     // See muted
         msgSend =":" + kicker + " KICK " + _name + ' ' + nickname + '\n';
         sendMsgToUsers(msgSend);
-        rmvUser(nickname);
+        rmvClient(nickname);
         return ;
     }
     std::cout << "ERROR: This User is not in the Channel" << std::endl;
 }
 
-void        Channel::cmdInvite(Client *client, Client *toInv)
-{
+void        Channel::cmdInvite(Client *client, Client *toInv) {
     std::string msgSend;
+    
     msgSend =":" + client->getNick() + " INVITE " + toInv->getNick() + ' ' + getName() + '\n';
-    MSG("MSGSEND -> " + msgSend);
     send(toInv->getFd(), msgSend.c_str(), msgSend.length(), 0);
 }

@@ -48,13 +48,14 @@ class Channel
         void    addUser(Client *);
         void    addChop(Client *);
         void    addMute(Client *);
-        void    rmvUser(std::string const &nickname);
+        void    rmvClient(std::string const &nickname);
 
         void    initFlags();
         void    cmdKick(const std::string &, const std::string &);
         void    cmdMode(std::string const &flags, std::string const &args, Client *client);
         void    cmdInvite(Client *client, Client *toInv);
-        //void    cmdTopic(std::string const &topic, Client *client);
+        void    sendTopic(Client *);
+        void    cmdTopic(const std::string &, Client *);
 
         std::string getUsersString();
 
@@ -66,9 +67,9 @@ class Channel
         void changeModePS(char set, char flag);
         void changePassword(char set, std::string const &args);
         void setLimit(char set, std::string const &args);
-        //int checkChop(std::string const &nickname);
 
         void    sendMsgToUsers(const std::string &);
+        void    sendMsgToUsers(const std::string &, const int &);
         
         Client  *finder(std::vector<Client *> &, const std::string &);
 };
