@@ -53,7 +53,7 @@ class Channel
         void    rmvClient(std::string const &nickname);
 
         void    initFlags();
-        void    cmdKick(const std::string &, const std::string &);
+        void    cmdKick(const std::string &, const std::string &, int fd);
         void    cmdMode(std::string const &flags, std::string const &args, Client *client);
         void    cmdInvite(Client *client, Client *toInv);
         void    sendTopic(Client *);

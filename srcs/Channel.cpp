@@ -315,11 +315,18 @@ void Channel::cmdTopic(const std::string &topic, Client *client) {
 }
 
 // LOOK AT CODES: 377, 470, 485, 495
-void Channel::cmdKick(std::string const &nickname, const std::string &kicker) {
+void Channel::cmdKick(std::string const &nickname, const std::string &kicker, int fd) {
     std::string msgSend;
 
+    if (!finder(_users, kicker))
+    {
+        std::string toSend =  "442 " + getName() + " :You're not on that channel\r\n";
+        send(fd, toSend.c_str(), toSend.length(), 0);
+        return ;
+    }
     if (!finder(_sec_chops, kicker)) {
-        MSG(kicker + " is not channel operator");                                       // Exception
+        std::string toSend =  "482 " + getName() + " :You're not channel operator\r\n";
+        send(fd, toSend.c_str(), toSend.length(), 0);
         return ;
     }
     if (finder(_users, nickname)) {                                                     // See muted
@@ -328,7 +335,9 @@ void Channel::cmdKick(std::string const &nickname, const std::string &kicker) {
         rmvClient(nickname);
         return ;
     }
-    std::cout << "ERROR: This User is not in the Channel" << std::endl;
+    std::string toSend =  "401 " + getName() + " :No such nick/channel\r\n";
+    send(fd, toSend.c_str(), toSend.length(), 0);
+    return ;
 }
 
 void        Channel::cmdInvite(Client *client, Client *toInv) {

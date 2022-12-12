@@ -56,9 +56,28 @@ void ChannelHandler::opMode(std::string const &msg, Client *chop)
     channel->cmdMode(info[2], args, chop);
 }
 
-void ChannelHandler::opKick(const std::string &msg, const std::string &chop) {
+//weechat automatically adds the channel name if missing. Also, it warns the user if missing parameters, so there is no way for us to test the errors here.
+void ChannelHandler::opKick(const std::string &msg, const std::string &chop, int fd) {
     std::vector<std::string> info = ft_split(msg);
-    finder(info[1])->cmdKick(info[2], chop);
+    if (info.size() >= 2)
+    {
+        Channel *channel = finder(info[1]);
+        if (!channel)
+        {
+            std::string toSend =  "403 " +  info[1] + " :No such channel\r\n";
+            send(fd, toSend.c_str(), toSend.length(), 0);
+            return ;
+        }
+        if (info.size() > 2)
+        {
+            channel->cmdKick(info[2], chop, fd);
+            return ;
+        }
+    }
+    
+    std::string toSend =  "461 MODE :Not enough parameters\r\n";
+    send(fd, toSend.c_str(), toSend.length(), 0);
+    return ;
 }
 
 Channel *ChannelHandler::finder(const std::string &channelName) {

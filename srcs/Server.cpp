@@ -122,8 +122,8 @@ void    Server::interpreter(std::string const &msg, int const &sockFd) {
 		privMsg(msg, sockFd);
 	else if (!cmd.compare("MODE"))
 		_channelHandler.opMode(copy, _clientHandler.finder(sockFd));
-	else if (!cmd.compare("KICK")) 												// TAKE OUT FROM THE VECTOR OF CLIENTS
-		_channelHandler.opKick(copy, _clientHandler.finder(sockFd)->getNick());
+	else if (!cmd.compare("KICK"))
+		_channelHandler.opKick(copy, _clientHandler.finder(sockFd)->getNick(), sockFd);
 	else if (!cmd.compare("TOPIC"))
 		_channelHandler.opTopic(copy, _clientHandler.finder(sockFd));
 	else if (!cmd.compare("INVITE"))
