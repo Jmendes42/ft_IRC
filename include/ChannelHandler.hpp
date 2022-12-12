@@ -5,6 +5,8 @@
 # include <string>
 # include <iostream>
 
+#define RPL(x) "403 " +  (x) + " :No such channel\r\n"
+
 class Client;
 class Channel;
 

@@ -8,6 +8,9 @@
 #include "../include/Server.hpp"
 #include "../include/Socket.hpp"
 
+
+#define TEST(fd, toSend) send(fd, toSend.c_str(), toSend.length(), 0);
+
 void	Server::activity()
 {
 	char		buffer[1024];

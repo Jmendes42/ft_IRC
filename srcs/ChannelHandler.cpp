@@ -2,6 +2,7 @@
 #include "../include/ChannelHandler.hpp"
 #include "../include/Socket.hpp"
 
+#define TEST(info, fd, toSend) toSend =  "403 " +  info + " :No such channel\r\n"; send(fd, toSend.c_str(), toSend.length(), 0); return ;
 
 void    ChannelHandler::addChannel(std::string const &channelName, Client *chop)
 {
@@ -36,13 +37,10 @@ void ChannelHandler::opTopic(std::string const &msg, Client *client) {
 void ChannelHandler::opMode(std::string const &msg, Client *chop)
 {
     std::vector<std::string> info = ft_split(msg);
+    std::string toSend;
     Channel *channel = finder(info[1]);
     if (!channel)
-    {
-        std::string toSend =  "403 " +  info[1] + " :No such channel\r\n";
-        send(chop->getFd(), toSend.c_str(), toSend.length(), 0);
-        return ;
-    }
+        TEST(info[1], chop->getFd(), toSend);
     if (info.size() == 2)
     {
         std::string toSend =  "461 MODE :Not enough parameters\r\n";
