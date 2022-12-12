@@ -25,7 +25,7 @@ void    ChannelHandler::rmvClient(std::string const &nick)
 }
 
 void ChannelHandler::opTopic(std::string const &msg, Client *client) {
-    std::vector<std::string> info = ft_split(msg);
+    std::vector<std::string> info = ft_split(msg, ' ');
     
     if (msg.find(':') == std::string::npos)
         finder(info[1])->sendTopic(client);
@@ -35,7 +35,7 @@ void ChannelHandler::opTopic(std::string const &msg, Client *client) {
 
 void ChannelHandler::opMode(std::string const &msg, Client *chop)
 {
-    std::vector<std::string> info = ft_split(msg);
+    std::vector<std::string> info = ft_split(msg, ' ');
     Channel *channel = finder(info[1]);
     if (info.size() == 2)
     {

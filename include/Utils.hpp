@@ -19,7 +19,7 @@ void	*ft_memset(void *, int, size_t);
 template<typename T>
 void	MSG(T msg) { std::cout << "Message: " << msg << std::endl; };
 
-std::vector<std::string> ft_split(std::string const &msg);
+std::vector<std::string> ft_split(std::string const &msg, char const &c);
 void rmvFromVector(std::string const &nick, std::vector<Client *> &vec);
 void  addToVector(std::string const &nickname, std::vector<Client *> &vec, std::vector<Client *> &users);
 

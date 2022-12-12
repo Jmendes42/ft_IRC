@@ -104,7 +104,7 @@ void    Server::interpreter(std::string const &msg, int const &sockFd) {
 	else if (!cmd.compare("USER"))
 		setClientUser(msg, sockFd);
 	else if (!cmd.compare("INVITE"))
-		inviteToChannel(ft_split(copy), sockFd);
+		inviteToChannel(ft_split(copy, ' '), sockFd);
 	else if (!cmd.compare("PART"))								// If operator leaves there is no succession
 		partCmd(copy.substr(5, copy.find(' ', 5) - 5), sockFd);
 	else if (!cmd.compare("MODE"))
@@ -112,16 +112,18 @@ void    Server::interpreter(std::string const &msg, int const &sockFd) {
 	else if (!cmd.compare("TOPIC"))
 		_channelHandler.opTopic(copy, _clientHandler.finder(sockFd));
 	else if (!cmd.compare("KICK"))
-		opKick(ft_split(copy), _clientHandler.finder(sockFd)->getNick());
+		opKick(ft_split(copy, ' '), _clientHandler.finder(sockFd)->getNick());
 	else if (!cmd.compare("PASS"))
 		_clientHandler.addClient(msg, _password, sockFd, std::string(inet_ntoa(_sock.getHint().sin_addr)));
 }
 
 void	Server::inviteToChannel(const std::vector<std::string> &info, const int &sockFd) {
-	Client						*invited = _clientHandler.finder(info[1]);
-	Channel						*channel = _channelHandler.finder(info[2]);
+	// INVITE  - Invite a client to an invite-only channel (mode +i), should it be just on this ocasion?
+	// On the mode +i there should be a flag indicating wich users where invited?
+	Client	*invited = _clientHandler.finder(info[1]);
+	Channel	*channel = _channelHandler.finder(info[2]);
 
-	if (invited != NULL) {									// missing invited user error?
+	if (invited != NULL) {													// missing invited user error?
 		if (channel == NULL) {
 			joinChannel("JOIN " + info[2] + "\r\n", sockFd);
 			channel = _channelHandler.finder(info[2]);
@@ -134,17 +136,19 @@ void	Server::inviteToChannel(const std::vector<std::string> &info, const int &so
 void    Server::joinChannel(const std::string &msg, const int &sockFd) {
 	// JOIN can come with multiple channels. Parse the message in order to not create a channel 
 	// wich has a name with all the names compiled -> split JOIN #c,#b,#c,#b,#c,#b,#c,#b
-
+	// Channel name should not contain spaces
+	// Limit of ten channels per user
 	// If a channel has more than one operator? 
-
 	// See codes 403, 404, 405 --- 651 -- 366
-
 	//When a user nickname changes, update on the participants list
-	std::string channelMsg;			// Confirm message user/nick
-	std::string channelName = msg.substr(5, msg.find('\0', 5));
+
+	std::string channelMsg;
 	std::string ip = _clientHandler.finder(sockFd)->getIp();
+	std::string channelName = msg.substr(5, msg.find('\0', 5));
 	std::string nick = _clientHandler.finder(sockFd)->getNick();
 	std::string user = _clientHandler.finder(sockFd)->getUser();
+
+	std::vector<std::string> channels = ft_split(msg, ',');
 
 	channelName.erase(channelName.find('\r'), 2);
 	if (channelName[0] != '#')
@@ -212,7 +216,7 @@ void    Server::setClientUser(const std::string &msg, const int &sockFd) {
 	_clientHandler.finder(sockFd)->setUser(user);
 }
 
-void	Server::opKick(const std::vector<std::string> &info, const std::string &chop) {    // User not foud error?
+void	Server::opKick(const std::vector<std::string> &info, const std::string &chop) {    // User not foud error. Kick wait time
 	if (_clientHandler.finder(info[2]))
     	_channelHandler.finder(info[1])->cmdKick(_clientHandler.finder(info[2]), chop);
 	else 
