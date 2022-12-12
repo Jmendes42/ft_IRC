@@ -37,9 +37,16 @@ void ChannelHandler::opMode(std::string const &msg, Client *chop)
 {
     std::vector<std::string> info = ft_split(msg);
     Channel *channel = finder(info[1]);
+    if (!channel)
+    {
+        std::string toSend =  "403 " +  info[1] + " :No such channel\r\n";
+        send(chop->getFd(), toSend.c_str(), toSend.length(), 0);
+        return ;
+    }
     if (info.size() == 2)
     {
-        MSG("No flags for MODE Command");
+        std::string toSend =  "461 MODE :Not enough parameters\r\n";
+        send(chop->getFd(), toSend.c_str(), toSend.length(), 0);
         return ;
     }
     std::string args = "";

@@ -138,7 +138,7 @@ int checkFlag(char flag)
  * @param set control if the function will set the flag to true or false (+/-)
  * @param flag the flag of the channel that will change state
 **/
-void Channel::changeSimpleFlag(char set, char flag)
+void Channel::changeSimpleFlag(int fd, char set, char flag, std::string const &channel_name)
 {
     std::map<char, bool>::iterator it = _flags.find(flag);
     if (set == '+' && it->second == false)
@@ -146,7 +146,11 @@ void Channel::changeSimpleFlag(char set, char flag)
     else if (set == '-' && it->second == true)
         it->second = false;
     else
-        MSG("FLAG already set");
+    {
+        std::string toSend =  "467 " + channel_name + " :Channel key already set\r\n";
+        send(fd, toSend.c_str(), toSend.length(), 0);
+        return ;
+    }
 }
 
 /**
@@ -154,7 +158,7 @@ void Channel::changeSimpleFlag(char set, char flag)
  * @param set control if the function will set the flag to true or false (+/-)
  * @param flag the flag of the channel that will change state
 **/
-void Channel::changeModePS(char set, char flag)
+void Channel::changeModePS(int fd, char set, char flag, std::string const &channel_name)
 {
     std::map<char, bool>::iterator it = _flags.find(flag);
     std::map<char, bool>::iterator temp;
@@ -169,7 +173,11 @@ void Channel::changeModePS(char set, char flag)
     else if (set == '-' && it->second == true)
         it->second = false;
     else
-        MSG("FLAG already set");
+    {
+        std::string toSend =  "467 " + channel_name + " :Channel key already set\r\n";
+        send(fd, toSend.c_str(), toSend.length(), 0);
+        return ;
+    }
 }
 
 /**
@@ -177,7 +185,7 @@ void Channel::changeModePS(char set, char flag)
  * @param set control if the function will set or unset the password
  * @param args the new password for the channel.
 **/
-void Channel::changePassword(char set, std::string const &args)
+void Channel::changePassword(int fd, char set, std::string const &args)
 {
     std::map<char, bool>::iterator it = _flags.find('k');
 
@@ -187,14 +195,18 @@ void Channel::changePassword(char set, std::string const &args)
         if (it->second == true)
             it->second == false;
     }
-    else if (!args.empty())
+    else if (set == '-' && !args.empty())
     {
         _password = args;
         if (it->second == false)
             it->second = true;
     }
     else
-        MSG("ERROR: MISSING ARGS TO SET THE PASSWORD OF THE CHANNEL");
+    {
+        std::string toSend =  "461 MODE :Not enough parameters\r\n";
+        send(fd, toSend.c_str(), toSend.length(), 0);
+        return ;
+    }
 }
 
 /**
@@ -202,7 +214,7 @@ void Channel::changePassword(char set, std::string const &args)
  * @param set control if the function will set or unset the limit 
  * @param args the new password for the channel.
 **/
-void Channel::setLimit(char set, std::string const &args)
+void Channel::setLimit(int fd, char set, std::string const &args)
 {
     std::map<char, bool>::iterator it = _flags.find('l');
 
@@ -215,15 +227,25 @@ void Channel::setLimit(char set, std::string const &args)
     else if (set == '+' && !args.empty())
     {
         _user_limit = atoi(args.c_str());
-       if (it->second == false)
+        if (it->second == false)
             it->second = true;
     }
     else
-        MSG("ERROR: MISSING ARGS TO SET THE LIMIT OF THE CHANNEL");
+    {
+        std::string toSend =  "461 MODE :Not enough parameters\r\n";
+        send(fd, toSend.c_str(), toSend.length(), 0);
+        return ;
+    }
 }
 
 void Channel::cmdMode(std::string const &flags, std::string const &args, Client *client)
 {
+    if (!finder(_users, client->getNick()))
+    {
+        std::string toSend =  "442 " + getName() + " :You're not on that channel\r\n";
+        send(client->getFd(), toSend.c_str(), toSend.length(), 0);
+        return ;
+    }
     if (!finder(_sec_chops, client->getNick()))
     {
         std::string toSend =  "482 " + getName() + " :You're not channel operator\r\n";
@@ -235,31 +257,34 @@ void Channel::cmdMode(std::string const &flags, std::string const &args, Client 
     {
         // In case of P or S ! Only one can be set at a time
         if (checkFlag(flags[i]) == 1)
-            changeModePS(set, flags[i]);
+            changeModePS(client->getFd(), set, flags[i], getName());
         else if (checkFlag(flags[i]) == 2)                          
-            changeSimpleFlag(set, flags[i]);
+            changeSimpleFlag(client->getFd(), set, flags[i], getName());
         else                                                    
         {
             switch (flags[i])
             {
                 case 'o':                                          
-                    (set == '+') ? addToVector(args, _sec_chops, _users) : rmvFromVector(args, _sec_chops); 
+                    (set == '+') ? addToVector(client->getFd(), getName(), args, _sec_chops, _users) : rmvFromVector(client->getFd(), getName(), args, _sec_chops); 
                     break;
                 case 'l':                                           
-                    setLimit(set, args);
+                    setLimit(client->getFd(), set, args);
                     break;
                 case 'b':                                       
-                    (set == '+') ? addToVector(args, _ban_users, _users) : rmvFromVector(args, _ban_users);
+                    (set == '+') ? addToVector(client->getFd(), getName(), args, _ban_users, _users) : rmvFromVector(client->getFd(), getName(), args, _ban_users);
                     break;
                 case 'v':                                      
-                    (set == '+') ? addToVector(args, _muted_users, _users) : rmvFromVector(args, _muted_users);
+                    (set == '+') ? addToVector(client->getFd(), getName(), args, _muted_users, _users) : rmvFromVector(client->getFd(), getName(), args, _muted_users);
                     break;
                 case 'k':                                   
-                    changePassword(set, args);
+                    changePassword(client->getFd(), set, args);
                     break;               
                 default:
-                    send(client->getFd(), "672 flags :Unknown Flags\n", 26, 0); 
-                    break;
+                	std::string msg =  "472 ";
+                    msg.push_back(flags[i]);
+                    msg += " :is unknown mode char to me\r\n";
+			        send(client->getFd(), msg.c_str(), msg.length(), 0);
+			        return ;
             }
         }
     }

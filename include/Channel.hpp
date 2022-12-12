@@ -69,10 +69,10 @@ class Channel
 
 
 
-        void changeSimpleFlag(char set, char flag);
-        void changeModePS(char set, char flag);
-        void changePassword(char set, std::string const &args);
-        void setLimit(char set, std::string const &args);
+        void changeSimpleFlag(int fd, char set, char flag, std::string const &channel_name);
+        void changeModePS(int fd, char set, char flag, std::string const &channel_name);
+        void changePassword(int fd, char set, std::string const &args);
+        void setLimit(int fd, char set, std::string const &args);
 
         void    sendMsgToUsers(const std::string &);
         void    sendMsgToUsers(const std::string &, const int &);
