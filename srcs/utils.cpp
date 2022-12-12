@@ -2,7 +2,10 @@
 #include "../include/Client.hpp"
 
 
-
+void sighandler(int signum) {
+   printf("Caught signal %d, coming out...\n", signum);
+   exit(1);
+}
 
 // template<typename T>
 // T   findert(std::vector<T> &vec, std::string search) {

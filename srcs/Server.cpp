@@ -93,16 +93,16 @@ void    Server::interpreter(std::string const &msg, int const &sockFd) {
     std::string cmd = msg.substr(0, msg.find(' '));
 	std::string copy = msg;
 
-	copy.erase(msg.find('\r'), 2);
-	MSG(msg);
+	copy.erase(copy.find('\r'), 2);
+	MSG(copy);
 	if (!cmd.compare("PRIVMSG"))
-		privMsg(msg, sockFd);
+		privMsg(copy, sockFd);
 	else if (!cmd.compare("JOIN"))
-		joinChannel(msg, sockFd);
+		joinChannel(copy, sockFd);
 	else if (!cmd.compare("NICK"))
-		setClientNick(msg, sockFd);
+		setClientNick(copy, sockFd);
 	else if (!cmd.compare("USER"))
-		setClientUser(msg, sockFd);
+		setClientUser(copy, sockFd);
 	else if (!cmd.compare("INVITE"))
 		inviteToChannel(ft_split(copy, ' '), sockFd);
 	else if (!cmd.compare("PART"))								// If operator leaves there is no succession
@@ -114,7 +114,7 @@ void    Server::interpreter(std::string const &msg, int const &sockFd) {
 	else if (!cmd.compare("KICK"))
 		opKick(ft_split(copy, ' '), _clientHandler.finder(sockFd)->getNick());
 	else if (!cmd.compare("PASS"))
-		_clientHandler.addClient(msg, _password, sockFd, std::string(inet_ntoa(_sock.getHint().sin_addr)));
+		_clientHandler.addClient(copy, _password, sockFd, std::string(inet_ntoa(_sock.getHint().sin_addr)));
 }
 
 void	Server::inviteToChannel(const std::vector<std::string> &info, const int &sockFd) {
@@ -142,37 +142,38 @@ void    Server::joinChannel(const std::string &msg, const int &sockFd) {
 	// See codes 403, 404, 405 --- 651 -- 366
 	//When a user nickname changes, update on the participants list
 
-	std::string channelMsg;
 	std::string ip = _clientHandler.finder(sockFd)->getIp();
-	std::string channelName = msg.substr(5, msg.find('\0', 5));
 	std::string nick = _clientHandler.finder(sockFd)->getNick();
 	std::string user = _clientHandler.finder(sockFd)->getUser();
 
-	std::vector<std::string> channels = ft_split(msg, ',');
+	std::vector<std::string>::iterator	it;
+	std::string 						channelMsg = msg.substr(msg.find(' ') + 1);
+	std::vector<std::string>			channels = ft_split(channelMsg, ',');
 
-	channelName.erase(channelName.find('\r'), 2);
-	if (channelName[0] != '#')
-		channelName.insert(0, 1, '#');
-	if (Channel *channel = _channelHandler.finder(channelName)) {
-		std::string	joinMsg;
-		
-		joinMsg = ':' + nick + '!' + user + '@' + ip + " JOIN " + channelName + '\n';
-		channel->sendMsgToUsers(joinMsg);
-		if (channel->getChops().empty())
-			channel->addChop(_clientHandler.finder(sockFd));
-		else
-			channel->addUser(_clientHandler.finder(sockFd));
-		_clientHandler.finder(sockFd)->addChannel(_channelHandler.finder(channelName));
+	for (it = channels.begin(); it != channels.end(); it++) {
+		if ((*it)[0] != '#')
+			(*it).insert(0, 1, '#');
+		if (Channel *channel = _channelHandler.finder(*it)) {
+			std::string	joinMsg;
+
+			joinMsg = ':' + nick + '!' + user + '@' + ip + " JOIN " + (*it) + '\n';
+			channel->sendMsgToUsers(joinMsg);
+			if (channel->getChops().empty())
+				channel->addChop(_clientHandler.finder(sockFd));
+			else
+				channel->addUser(_clientHandler.finder(sockFd));
+			_clientHandler.finder(sockFd)->addChannel(_channelHandler.finder((*it)));
+		}
+		else {
+			_channelHandler.addChannel((*it), _clientHandler.finder(sockFd));
+			_clientHandler.finder(sockFd)->addChannel(_channelHandler.finder((*it)));
+		}
+		channelMsg = ":" + nick + "!" + user + "@" + ip + " JOIN :" + (*it) + "\n";
+		channelMsg += "353 " + nick + " = " + (*it) + " :";
+		channelMsg += _channelHandler.finder((*it))->getUsersString() + "\n";
+		send(sockFd, channelMsg.c_str(), channelMsg.length(), 0);
+		_channelHandler.finder((*it))->sendTopic(_clientHandler.finder(sockFd));
 	}
-	else {
-		_channelHandler.addChannel(channelName, _clientHandler.finder(sockFd));
-		_clientHandler.finder(sockFd)->addChannel(_channelHandler.finder(channelName));
-	}
-	channelMsg = ":" + nick + "!" + user + "@" + ip + " JOIN :" + channelName + "\n";
-	channelMsg += "353 " + nick + " = " + channelName + " :";
-	channelMsg += _channelHandler.finder(channelName)->getUsersString() + "\n";
-	send(sockFd, channelMsg.c_str(), channelMsg.length(), 0);
-	_channelHandler.finder(channelName)->sendTopic(_clientHandler.finder(sockFd));
 }
 
 void    Server::privMsg(const std::string &msg, const int &sockFd) {
@@ -185,7 +186,7 @@ void    Server::privMsg(const std::string &msg, const int &sockFd) {
 
 		if (!_clientHandler.finder(sockFd)->findChannel(channelName)) {
 			MSG(_clientHandler.finder(sockFd)->getNick() + " is not in this channel anymore");
-			return ; 				// Exception
+			return ;
 		}
 		if (Channel *channel = _channelHandler.finder(channelName)) {
 			sendMsg = ':' + _clientHandler.finder(sockFd)->getNick();
@@ -203,7 +204,7 @@ void    Server::privMsg(const std::string &msg, const int &sockFd) {
 void    Server::setClientNick(const std::string &msg, const int &sockFd) { // Change nick in channel
 	std::string	nick = msg.substr(5, msg.find('\0', 5));
 
-	nick.erase(nick.find('\r'), 2);
+	//nick.erase(nick.find('\r'), 2);
 	_clientHandler.finder(sockFd)->setNick(nick);
 	nick = "001 " + nick + "\n";
 	send(sockFd, nick.c_str(), nick.length(), 0);
@@ -211,8 +212,6 @@ void    Server::setClientNick(const std::string &msg, const int &sockFd) { // Ch
 
 void    Server::setClientUser(const std::string &msg, const int &sockFd) {
 	std::string	user = msg.substr(msg.find(':') + 1);
-
-	user.erase(user.find('\r'), 2);
 	_clientHandler.finder(sockFd)->setUser(user);
 }
 

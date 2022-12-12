@@ -25,7 +25,7 @@ class Server
         void    sockSet();
 		void	activity();
         void    privMsg(const std::string &, const int &);
-        void    interpreter(const std::string  &, int const &);
+        void    interpreter(const std::string &, int const &);
         void    joinChannel(const std::string &, const int &);
         void    setClientNick(const std::string &, const int &);
         void    setClientUser(const std::string &, const int &);

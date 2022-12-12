@@ -10,8 +10,8 @@ class Channel;
 
 class ChannelHandler
 {
-    std::vector<Channel *> _channels;
-    std::vector<Channel *>::iterator _it;
+    std::vector<Channel *>::iterator    _it;
+    std::vector<Channel *>              _channels;
     public:
 
         ChannelHandler() {};

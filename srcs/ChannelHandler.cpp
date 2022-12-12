@@ -8,6 +8,9 @@ void    ChannelHandler::addChannel(std::string const &channelName, Client *chop)
     _channels.push_back(new Channel(channelName, chop));
 }
 
+
+
+
 // REMOVE BY NICK ! CHECK THE COMMAND TO REMOVE USER TO CHECK WHAT IS NEEDED
 void    ChannelHandler::rmvClient(std::string const &nick)
 {
@@ -48,8 +51,6 @@ void ChannelHandler::opMode(std::string const &msg, Client *chop)
     args.pop_back();
     channel->cmdMode(info[2], args, chop);
 }
-
-
 
 Channel *ChannelHandler::finder(const std::string &channelName) {
     for (_it = _channels.begin(); _it != _channels.end(); _it++) {

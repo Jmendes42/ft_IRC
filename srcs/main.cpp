@@ -1,5 +1,6 @@
 #include <string>
 #include <sstream>
+#include <signal.h>
 #include "../include/Utils.hpp"
 #include "../include/Server.hpp"
 #include "../include/Socket.hpp"
@@ -13,7 +14,7 @@ int	main(int argc, char **argv)
 {
     int port;
     std::string password;
- 
+    signal(SIGINT, sighandler);
     // REPLACE THIS WITH AN ERROR MESSAGE (Just here for testing purpose)
     if (argc != 3)
     {
