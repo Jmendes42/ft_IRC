@@ -71,6 +71,8 @@ void    Channel::sendMsgToUsers(const std::string &msg, const int &fd) {
 }
 
 void    Channel::addChop(Client *chop) {
+    if (finder(_users, chop->getNick()))
+        rmvClient(chop->getNick());
     if (!finder(_sec_chops, chop->getNick()))
         _sec_chops.push_back(chop);
 }
@@ -270,20 +272,20 @@ void Channel::cmdTopic(const std::string &topic, Client *client) {
 }
 
 // LOOK AT CODES: 377, 470, 485, 495
-void Channel::cmdKick(std::string const &nickname, const std::string &kicker) {
+void Channel::cmdKick(Client *kicked, const std::string &kicker) {
     std::string msgSend;
+    std::string kick = kicked->getNick();
 
-    if (!finder(_sec_chops, kicker)) {
+    if (!finder(_sec_chops, kicker))
         MSG(kicker + " is not channel operator");                                       // Exception
-        return ;
-    }
-    if (finder(_users, nickname)) {                                                     // See muted
-        msgSend =":" + kicker + " KICK " + _name + ' ' + nickname + '\n';
+    else if (finder(_users, kick)) {                                                     // See muted
+        msgSend =":" + kicker + " KICK " + _name + ' ' + kick + '\n';
+        kicked->rmvChannel(_name);
         sendMsgToUsers(msgSend);
-        rmvClient(nickname);
-        return ;
+        rmvClient(kick);
     }
-    std::cout << "ERROR: This User is not in the Channel" << std::endl;
+    else
+        std::cout << "ERROR: This User is not in the Channel" << std::endl;
 }
 
 void        Channel::cmdInvite(Client *client, Client *toInv) {
@@ -297,15 +299,18 @@ void        Channel::cmdInvite(Client *client, Client *toInv) {
  * @brief Leave the Channel (using PART Command)
  * @param client a Pointer to the client that wants to leave the Channel
 **/
-void Channel::partChannel(Client *client)
-{
+void Channel::partChannel(Client *client) {
     std::string msgSend;
 
     if (finder(_users, client->getNick()) || finder(_sec_chops, client->getNick())) {
         msgSend = ":" + client->getNick() + "!" + client->getUser() + "@" + client->getIp() + " PART :" + _name + "\r\n";
-        send(client->getFd(), msgSend.c_str(), msgSend.length(), 0);
         sendMsgToUsers(msgSend);
+        client->rmvChannel(_name);
         rmvClient(client->getNick());
+        /*if (_sec_chops.empty() && _users[0])                                // Chop sucsession
+            addChop(finder(_users, _users[0]->getNick()));
+        msgSend = "353 " + _name + " :" + getUsersString() + '\n';
+        sendMsgToUsers(msgSend);*/
         return ;
     }
     std::cout << "ERROR: This User is not in the Channel" << std::endl;

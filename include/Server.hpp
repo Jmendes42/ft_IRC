@@ -29,7 +29,11 @@ class Server
         void    joinChannel(const std::string &, const int &);
         void    setClientNick(const std::string &, const int &);
         void    setClientUser(const std::string &, const int &);
+        void	inviteToChannel(const std::vector<std::string> &, const int &);
+        void	partCmd(const std::string &, const int &);
         
+        void    opKick(const std::vector<std::string> &, const std::string &);
+
         Socket  &getSocket()    {return _sock;};
 
 };

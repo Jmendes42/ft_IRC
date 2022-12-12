@@ -10,26 +10,17 @@ Channel *Client::findChannel(const std::string &channelName) {
 }
 
 
-bool Client::addChannel(Channel *add) {
-    if (findChannel(add->getName()) != NULL) {                                  // Exception
+void Client::addChannel(Channel *add) {
+    if (findChannel(add->getName()))
         std::cout <<  "This Client is already in this Channel!" << std::endl;
-        return false;
-    }
-    _channels.push_back(add);
-    return true;
+    else
+        _channels.push_back(add);
 }
 
 void Client::rmvChannel(const std::string &name)
 {
-    for (_it = _channels.begin(); _it != _channels.end(); _it++)
-    {
-        //  THIS SHOULD BE AN EXCEPTION
-        if (!((*_it)->getName().compare(name)))
-        {
-            _channels.erase(_it);
-            return ;                               
-        } 
-    }
-    // THIS SHOULD BE AN EXCEPTION
-    std::cout << "THIS CLIENT IS NOT IN THE CHANNEL" << std::endl;
+    if (!findChannel(name))
+        std::cout << "THIS CLIENT IS NOT IN THE CHANNEL" << std::endl;
+    else 
+        _channels.erase(_it);
 }

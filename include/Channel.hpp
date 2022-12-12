@@ -43,7 +43,6 @@ class Channel
 
         std::string             &getName() { return (_name); };
         std::string             &getTopic() { return (_topic); };
-        std::vector<Client *>   &getChop() { return (_sec_chops); };
 
         void    addUser(Client *);
         void    addChop(Client *);
@@ -51,7 +50,7 @@ class Channel
         void    rmvClient(std::string const &nickname);
 
         void    initFlags();
-        void    cmdKick(const std::string &, const std::string &);
+        void    cmdKick(Client *, const std::string &);
         void    cmdMode(std::string const &flags, std::string const &args, Client *client);
         void    cmdInvite(Client *client, Client *toInv);
         void    sendTopic(Client *);

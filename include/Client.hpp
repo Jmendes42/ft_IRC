@@ -41,7 +41,7 @@ class Client
         void    setHost(std::string const &set) { _hostname = set; };
         void    setReal(std::string const &set) { _realname = set; };
 
-        bool    addChannel(Channel *);
+        void    addChannel(Channel *);
         void    rmvChannel(const std::string &);
         Channel *findChannel(const std::string &);
 };

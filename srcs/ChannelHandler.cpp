@@ -49,10 +49,7 @@ void ChannelHandler::opMode(std::string const &msg, Client *chop)
     channel->cmdMode(info[2], args, chop);
 }
 
-void ChannelHandler::opKick(const std::string &msg, const std::string &chop) {
-    std::vector<std::string> info = ft_split(msg);
-    finder(info[1])->cmdKick(info[2], chop);
-}
+
 
 Channel *ChannelHandler::finder(const std::string &channelName) {
     for (_it = _channels.begin(); _it != _channels.end(); _it++) {
