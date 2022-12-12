@@ -3,6 +3,7 @@
 #include "../include/Channel.hpp"
 #include "../include/Socket.hpp"
 #include "../include/Client.hpp"
+#include "../include/Macros.hpp"
 
 
 Channel::Channel(std::string const &name, Client *chop) : _name(name), _topic("")
@@ -140,17 +141,14 @@ int checkFlag(char flag)
 **/
 void Channel::changeSimpleFlag(int fd, char set, char flag, std::string const &channel_name)
 {
+    std::string toSend;
     std::map<char, bool>::iterator it = _flags.find(flag);
     if (set == '+' && it->second == false)
         it->second = true;
     else if (set == '-' && it->second == true)
         it->second = false;
     else
-    {
-        std::string toSend =  "467 " + channel_name + " :Channel key already set\r\n";
-        send(fd, toSend.c_str(), toSend.length(), 0);
-        return ;
-    }
+        ERR_KEYSET(channel_name, fd, toSend);
 }
 
 /**
@@ -162,6 +160,7 @@ void Channel::changeModePS(int fd, char set, char flag, std::string const &chann
 {
     std::map<char, bool>::iterator it = _flags.find(flag);
     std::map<char, bool>::iterator temp;
+    std::string toSend;
     
     temp = (it->first == 'p') ?  _flags.find('s') : _flags.find('p');
     if (set == '+' && it->second == false)
@@ -173,11 +172,7 @@ void Channel::changeModePS(int fd, char set, char flag, std::string const &chann
     else if (set == '-' && it->second == true)
         it->second = false;
     else
-    {
-        std::string toSend =  "467 " + channel_name + " :Channel key already set\r\n";
-        send(fd, toSend.c_str(), toSend.length(), 0);
-        return ;
-    }
+        ERR_KEYSET(channel_name, fd, toSend);
 }
 
 /**
@@ -188,6 +183,7 @@ void Channel::changeModePS(int fd, char set, char flag, std::string const &chann
 void Channel::changePassword(int fd, char set, std::string const &args)
 {
     std::map<char, bool>::iterator it = _flags.find('k');
+    std::string toSend;
 
     if (set == '-')
     {
@@ -202,11 +198,7 @@ void Channel::changePassword(int fd, char set, std::string const &args)
             it->second = true;
     }
     else
-    {
-        std::string toSend =  "461 MODE :Not enough parameters\r\n";
-        send(fd, toSend.c_str(), toSend.length(), 0);
-        return ;
-    }
+        ERR_NEEDMOREPARAMS("MODE", fd, toSend);
 }
 
 /**
@@ -217,6 +209,7 @@ void Channel::changePassword(int fd, char set, std::string const &args)
 void Channel::setLimit(int fd, char set, std::string const &args)
 {
     std::map<char, bool>::iterator it = _flags.find('l');
+    std::string toSend;
 
     if (set == '-')
     {
@@ -231,27 +224,16 @@ void Channel::setLimit(int fd, char set, std::string const &args)
             it->second = true;
     }
     else
-    {
-        std::string toSend =  "461 MODE :Not enough parameters\r\n";
-        send(fd, toSend.c_str(), toSend.length(), 0);
-        return ;
-    }
+        ERR_NEEDMOREPARAMS("MODE", fd, toSend);
 }
 
 void Channel::cmdMode(std::string const &flags, std::string const &args, Client *client)
 {
+    std::string toSend;
     if (!finder(_users, client->getNick()))
-    {
-        std::string toSend =  "442 " + getName() + " :You're not on that channel\r\n";
-        send(client->getFd(), toSend.c_str(), toSend.length(), 0);
-        return ;
-    }
+        ERR_NOTONCHANNEL(getName(), client->getFd, toSend);
     if (!finder(_sec_chops, client->getNick()))
-    {
-        std::string toSend =  "482 " + getName() + " :You're not channel operator\r\n";
-        send(client->getFd(), toSend.c_str(), toSend.length(), 0);
-        return ;
-    }
+        ERR_CHANOPRIVSNEEDED(getName(), client->getFd, toSend);
     char set = flags[0];
     for (int i = 1; i < flags.length(); i++)
     {
@@ -280,11 +262,7 @@ void Channel::cmdMode(std::string const &flags, std::string const &args, Client 
                     changePassword(client->getFd(), set, args);
                     break;               
                 default:
-                	std::string msg =  "472 ";
-                    msg.push_back(flags[i]);
-                    msg += " :is unknown mode char to me\r\n";
-			        send(client->getFd(), msg.c_str(), msg.length(), 0);
-			        return ;
+                    ERR_UNKNOWNMODE(getName(), client->getFd, toSend);
             }
         }
     }
@@ -305,13 +283,13 @@ void Channel::sendTopic(Client *client) {
 
 void Channel::cmdTopic(const std::string &topic, Client *client) {
         //std::map<char, bool>::iterator it = _flags.find('t');  && (it->second == true)
+        std::string toSend;
         if (finder(_sec_chops, client->getNick())) {
             setTopic(topic);
             sendTopic(client);
         }
         else
-            MSG(client->getNick() + " is not a channel operator");
-            // MSG("Flag <t> is false");
+            ERR_CHANOPRIVSNEEDED(getName(), client->getFd(), toSend);
 }
 
 // LOOK AT CODES: 377, 470, 485, 495
@@ -319,25 +297,16 @@ void Channel::cmdKick(std::string const &nickname, const std::string &kicker, in
     std::string msgSend;
 
     if (!finder(_users, kicker))
-    {
-        std::string toSend =  "442 " + getName() + " :You're not on that channel\r\n";
-        send(fd, toSend.c_str(), toSend.length(), 0);
-        return ;
-    }
+        ERR_NOTONCHANNEL(getName(), fd, msgSend);
     if (!finder(_sec_chops, kicker)) {
-        std::string toSend =  "482 " + getName() + " :You're not channel operator\r\n";
-        send(fd, toSend.c_str(), toSend.length(), 0);
-        return ;
-    }
+        ERR_CHANOPRIVSNEEDED(getName(), fd, msgSend);
     if (finder(_users, nickname)) {                                                     // See muted
         msgSend =":" + kicker + " KICK " + _name + ' ' + nickname + '\n';
         sendMsgToUsers(msgSend);
         rmvClient(nickname);
         return ;
     }
-    std::string toSend =  "401 " + getName() + " :No such nick/channel\r\n";
-    send(fd, toSend.c_str(), toSend.length(), 0);
-    return ;
+    ERR_NOSUCHNICK(getName(), fd, msgSend);
 }
 
 void        Channel::cmdInvite(Client *client, Client *toInv) {
@@ -361,8 +330,7 @@ void Channel::partChannel(Client *client)
         rmvClient(client->getNick());
         return ;
     }
-    msgSend =  "403 " +  _name + " :You're not on that channel\r\n";
-    send(client->getFd(), msgSend.c_str(), msgSend.length(), 0);
+    ERR_NOSUCHCHANNEL(_name, client->getFd(), msgSend);
 }
 
 bool Channel::retStateFlag(char flag)

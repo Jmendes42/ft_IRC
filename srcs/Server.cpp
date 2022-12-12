@@ -7,9 +7,7 @@
 #include "../include/Channel.hpp"
 #include "../include/Server.hpp"
 #include "../include/Socket.hpp"
-
-
-#define TEST(fd, toSend) send(fd, toSend.c_str(), toSend.length(), 0);
+#include "../include/Macros.hpp"
 
 void	Server::activity()
 {
@@ -95,6 +93,7 @@ void    Server::sockSet() {
 void    Server::interpreter(std::string const &msg, int const &sockFd) {
     std::string cmd = msg.substr(0, msg.find(' '));
 	std::string copy = msg;
+	std::string toSend;
 
 	copy.erase(msg.find('\r'), 2);
 	MSG(msg);
@@ -108,16 +107,10 @@ void    Server::interpreter(std::string const &msg, int const &sockFd) {
 	{
 		std::vector<std::string> info = ft_split(copy);
 		if (info.size() < 2)
-		{
-			std::string toSend = "461 PART :Not enough parameters\r\n";
-			send(sockFd, toSend.c_str(), toSend.length(), 0);
-		}
+			ERR_NEEDMOREPARAMS("PART", sockFd, toSend);
 		Channel *channel = _channelHandler.finder(info[1]);
 		if (!channel)
-		{
-			std::string toSend =  "403 " +  info[1] + " :No such channel\r\n";
-			send(sockFd, toSend.c_str(), toSend.length(), 0);
-		}
+			ERR_NOSUCHCHANNEL(info[1], sockFd, toSend);
 		else
 			channel->partChannel(_clientHandler.finder(sockFd));
 	}
@@ -163,15 +156,12 @@ void    Server::joinChannel(const std::string &msg, const int &sockFd) {
 
 	//When a user nickname changes, update on the participants list
 	std::string copy = msg;
+	std::string toSend;
 	copy.erase(msg.find('\r'), 2);
 	std::vector<std::string> info = ft_split(copy);
 	std::string channelMsg;			// Confirm message user/nick
 	if (info.size() < 2)
-	{
-		channelMsg =  "461 JOIN :Not enough parameters\r\n";
-		send(sockFd, channelMsg.c_str(), channelMsg.length(), 0);
-		return ;
-	}
+		ERR_NEEDMOREPARAMS("JOIN", sockFd, toSend);
 	std::string channelName = info[1];
 	std::string ip = _clientHandler.finder(sockFd)->getIp();
 	std::string nick = _clientHandler.finder(sockFd)->getNick();
@@ -182,38 +172,17 @@ void    Server::joinChannel(const std::string &msg, const int &sockFd) {
 	if (Channel *channel = _channelHandler.finder(channelName)) {
 		std::string	joinMsg;
 		if (channel->retStateFlag('i'))
-		{
-			joinMsg =  "473 " +  channel->getName() + " :Cannot join channel (+i)\r\n";
-			send(sockFd, joinMsg.c_str(), joinMsg.length(), 0);
-			return ;
-		}
+			ERR_INVITEONLYCHAN(channel->getName(), sockFd, toSend);
 		if (channel->retStateFlag('l') && ((channel->getUsersTotal() + 1) > channel->getLimit()))
-		{
-
-			joinMsg =  "471 " +  channel->getName() + " :Cannot join channel (+l)\r\n";
-			send(sockFd, joinMsg.c_str(), joinMsg.length(), 0);
-			return ;
-		}
+			ERR_CHANNELISFULL(channel->getName(), sockFd, toSend);
 		if (channel->checkBan(nick))
-		{
-			joinMsg =  "474 " +  channel->getName() + " :Cannot join channel (+b)\r\n";
-			send(sockFd, joinMsg.c_str(), joinMsg.length(), 0);
-			return ;
-		}
+			ERR_BANNEDFROMCHAN(channel->getName(), sockFd, toSend);
 		if (channel->retStateFlag('k'))
 		{
 			if (info.size() < 3)
-			{
-				joinMsg =  "461 JOIN :Not enough parameters\r\n";
-				send(sockFd, joinMsg.c_str(), joinMsg.length(), 0);
-				return ;
-			}
+				ERR_NEEDMOREPARAMS(channel->getName(), sockFd, toSend);
 			if (info[2] != channel->getPass())
-			{
-				joinMsg =  "475 " + channel->getName() + " :Cannot join channel (+k)\r\n";
-				send(sockFd, joinMsg.c_str(), joinMsg.length(), 0);
-				return ;
-			}
+				ERR_BADCHANNELKEY(channel->getName(), sockFd, toSend);
 		}
 		joinMsg = ':' + nick + '!' + user + '@' + ip + " JOIN " + channelName + '\n';
 		channel->sendMsgToUsers(joinMsg);

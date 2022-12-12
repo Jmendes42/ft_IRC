@@ -1,8 +1,9 @@
 #include "../include/Channel.hpp"
 #include "../include/ChannelHandler.hpp"
 #include "../include/Socket.hpp"
+#include "../include/Macros.hpp"
 
-#define TEST(info, fd, toSend) toSend =  "403 " +  info + " :No such channel\r\n"; send(fd, toSend.c_str(), toSend.length(), 0); return ;
+
 
 void    ChannelHandler::addChannel(std::string const &channelName, Client *chop)
 {
@@ -40,13 +41,9 @@ void ChannelHandler::opMode(std::string const &msg, Client *chop)
     std::string toSend;
     Channel *channel = finder(info[1]);
     if (!channel)
-        TEST(info[1], chop->getFd(), toSend);
+        ERR_NOSUCHCHANNEL(info[1], chop->getFd(), toSend);
     if (info.size() == 2)
-    {
-        std::string toSend =  "461 MODE :Not enough parameters\r\n";
-        send(chop->getFd(), toSend.c_str(), toSend.length(), 0);
-        return ;
-    }
+        ERR_NEEDMOREPARAMS("MODE", chop->getFd(), toSend)
     std::string args = "";
     for (int i = 3; i < info.size(); i++)
         args += info[i] + " ";
@@ -57,25 +54,19 @@ void ChannelHandler::opMode(std::string const &msg, Client *chop)
 //weechat automatically adds the channel name if missing. Also, it warns the user if missing parameters, so there is no way for us to test the errors here.
 void ChannelHandler::opKick(const std::string &msg, const std::string &chop, int fd) {
     std::vector<std::string> info = ft_split(msg);
+    std::string toSend;
     if (info.size() >= 2)
     {
         Channel *channel = finder(info[1]);
         if (!channel)
-        {
-            std::string toSend =  "403 " +  info[1] + " :No such channel\r\n";
-            send(fd, toSend.c_str(), toSend.length(), 0);
-            return ;
-        }
+            ERR_NOSUCHCHANNEL(info[1], fd, toSend);
         if (info.size() > 2)
         {
             channel->cmdKick(info[2], chop, fd);
             return ;
         }
     }
-    
-    std::string toSend =  "461 MODE :Not enough parameters\r\n";
-    send(fd, toSend.c_str(), toSend.length(), 0);
-    return ;
+    ERR_NEEDMOREPARAMS("KICK", fd, toSend);
 }
 
 Channel *ChannelHandler::finder(const std::string &channelName) {
