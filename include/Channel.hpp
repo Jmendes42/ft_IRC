@@ -46,6 +46,7 @@ class Channel
         std::string             &getPass() { return (_password); };
         std::vector<Client *>   &getChop() { return (_sec_chops); };
 
+        void    addBan(Client *);
         void    addUser(Client *);
         void    addChop(Client *);
         void    addMute(Client *);

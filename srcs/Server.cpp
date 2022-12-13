@@ -106,14 +106,14 @@ void    Server::interpreter(std::string const &msg, int const &sockFd) {
 		setClientUser(copy, sockFd);
 	else if (!cmd.compare("INVITE"))
 		inviteToChannel(ft_split(copy, ' '), sockFd);
-	else if (!cmd.compare("PART"))								// If operator leaves there is no succession
+	else if (!cmd.compare("PART"))
 		partCmd(copy.substr(5, copy.find(' ', 5) - 5), sockFd);
 	else if (!cmd.compare("MODE"))
 		_channelHandler.opMode(copy, _clientHandler.finder(sockFd));
-	else if (!cmd.compare("KICK"))
-		opKick(ft_split(copy, ' '), _clientHandler.finder(sockFd)->getNick(), sockFd);
 	else if (!cmd.compare("TOPIC"))
 		_channelHandler.opTopic(copy, _clientHandler.finder(sockFd));
+	else if (!cmd.compare("KICK"))
+		opKick(ft_split(copy, ' '), _clientHandler.finder(sockFd)->getNick(), sockFd);
 	else if (!cmd.compare("PASS"))
 		_clientHandler.addClient(copy, _password, sockFd, std::string(inet_ntoa(_sock.getHint().sin_addr)));
 }
@@ -137,40 +137,39 @@ void	Server::inviteToChannel(const std::vector<std::string> &info, const int &so
 }
 
 void    Server::joinChannel(const std::vector<std::string> &msg, const int &sockFd) {
-	// JOIN can come with multiple channels. Parse the message in order to not create a channel 
-	// wich has a name with all the names compiled -> split JOIN #c,#b,#c,#b,#c,#b,#c,#b
-	// Channel name should not contain spaces
+	// the channel ceases to exist when the last client leaves it
+	// Channel name should not contain spacesit may not contain any spaces (' '), a control G(^G or ASCII 7), or a comma (','
 	// Limit of ten channels per user
-	// If a channel has more than one operator? 
-	// See codes 403, 404, 405 --- 651 -- 366
-	//When a user nickname changes, update on the participants list
-	if (msg.size() < 2)
-		ERR_NEEDMOREPARAMS(std::string("JOIN"), sockFd, std::string(""));
-	std::string ip = _clientHandler.finder(sockFd)->getIp();
-	std::string nick = _clientHandler.finder(sockFd)->getNick();
-	std::string user = _clientHandler.finder(sockFd)->getUser();
+	// When a user nickname changes, update on the participants list
+	std::string errMsg;
 
-	std::vector<std::string>::iterator	it;
-	std::string 						channelMsg = msg[2].substr(msg[2].find(' ') + 1);
+	if (msg.size() < 2) 
+		ERR_NEEDMOREPARAMS(std::string("JOIN"), sockFd, errMsg);
+
+	std::string 						channelMsg = msg[1].substr(msg[1].find(' ') + 1);
+	std::string							nick = _clientHandler.finder(sockFd)->getNick();
+	std::string							user = _clientHandler.finder(sockFd)->getUser();
+	std::string							ip = _clientHandler.finder(sockFd)->getIp();
 	std::vector<std::string>			channels = ft_split(channelMsg, ',');
+	std::vector<std::string>::iterator	it;
 
 	for (it = channels.begin(); it != channels.end(); it++) {
-		if ((*it)[0] != '#')
+		if ((*it)[0] != '#' && (*it)[0] != '&')
 			(*it).insert(0, 1, '#');
 		if (Channel *channel = _channelHandler.finder(*it)) {
 			std::string	joinMsg;
 
 			if (channel->retStateFlag('i'))
-				ERR_INVITEONLYCHAN(channel->getName(), sockFd, std::string(""));
+				ERR_INVITEONLYCHAN(channel->getName(), sockFd, errMsg);
 			if (channel->retStateFlag('l') && ((channel->getUsersTotal() + 1) > channel->getLimit()))
-				ERR_CHANNELISFULL(channel->getName(), sockFd, std::string(""));
+				ERR_CHANNELISFULL(channel->getName(), sockFd, errMsg);
 			if (channel->checkBan(nick))
-				ERR_BANNEDFROMCHAN(channel->getName(), sockFd, std::string(""));
+				ERR_BANNEDFROMCHAN(channel->getName(), sockFd, errMsg);
 			if (channel->retStateFlag('k')) {
 				if (msg.size() < 3)
-					ERR_NEEDMOREPARAMS(channel->getName(), sockFd, std::string(""));
+					ERR_NEEDMOREPARAMS(channel->getName(), sockFd, errMsg);
 				if (msg[2] != channel->getPass())
-					ERR_BADCHANNELKEY(channel->getName(), sockFd, std::string(""));
+					ERR_BADCHANNELKEY(channel->getName(), sockFd, errMsg);
 			}
 			joinMsg = ':' + nick + '!' + user + '@' + ip + " JOIN " + (*it) + '\n';
 			channel->sendMsgToUsers(joinMsg);
@@ -206,13 +205,14 @@ void    Server::privMsg(const std::string &msg, const int &sockFd) {
 		}
 		if (Channel *channel = _channelHandler.finder(channelName)) {
 			sendMsg = ':' + _clientHandler.finder(sockFd)->getNick();
-			sendMsg += " PRIVMSG " + channelName + ' ' + msg.substr(msg.find(':'));
+			sendMsg += " PRIVMSG " + channelName + ' ' + msg.substr(msg.find(':')) + "\r\n";
+			MSG("HERE " + sendMsg);
 			channel->sendMsgToUsers(sendMsg, sockFd);
 		}
 	}
 	else if (Client * client = _clientHandler.finder(msg.substr(8, msg.find(' ', 8) - 8))) {
 		sendMsg = ":" + _clientHandler.finder(sockFd)->getNick() + " PRIVMSG ";
-		sendMsg += client->getNick() + ' ' + msg.substr(msg.find(':'));
+		sendMsg += client->getNick() + ' ' + msg.substr(msg.find(':')) + "\r\n";
 		send(client->getFd(), sendMsg.c_str(), sendMsg.length(), 0);
 	}
 }
@@ -231,23 +231,26 @@ void    Server::setClientUser(const std::string &msg, const int &sockFd) {
 	_clientHandler.finder(sockFd)->setUser(user);
 }
 
-void	Server::opKick(const std::vector<std::string> &info, const std::string &chop, const int &fd) {    // User not foud error. Kick wait time
-	if (info.size() >= 2)
-    {
+void	Server::opKick(const std::vector<std::string> &info, const std::string &chop, const int &fd) {
+	std::string errMsg;
+
+	if (info.size() >= 2) {
         Channel *channel = _channelHandler.finder(info[1]);
         if (!channel)
-            ERR_NOSUCHCHANNEL(info[1], fd, std::string(""));
+            ERR_NOSUCHCHANNEL(info[1], fd, errMsg);
         if (info.size() > 2) {
             channel->cmdKick(_clientHandler.finder(info[2]), chop, fd);
             return ;
         }
     }
-    ERR_NEEDMOREPARAMS(std::string("KICK"), fd, std::string(""));
+    ERR_NEEDMOREPARAMS(std::string("KICK"), fd, errMsg);
 }
 
 void	Server::partCmd(const std::string &channel, const int &fd) {
+	std::string errMsg;
+
 	if (Channel *part = _channelHandler.finder(channel))
 		part->partChannel(_clientHandler.finder(fd));
 	else
-		ERR_NOSUCHCHANNEL(channel, fd, std::string(""));
+		ERR_NOSUCHCHANNEL(channel, fd, errMsg);
 }

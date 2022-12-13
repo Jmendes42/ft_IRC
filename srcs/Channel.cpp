@@ -294,12 +294,22 @@ void Channel::cmdTopic(const std::string &topic, Client *client) {
             ERR_CHANOPRIVSNEEDED(getName(), client->getFd(), toSend);
 }
 
+/**
+ * @brief           Removes a user from the channel and adds it to ban list
+ * @param client    A Pointer to banned client
+**/
+void    Channel::addBan(Client *kicked) {
+    rmvClient(kicked->getNick());
+    _ban_users.push_back(kicked);
+}
+
+
 // LOOK AT CODES: 377, 470, 485, 495
 void Channel::cmdKick(Client *kicked, const std::string &kicker, int fd) {
     std::string msgSend;
     std::string kick = kicked->getNick();
 
-    if (!finder(_users, kicker))
+    if (finder(_users, kicker))
         ERR_NOTONCHANNEL(getName(), fd, msgSend);
     if (!finder(_sec_chops, kicker))
         ERR_CHANOPRIVSNEEDED(getName(), fd, msgSend);
@@ -307,7 +317,7 @@ void Channel::cmdKick(Client *kicked, const std::string &kicker, int fd) {
         msgSend =":" + kicker + " KICK " + _name + ' ' + kick + '\n';
         kicked->rmvChannel(_name);
         sendMsgToUsers(msgSend);
-        rmvClient(kick);
+        addBan(kicked);
     }
     else
         ERR_NOSUCHNICK(getName(), fd, msgSend);
