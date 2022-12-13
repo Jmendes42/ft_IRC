@@ -9,7 +9,6 @@ Channel *Client::findChannel(const std::string &channelName) {
     return NULL;
 }
 
-
 void Client::addChannel(Channel *add) {
     if (findChannel(add->getName()))
         std::cout <<  "This Client is already in this Channel!" << std::endl;

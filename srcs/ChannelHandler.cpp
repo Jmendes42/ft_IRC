@@ -1,15 +1,12 @@
 #include "../include/Channel.hpp"
 #include "../include/ChannelHandler.hpp"
 #include "../include/Socket.hpp"
-
+#include "../include/Macros.hpp"
 
 void    ChannelHandler::addChannel(std::string const &channelName, Client *chop)
 {
     _channels.push_back(new Channel(channelName, chop));
 }
-
-
-
 
 // REMOVE BY NICK ! CHECK THE COMMAND TO REMOVE USER TO CHECK WHAT IS NEEDED
 void    ChannelHandler::rmvClient(std::string const &nick)
@@ -39,12 +36,13 @@ void ChannelHandler::opTopic(std::string const &msg, Client *client) {
 void ChannelHandler::opMode(std::string const &msg, Client *chop)
 {
     std::vector<std::string> info = ft_split(msg, ' ');
+    std::string toSend;
+    // info[1] seg fault
     Channel *channel = finder(info[1]);
+    if (!channel)
+        ERR_NOSUCHCHANNEL(info[1], chop->getFd(), toSend);
     if (info.size() == 2)
-    {
-        MSG("No flags for MODE Command");
-        return ;
-    }
+        ERR_NEEDMOREPARAMS(std::string("MODE"), chop->getFd(), toSend)
     std::string args = "";
     for (int i = 3; i < info.size(); i++)
         args += info[i] + " ";

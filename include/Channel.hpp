@@ -43,6 +43,8 @@ class Channel
 
         std::string             &getName() { return (_name); };
         std::string             &getTopic() { return (_topic); };
+        std::string             &getPass() { return (_password); };
+        std::vector<Client *>   &getChop() { return (_sec_chops); };
 
         void    addUser(Client *);
         void    addChop(Client *);
@@ -50,7 +52,7 @@ class Channel
         void    rmvClient(std::string const &nickname);
 
         void    initFlags();
-        void    cmdKick(Client *, const std::string &);
+        void    cmdKick(Client *, const std::string &, int fd);
         void    cmdMode(std::string const &flags, std::string const &args, Client *client);
         void    cmdInvite(Client *client, Client *toInv);
         void    sendTopic(Client *);
@@ -61,11 +63,15 @@ class Channel
         std::vector<Client *>   &getUsers() {return _users;};
         std::vector<Client *>   &getChops() {return _sec_chops;};
         std::vector<Client *>   &getMuted() {return _muted_users;};
+        int                     getLimit()  {return _user_limit;};
+        int                     getUsersTotal()  {return (_users.size() + _sec_chops.size());};
 
-        void changeSimpleFlag(char set, char flag);
-        void changeModePS(char set, char flag);
-        void changePassword(char set, std::string const &args);
-        void setLimit(char set, std::string const &args);
+
+
+        void changeSimpleFlag(int fd, char set, char flag, std::string const &channel_name);
+        void changeModePS(int fd, char set, char flag, std::string const &channel_name);
+        void changePassword(int fd, char set, std::string const &args);
+        void setLimit(int fd, char set, std::string const &args);
 
         void    sendMsgToUsers(const std::string &);
         void    sendMsgToUsers(const std::string &, const int &);
@@ -73,6 +79,8 @@ class Channel
         Client  *finder(std::vector<Client *> &, const std::string &);
 
         void partChannel(Client *client);
+        bool retStateFlag(char flag);
+        bool checkBan(std::string const &nick);
 
 };
 

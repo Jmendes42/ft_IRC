@@ -1,8 +1,9 @@
 #include "../include/Utils.hpp"
 #include "../include/Client.hpp"
-#include "../include/Channel.hpp"
 #include "../include/Socket.hpp"
 #include "../include/Client.hpp"
+#include "../include/Macros.hpp"
+#include "../include/Channel.hpp"
 
 
 Channel::Channel(std::string const &name, Client *chop) : _name(name), _topic("")
@@ -140,15 +141,16 @@ int checkFlag(char flag)
  * @param set control if the function will set the flag to true or false (+/-)
  * @param flag the flag of the channel that will change state
 **/
-void Channel::changeSimpleFlag(char set, char flag)
+void Channel::changeSimpleFlag(int fd, char set, char flag, std::string const &channel_name)
 {
+    std::string toSend;
     std::map<char, bool>::iterator it = _flags.find(flag);
     if (set == '+' && it->second == false)
         it->second = true;
     else if (set == '-' && it->second == true)
         it->second = false;
     else
-        MSG("FLAG already set");
+        ERR_KEYSET(channel_name, fd, toSend);
 }
 
 /**
@@ -156,10 +158,11 @@ void Channel::changeSimpleFlag(char set, char flag)
  * @param set control if the function will set the flag to true or false (+/-)
  * @param flag the flag of the channel that will change state
 **/
-void Channel::changeModePS(char set, char flag)
+void Channel::changeModePS(int fd, char set, char flag, std::string const &channel_name)
 {
     std::map<char, bool>::iterator it = _flags.find(flag);
     std::map<char, bool>::iterator temp;
+    std::string toSend;
     
     temp = (it->first == 'p') ?  _flags.find('s') : _flags.find('p');
     if (set == '+' && it->second == false)
@@ -171,7 +174,7 @@ void Channel::changeModePS(char set, char flag)
     else if (set == '-' && it->second == true)
         it->second = false;
     else
-        MSG("FLAG already set");
+        ERR_KEYSET(channel_name, fd, toSend);
 }
 
 /**
@@ -179,14 +182,25 @@ void Channel::changeModePS(char set, char flag)
  * @param set control if the function will set or unset the password
  * @param args the new password for the channel.
 **/
-void Channel::changePassword(char set, std::string const &args)
+void Channel::changePassword(int fd, char set, std::string const &args)
 {
+    std::map<char, bool>::iterator it = _flags.find('k');
+    std::string toSend;
+
     if (set == '-')
+    {
         _password.clear();
-    else if (!args.empty())
+        if (it->second == true)
+            it->second == false;
+    }
+    else if (set == '-' && !args.empty())
+    {
         _password = args;
+        if (it->second == false)
+            it->second = true;
+    }
     else
-        MSG("ERROR: MISSING ARGS TO SET THE PASSWORD OF THE CHANNEL");
+        ERR_NEEDMOREPARAMS(std::string("MODE"), fd, toSend);
 }
 
 /**
@@ -194,54 +208,63 @@ void Channel::changePassword(char set, std::string const &args)
  * @param set control if the function will set or unset the limit 
  * @param args the new password for the channel.
 **/
-void Channel::setLimit(char set, std::string const &args)
+void Channel::setLimit(int fd, char set, std::string const &args)
 {
-    std::cout << "Pass = " << _user_limit << std::endl;
+    std::map<char, bool>::iterator it = _flags.find('l');
+    std::string toSend;
+
     if (set == '-')
+    {
         _user_limit = 0;
-    else if (!args.empty())
+        if (it->second == true)
+            it->second == false;
+    }
+    else if (set == '+' && !args.empty())
+    {
         _user_limit = atoi(args.c_str());
+        if (it->second == false)
+            it->second = true;
+    }
     else
-        MSG("ERROR: MISSING ARGS TO SET THE LIMIT OF THE CHANNEL");
+        ERR_NEEDMOREPARAMS(std::string("MODE"), fd, toSend);
 }
 
 void Channel::cmdMode(std::string const &flags, std::string const &args, Client *client)
 {
+    std::string toSend;
+    if (!finder(_users, client->getNick()))
+        ERR_NOTONCHANNEL(getName(), client->getFd(), toSend);
     if (!finder(_sec_chops, client->getNick()))
-    {
-        std::cout << "ERROR: This client is not a CHOP, can't use MODE command" << std::endl;
-        return ;
-    }
+        ERR_CHANOPRIVSNEEDED(getName(), client->getFd(), toSend);
     char set = flags[0];
     for (int i = 1; i < flags.length(); i++)
     {
         // In case of P or S ! Only one can be set at a time
         if (checkFlag(flags[i]) == 1)
-            changeModePS(set, flags[i]);
+            changeModePS(client->getFd(), set, flags[i], getName());
         else if (checkFlag(flags[i]) == 2)                          
-            changeSimpleFlag(set, flags[i]);
+            changeSimpleFlag(client->getFd(), set, flags[i], getName());
         else                                                    
         {
             switch (flags[i])
             {
                 case 'o':                                          
-                    (set == '+') ? addToVector(args, _sec_chops, _users) : rmvFromVector(args, _sec_chops); 
+                    (set == '+') ? addToVector(client->getFd(), getName(), args, _sec_chops, _users) : rmvFromVector(client->getFd(), getName(), args, _sec_chops); 
                     break;
                 case 'l':                                           
-                    setLimit(set, args);
+                    setLimit(client->getFd(), set, args);
                     break;
                 case 'b':                                       
-                    (set == '+') ? addToVector(args, _ban_users, _users) : rmvFromVector(args, _ban_users);
+                    (set == '+') ? addToVector(client->getFd(), getName(), args, _ban_users, _users) : rmvFromVector(client->getFd(), getName(), args, _ban_users);
                     break;
                 case 'v':                                      
-                    (set == '+') ? addToVector(args, _muted_users, _users) : rmvFromVector(args, _muted_users);
+                    (set == '+') ? addToVector(client->getFd(), getName(), args, _muted_users, _users) : rmvFromVector(client->getFd(), getName(), args, _muted_users);
                     break;
                 case 'k':                                   
-                    changePassword(set, args);
+                    changePassword(client->getFd(), set, args);
                     break;               
                 default:
-                    send(client->getFd(), "672 flags :Unknown Flags\n", 26, 0); 
-                    break;
+                    ERR_UNKNOWNMODE(getName(), client->getFd(), toSend);
             }
         }
     }
@@ -262,30 +285,32 @@ void Channel::sendTopic(Client *client) {
 
 void Channel::cmdTopic(const std::string &topic, Client *client) {
         //std::map<char, bool>::iterator it = _flags.find('t');  && (it->second == true)
+        std::string toSend;
         if (finder(_sec_chops, client->getNick())) {
             setTopic(topic);
             sendTopic(client);
         }
         else
-            MSG(client->getNick() + " is not a channel operator");
-            // MSG("Flag <t> is false");
+            ERR_CHANOPRIVSNEEDED(getName(), client->getFd(), toSend);
 }
 
 // LOOK AT CODES: 377, 470, 485, 495
-void Channel::cmdKick(Client *kicked, const std::string &kicker) {
+void Channel::cmdKick(Client *kicked, const std::string &kicker, int fd) {
     std::string msgSend;
     std::string kick = kicked->getNick();
 
+    if (!finder(_users, kicker))
+        ERR_NOTONCHANNEL(getName(), fd, msgSend);
     if (!finder(_sec_chops, kicker))
-        MSG(kicker + " is not channel operator");                                       // Exception
-    else if (finder(_users, kick)) {                                                     // See muted
+        ERR_CHANOPRIVSNEEDED(getName(), fd, msgSend);
+    if (finder(_users, kick)) {
         msgSend =":" + kicker + " KICK " + _name + ' ' + kick + '\n';
         kicked->rmvChannel(_name);
         sendMsgToUsers(msgSend);
         rmvClient(kick);
     }
     else
-        std::cout << "ERROR: This User is not in the Channel" << std::endl;
+        ERR_NOSUCHNICK(getName(), fd, msgSend);
 }
 
 void        Channel::cmdInvite(Client *client, Client *toInv) {
@@ -313,5 +338,19 @@ void Channel::partChannel(Client *client) {
         sendMsgToUsers(msgSend);*/
         return ;
     }
-    std::cout << "ERROR: This User is not in the Channel" << std::endl;
+    ERR_NOSUCHCHANNEL(_name, client->getFd(), msgSend);
 }
+
+bool Channel::retStateFlag(char flag)
+{
+    std::map<char, bool>::iterator it = _flags.find(flag);
+    return (it->second);
+}
+
+bool Channel::checkBan(std::string const &nick)
+{
+    if (!finder(_ban_users, nick))
+        return (false);
+    return (true);
+}
+

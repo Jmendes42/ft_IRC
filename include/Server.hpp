@@ -26,13 +26,13 @@ class Server
 		void	activity();
         void    privMsg(const std::string &, const int &);
         void    interpreter(const std::string &, int const &);
-        void    joinChannel(const std::string &, const int &);
+        void    joinChannel(const std::vector<std::string> &, const int &);
         void    setClientNick(const std::string &, const int &);
         void    setClientUser(const std::string &, const int &);
         void	inviteToChannel(const std::vector<std::string> &, const int &);
         void	partCmd(const std::string &, const int &);
         
-        void    opKick(const std::vector<std::string> &, const std::string &);
+        void    opKick(const std::vector<std::string> &, const std::string &, const int &);
 
         Socket  &getSocket()    {return _sock;};
 

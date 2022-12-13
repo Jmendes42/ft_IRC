@@ -1,5 +1,7 @@
 #include "../include/Utils.hpp"
 #include "../include/Client.hpp"
+#include "../include/Socket.hpp"
+
 
 
 void sighandler(int signum) {
@@ -60,8 +62,14 @@ std::vector<std::string> ft_split(std::string const &msg, char const &c)
 	return (info);
 }
 
-void rmvFromVector(std::string const &nick, std::vector<Client *> &vec)
+void rmvFromVector(int fd, std::string const &channel_name, std::string const &nick, std::vector<Client *> &vec)
 {
+    if (nick.empty())
+    {
+        std::string toSend =  "461 MODE :Not enough parameters\r\n";
+        send(fd, toSend.c_str(), toSend.length(), 0);
+        return ;
+    }
 	std::vector<Client *>::iterator it;
     for (it = vec.begin(); it != vec.end(); it++)
     {
@@ -71,14 +79,17 @@ void rmvFromVector(std::string const &nick, std::vector<Client *> &vec)
             return ;
         }
     }
-    std::cout << "ERROR: User not Found in the Vector" << std::endl;
+    std::string toSend =  "401 " + channel_name + " :No such nick/channel\r\n";
+    send(fd, toSend.c_str(), toSend.length(), 0);
+    return ;
 }
 
-void  addToVector(std::string const &nickname, std::vector<Client *> &vec, std::vector<Client *> &users)
+void  addToVector(int fd, std::string const &channel_name, std::string const &nickname, std::vector<Client *> &vec, std::vector<Client *> &users)
 {
     if (nickname.empty())
     {
-        std::cout << "ERROR: NO NICKNAME" << std::endl;
+        std::string toSend =  "461 MODE :Not enough parameters\r\n";
+        send(fd, toSend.c_str(), toSend.length(), 0);
         return ;
     }
     std::vector<Client *>::iterator it_chop;
@@ -89,7 +100,8 @@ void  addToVector(std::string const &nickname, std::vector<Client *> &vec, std::
 
         if (!((*it_chop)->getNick().compare(nickname)))
         {
-            std::cout << "ERROR: This User is already in the Vect" << std::endl;
+            std::string toSend =  "467 " + channel_name + " :Channel key already set\r\n";
+            send(fd, toSend.c_str(), toSend.length(), 0);
             return ;
         }
     }
@@ -102,5 +114,7 @@ void  addToVector(std::string const &nickname, std::vector<Client *> &vec, std::
             return ;
         }
     }
-    std::cout << "ERROR: This User is not in the Channel" << std::endl;
+    std::string toSend =  "401 " + channel_name + " :No such nick/channel\r\n";
+    send(fd, toSend.c_str(), toSend.length(), 0);
+    return ;
 }
