@@ -325,10 +325,18 @@ void Channel::cmdKick(Client *kicked, const std::string &kicker, int fd) {
 
 void        Channel::cmdInvite(Client *client, Client *toInv) {
     std::string msgSend;
-    
     msgSend =":" + client->getNick() + " INVITE " + toInv->getNick() + ' ' + getName() + '\n';
     send(toInv->getFd(), msgSend.c_str(), msgSend.length(), 0);
     addInvited(toInv);
+}
+
+
+
+bool    Channel::usersOnChannel(std::string const &nick) 
+{
+    if (finder(_users, nick) || finder(_sec_chops, nick) || finder(_muted_users, nick))
+        return true;
+    return false;
 }
 
 bool    Channel::usersOnChannel() {
@@ -336,7 +344,6 @@ bool    Channel::usersOnChannel() {
         return false;
     return true;
 }
-
 
 /**
  * @brief Leave the Channel (using PART Command)

@@ -107,7 +107,7 @@ void    Server::interpreter(std::string const &msg, int const &sockFd) {
 		setClientNick(copy, _clientHandler.finder(sockFd));
 	else if (!cmd.compare("USER"))
 		setClientUser(copy.substr(copy.find(' ') + 1), _clientHandler.finder(sockFd));
-	else if (!cmd.compare("INVITE"))
+	else if (!cmd.compare("INVITE"))       
 		inviteToChannel(ft_split(copy, ' '), sockFd);
 	else if (!cmd.compare("PART"))
 		partCmd(copy.substr(5, copy.find(' ', 5) - 5), sockFd);
@@ -122,23 +122,35 @@ void    Server::interpreter(std::string const &msg, int const &sockFd) {
 }
 
 void	Server::inviteToChannel(const std::vector<std::string> &info, const int &sockFd) {
-	// INVITE  - Invite a client to an invite-only channel (mode +i), should it be just on this ocasion?
-	// On the mode +i there should be a flag indicating wich users where invited?
+
+	if (info.size() < 3)
+		ERR_NEEDMOREPARAMS(info[0], sockFd, _errMsg);
 	Client	*invited = _clientHandler.finder(info[1]);
 	Channel	*channel = _channelHandler.finder(info[2]);
 
-	if (invited != NULL) {													// missing invited user error?
+	if (invited != NULL) {
 		if (channel == NULL) {
 			std::string toSend = "JOIN " + info[2];
-
 			joinChannel(ft_split(toSend, ' '), sockFd);
 			channel = _channelHandler.finder(info[2]);
 		}
+		if (!channel->usersOnChannel(_clientHandler.finder(sockFd)->getNick()))
+			ERR_NOTONCHANNEL(channel->getName(), sockFd, _errMsg);
+		if (!channel->finder(channel->getChop(), _clientHandler.finder(sockFd)->getNick()))
+			ERR_CHANOPRIVSNEEDED(channel->getName(), sockFd, _errMsg);
 		std::cout << "INVITE\n";
 		channel->cmdInvite(_clientHandler.finder(sockFd), invited);
 	}
+	else
+		ERR_NOSUCHNICK(info[1], sockFd, _errMsg);
 }
 
+
+// ERR_NEEDMOREPARAMS              ERR_BANNEDFROMCHAN
+// ERR_INVITEONLYCHAN              ERR_BADCHANNELKEY
+// ERR_CHANNELISFULL               ERR_BADCHANMASK
+// ERR_NOSUCHCHANNEL               ERR_TOOMANYCHANNELS
+// RPL_TOPIC
 void    Server::joinChannel(const std::vector<std::string> &msg, const int &sockFd) { // Put Client *
 	// Limit of ten channels per user
 	// User already in channel error
@@ -159,10 +171,8 @@ void    Server::joinChannel(const std::vector<std::string> &msg, const int &sock
 		if (Channel *channel = _channelHandler.finder(*it)) {
 			std::string	joinMsg;
 
-			if (channel->finder(channel->getChops(), nick) || channel->finder(channel->getUsers(), nick) || channel->finder(channel->getMuted(), nick)) {
-				MSG("User already in channel");
+			if (channel->finder(channel->getChops(), nick) || channel->finder(channel->getUsers(), nick) || channel->finder(channel->getMuted(), nick))
 				return ;
-			}
 			if (channel->retStateFlag('i', _clientHandler.finder(sockFd)->getNick()))
 				ERR_INVITEONLYCHAN(channel->getName(), sockFd, _errMsg);
 			if (channel->retStateFlag('l') && ((channel->getUsersTotal() + 1) > channel->getLimit()))
@@ -196,11 +206,6 @@ void    Server::joinChannel(const std::vector<std::string> &msg, const int &sock
 }
 
 
-// ERR_NEEDMOREPARAMS              ERR_BANNEDFROMCHAN
-// ERR_INVITEONLYCHAN              ERR_BADCHANNELKEY
-// ERR_CHANNELISFULL               ERR_BADCHANMASK
-// ERR_NOSUCHCHANNEL               ERR_TOOMANYCHANNELS
-// RPL_TOPIC
 void    Server::privMsg(const std::string &msg, const int &sockFd) {
 	// If nick not found Exception
 	// See codes - 412, 717, 
@@ -234,11 +239,9 @@ void    Server::setClientNick(const std::string &msg, Client *client) { // Chang
 	std::vector<Channel *>				channels = client->getChannels();
 	std::string							nick = msg.substr(5, msg.find('\0', 5));
 
-	if (_clientHandler.finder(nick)) {							// ERR
-		MSG("Nick repeated");
-		return ;
-	}
-	if (client->getNick().empty()) {
+	if (_clientHandler.finder(nick))						// ERR
+		ERR_NICKNAMEINUSE(nick, client->getFd(), _errMsg);
+	if (client->getNick().empty()) {	
 		client->setNick(nick);
 		return ;
 	}

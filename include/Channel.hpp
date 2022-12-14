@@ -81,7 +81,9 @@ class Channel
         void    sendMsgToUsers(const std::string &, const int &);
         
         Client  *finder(std::vector<Client *> &, const std::string &);
+        bool    usersOnChannel(std::string const &nick);
         bool    usersOnChannel();
+        bool    isChop(std::string const &nick);
 
         void partChannel(Client *client);
         bool retStateFlag(const char &flag);
