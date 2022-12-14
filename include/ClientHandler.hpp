@@ -24,10 +24,11 @@ class ClientHandler
 
         void    rmvClient(std::string const &);
         void    addClient(std::string const &, std::string const &, const int &,
-                            const std::string &);
+                            const std::string &, const uint16_t &);
 
-        Client * finder(const int &);
-        Client * finder(const std::string &);
+        Client  *finder(const int &);
+        Client  *finder(const uint16_t &);
+        Client  *finder(const std::string &);
 
         std::vector<Client *>   &getClients()   {return _clients;};
 };

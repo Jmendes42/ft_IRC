@@ -36,14 +36,13 @@ void ChannelHandler::opTopic(std::string const &msg, Client *client) {
 void ChannelHandler::opMode(std::string const &msg, Client *chop)
 {
     std::vector<std::string> info = ft_split(msg, ' ');
-    std::string toSend;
-    // info[1] seg fault
-    Channel *channel = finder(info[1]);
-    if (!channel)
-        ERR_NOSUCHCHANNEL(info[1], chop->getFd(), toSend);
+    Channel *channel;
+    std::string args;
+
+    if (!(channel = finder(info[1])))
+        ERR_NOSUCHCHANNEL(info[1], chop->getFd(), _errMsg);
     if (info.size() == 2)
-        ERR_NEEDMOREPARAMS(std::string("MODE"), chop->getFd(), toSend)
-    std::string args = "";
+        ERR_NEEDMOREPARAMS(std::string("MODE"), chop->getFd(), _errMsg)
     for (int i = 3; i < info.size(); i++)
         args += info[i] + " ";
     args.pop_back();
@@ -56,4 +55,9 @@ Channel *ChannelHandler::finder(const std::string &channelName) {
             return (*_it);
     }
     return (NULL);
+}
+
+void    ChannelHandler::rmvChannel(std::string const &name) {
+    finder(name);
+    _channels.erase(_it);
 }

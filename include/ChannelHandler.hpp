@@ -13,12 +13,14 @@ class Channel;
 class ChannelHandler
 {
     std::vector<Channel *>::iterator    _it;
+	std::string                         _errMsg;
     std::vector<Channel *>              _channels;
     public:
 
         ChannelHandler() {};
         ~ChannelHandler() {};
 
+        void    rmvChannel(std::string const &);
         void    rmvClient(std::string const &msg);
         void    addChannel(std::string const &msg, Client *chop);
 

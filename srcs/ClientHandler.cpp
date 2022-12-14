@@ -18,27 +18,29 @@ Client *ClientHandler::finder(const int &fd) {
     return NULL;
 }
 
+Client *ClientHandler::finder(const uint16_t &port) {
+    for (_it = _clients.begin(); _it != _clients.end(); _it++) {
+        if ((*_it)->getPort() == port)
+            return (*_it);
+    }
+    return NULL;
+}
+
 void    ClientHandler::addClient(std::string const &msg, std::string const &pass, const int &fd,
-                                    const std::string &ip)
+                                    const std::string &ip, const uint16_t &port)
 {
-    // Should it look for equal clients?
     std::string msgPass = msg.substr(msg.find(' ') + 1, msg.find(' ') - 1);
 
     if (!msgPass.compare(pass))
-        _clients.push_back(new Client(fd, ip));
+        _clients.push_back(new Client(fd, ip, port));
     else {
         MSG("Error: Wrong password!");
         exit(0);                                        // Missing Exception
     }
 }
 
-// REMOVE BY NICK ! CHECK THE COMMAND TO REMOVE USER TO CHECK WHAT IS NEEDED
-void    ClientHandler::rmvClient(std::string const &msg)
-{
-    for (_it = _clients.begin(); _it != _clients.end(); _it++)
-    {
-        if (!((*_it)->getNick().compare(msg)))
-            _clients.erase(_it);
-    }
+void    ClientHandler::rmvClient(std::string const &rmv) {
+    if (finder(rmv))
+        _clients.erase(_it);
 }
 

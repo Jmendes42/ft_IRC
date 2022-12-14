@@ -13,6 +13,7 @@ class Server
 {
     int                     _port;
     Socket                  _sock;
+	std::string             _errMsg;
     std::string             _password;
 	ClientHandler			_clientHandler;
     ChannelHandler          _channelHandler;
@@ -27,10 +28,11 @@ class Server
         void    privMsg(const std::string &, const int &);
         void    interpreter(const std::string &, int const &);
         void    joinChannel(const std::vector<std::string> &, const int &);
-        void    setClientNick(const std::string &, const int &);
-        void    setClientUser(const std::string &, const int &);
+        void    setClientNick(const std::string &, Client *);
+        void    setClientUser(const std::string &, Client *);
         void	inviteToChannel(const std::vector<std::string> &, const int &);
         void	partCmd(const std::string &, const int &);
+        void	quitCmd(Client *);
         
         void    opKick(const std::vector<std::string> &, const std::string &, const int &);
 

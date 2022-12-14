@@ -23,7 +23,7 @@ Client  *Channel::finder(std::vector<Client *> &vec, const std::string &nick) {
 /**
  * @brief   Get a string with the nicks of all the clients present in the channel with the respective indicator
 **/
-std::string Channel::getUsersString() {
+std::string Channel::getUsersString() { // + if the user has the rigth to speak in a moderated channel
     std::string users;
 
     for (_it = _sec_chops.begin(); _it != _sec_chops.end(); _it++)
@@ -90,6 +90,11 @@ void    Channel::addMute(Client *mute) {
     }
 }
 
+void    Channel::addInvited(Client *client) {   // Should it be taken off the ban vec?
+    _invited_users.push_back(client);
+}
+
+
 /**
  * @brief       Searches all the client groups for the nick and removes it from the channel vectors
  * @param nick  Nick to search 
@@ -143,14 +148,13 @@ int checkFlag(char flag)
 **/
 void Channel::changeSimpleFlag(int fd, char set, char flag, std::string const &channel_name)
 {
-    std::string toSend;
     std::map<char, bool>::iterator it = _flags.find(flag);
     if (set == '+' && it->second == false)
         it->second = true;
     else if (set == '-' && it->second == true)
         it->second = false;
     else
-        ERR_KEYSET(channel_name, fd, toSend);
+        ERR_KEYSET(channel_name, fd, _errMsg);
 }
 
 /**
@@ -162,7 +166,6 @@ void Channel::changeModePS(int fd, char set, char flag, std::string const &chann
 {
     std::map<char, bool>::iterator it = _flags.find(flag);
     std::map<char, bool>::iterator temp;
-    std::string toSend;
     
     temp = (it->first == 'p') ?  _flags.find('s') : _flags.find('p');
     if (set == '+' && it->second == false)
@@ -174,7 +177,7 @@ void Channel::changeModePS(int fd, char set, char flag, std::string const &chann
     else if (set == '-' && it->second == true)
         it->second = false;
     else
-        ERR_KEYSET(channel_name, fd, toSend);
+        ERR_KEYSET(channel_name, fd, _errMsg);
 }
 
 /**
@@ -185,7 +188,6 @@ void Channel::changeModePS(int fd, char set, char flag, std::string const &chann
 void Channel::changePassword(int fd, char set, std::string const &args)
 {
     std::map<char, bool>::iterator it = _flags.find('k');
-    std::string toSend;
 
     if (set == '-')
     {
@@ -200,7 +202,7 @@ void Channel::changePassword(int fd, char set, std::string const &args)
             it->second = true;
     }
     else
-        ERR_NEEDMOREPARAMS(std::string("MODE"), fd, toSend);
+        ERR_NEEDMOREPARAMS(std::string("MODE"), fd, _errMsg);
 }
 
 /**
@@ -211,7 +213,6 @@ void Channel::changePassword(int fd, char set, std::string const &args)
 void Channel::setLimit(int fd, char set, std::string const &args)
 {
     std::map<char, bool>::iterator it = _flags.find('l');
-    std::string toSend;
 
     if (set == '-')
     {
@@ -226,16 +227,16 @@ void Channel::setLimit(int fd, char set, std::string const &args)
             it->second = true;
     }
     else
-        ERR_NEEDMOREPARAMS(std::string("MODE"), fd, toSend);
+        ERR_NEEDMOREPARAMS(std::string("MODE"), fd, _errMsg);
 }
 
 void Channel::cmdMode(std::string const &flags, std::string const &args, Client *client)
 {
-    std::string toSend;
-    if (!finder(_users, client->getNick()))
-        ERR_NOTONCHANNEL(getName(), client->getFd(), toSend);
+
+    if (!finder(_users, client->getNick()) && !finder(_sec_chops, client->getNick()))
+        ERR_NOTONCHANNEL(getName(), client->getFd(), _errMsg);
     if (!finder(_sec_chops, client->getNick()))
-        ERR_CHANOPRIVSNEEDED(getName(), client->getFd(), toSend);
+        ERR_CHANOPRIVSNEEDED(getName(), client->getFd(), _errMsg);
     char set = flags[0];
     for (int i = 1; i < flags.length(); i++)
     {
@@ -264,7 +265,7 @@ void Channel::cmdMode(std::string const &flags, std::string const &args, Client 
                     changePassword(client->getFd(), set, args);
                     break;               
                 default:
-                    ERR_UNKNOWNMODE(getName(), client->getFd(), toSend);
+                    ERR_UNKNOWNMODE(getName(), client->getFd(), _errMsg);
             }
         }
     }
@@ -284,14 +285,13 @@ void Channel::sendTopic(Client *client) {
 }
 
 void Channel::cmdTopic(const std::string &topic, Client *client) {
-        //std::map<char, bool>::iterator it = _flags.find('t');  && (it->second == true)
-        std::string toSend;
-        if (finder(_sec_chops, client->getNick())) {
-            setTopic(topic);
-            sendTopic(client);
-        }
-        else
-            ERR_CHANOPRIVSNEEDED(getName(), client->getFd(), toSend);
+    //std::map<char, bool>::iterator it = _flags.find('t');  && (it->second == true)
+    if (finder(_sec_chops, client->getNick())) {
+        setTopic(topic);
+        sendTopic(client);
+    }
+    else
+        ERR_CHANOPRIVSNEEDED(getName(), client->getFd(), _errMsg);
 }
 
 /**
@@ -310,9 +310,9 @@ void Channel::cmdKick(Client *kicked, const std::string &kicker, int fd) {
     std::string kick = kicked->getNick();
 
     if (finder(_users, kicker))
-        ERR_NOTONCHANNEL(getName(), fd, msgSend);
+        ERR_NOTONCHANNEL(getName(), fd, _errMsg);
     if (!finder(_sec_chops, kicker))
-        ERR_CHANOPRIVSNEEDED(getName(), fd, msgSend);
+        ERR_CHANOPRIVSNEEDED(getName(), fd, _errMsg);
     if (finder(_users, kick)) {
         msgSend =":" + kicker + " KICK " + _name + ' ' + kick + '\n';
         kicked->rmvChannel(_name);
@@ -320,7 +320,7 @@ void Channel::cmdKick(Client *kicked, const std::string &kicker, int fd) {
         addBan(kicked);
     }
     else
-        ERR_NOSUCHNICK(getName(), fd, msgSend);
+        ERR_NOSUCHNICK(getName(), fd, _errMsg);
 }
 
 void        Channel::cmdInvite(Client *client, Client *toInv) {
@@ -328,13 +328,21 @@ void        Channel::cmdInvite(Client *client, Client *toInv) {
     
     msgSend =":" + client->getNick() + " INVITE " + toInv->getNick() + ' ' + getName() + '\n';
     send(toInv->getFd(), msgSend.c_str(), msgSend.length(), 0);
+    addInvited(toInv);
 }
+
+bool    Channel::usersOnChannel() {
+    if (_users.empty() && _sec_chops.empty() && _muted_users.empty())
+        return false;
+    return true;
+}
+
 
 /**
  * @brief Leave the Channel (using PART Command)
  * @param client a Pointer to the client that wants to leave the Channel
 **/
-void Channel::partChannel(Client *client) {
+void Channel::partChannel(Client *client) {                 // Channel ends when there are no more users
     std::string msgSend;
 
     if (finder(_users, client->getNick()) || finder(_sec_chops, client->getNick())) {
@@ -342,17 +350,26 @@ void Channel::partChannel(Client *client) {
         sendMsgToUsers(msgSend);
         client->rmvChannel(_name);
         rmvClient(client->getNick());
-        /*if (_sec_chops.empty() && _users[0])                                // Chop sucsession
+        if (_sec_chops.empty() && !_users.empty()) {                                // Chop sucsession
             addChop(finder(_users, _users[0]->getNick()));
-        msgSend = "353 " + _name + " :" + getUsersString() + '\n';
-        sendMsgToUsers(msgSend);*/
+            msgSend = "353 " + client->getNick() + " = " + _name + " :" + getUsersString() + '\n';
+		    MSG("HERE " + msgSend);
+            sendMsgToUsers(msgSend);
+        }
         return ;
     }
-    ERR_NOSUCHCHANNEL(_name, client->getFd(), msgSend);
+    ERR_NOSUCHCHANNEL(_name, client->getFd(), _errMsg);
 }
 
-bool Channel::retStateFlag(char flag)
-{
+bool Channel::retStateFlag(const char &flag, const std::string &nick) {
+    if (finder(_invited_users, nick)) {
+        return false;
+    }
+    std::map<char, bool>::iterator it = _flags.find(flag);
+    return (it->second);
+}
+
+bool Channel::retStateFlag(const char &flag) {
     std::map<char, bool>::iterator it = _flags.find(flag);
     return (it->second);
 }

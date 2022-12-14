@@ -21,9 +21,11 @@ class Channel
         std::vector<Client *>::iterator _it;
         std::string                     _name;
         std::vector<Client *>           _users;
+        std::string                     _errMsg;
         std::vector<Client *>           _sec_chops;
         std::vector<Client *>           _ban_users;
         std::vector<Client *>           _muted_users;
+        std::vector<Client *>           _invited_users;
 
         //operators
         std::string _topic;
@@ -50,6 +52,7 @@ class Channel
         void    addUser(Client *);
         void    addChop(Client *);
         void    addMute(Client *);
+        void    addInvited(Client *);
         void    rmvClient(std::string const &nickname);
 
         void    initFlags();
@@ -78,9 +81,11 @@ class Channel
         void    sendMsgToUsers(const std::string &, const int &);
         
         Client  *finder(std::vector<Client *> &, const std::string &);
+        bool    usersOnChannel();
 
         void partChannel(Client *client);
-        bool retStateFlag(char flag);
+        bool retStateFlag(const char &flag);
+        bool retStateFlag(const char &, const std::string &);
         bool checkBan(std::string const &nick);
 
 };
