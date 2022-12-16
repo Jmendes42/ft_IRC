@@ -36,7 +36,7 @@ class Server
         void	inviteToChannel(const std::vector<std::string> &, Client *);
         void	quitCmd(Client *);
         
-        void    opKick(const std::vector<std::string> &, const std::string &, const int &);
+        void    opKick(const std::vector<std::string> &, Client *);
 
         Socket  &getSocket()    {return _sock;};
 

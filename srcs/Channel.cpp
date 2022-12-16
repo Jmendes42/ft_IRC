@@ -11,14 +11,10 @@ Channel::Channel(std::string const &name, Client *chop) : _name(name), _topic(""
     initFlags();
 }
 
-Client  *Channel::finder(std::vector<Client *> &vec, const std::string &nick) {
-    for (_it = vec.begin(); _it != vec.end(); _it++) {
-        if (!(*_it)->getNick().compare(nick))
-            return (*_it);
-    }
-    return NULL;
-}
-
+/**
+ * @brief Searches user on the provided vector
+ * @param client User to search for
+**/
 Client  *Channel::finder(std::vector<Client *> &vec, Client *client) {
     std::string nick = client->getNick();
 
@@ -33,10 +29,9 @@ Client  *Channel::finder(std::vector<Client *> &vec, Client *client) {
  * @brief returns true if the user is on the channel and false if it's not
  * @param nick nickname to search for
 **/
-bool    Channel::usersOnChannel(std::string const &nick) 
-{
-    if (finder(_users, nick) || finder(_chops, nick) || finder(_muted_users, nick)
-            || finder(_moderators, nick))
+bool    Channel::usersOnChannel(Client *find) {
+    if (finder(_users, find) || finder(_chops, find) || finder(_muted_users, find)
+            || finder(_moderators, find))
         return true;
     return false;
 }
@@ -103,10 +98,13 @@ void    Channel::sendMsgToUsers(const std::string &msg, const int &fd) {
     }
 }
 
-void    Channel::addInvited(Client *client) {   // Should it be taken off the ban vec?
+/**
+ * @brief           Adds user to the invited list(vector)
+ * @param client    Client to be invited
+ */
+void    Channel::addInvited(Client *client) {
     _invited_users.push_back(client);
 }
-
 
 /**
  * @brief       Searches all the client groups for the nick and removes it from the channel vectors
@@ -247,12 +245,21 @@ void Channel::setLimit(int fd, char set, std::string const &args)
         ERR_NEEDMOREPARAMS(std::string("MODE"), fd, _errMsg);
 }
 
+/**
+ * @brief           Searches all the client groups for the user, if it exists in any removes it and adds it to the vector provided
+ * @param client    Client to search 
+ * @param vec       Vector to insert 
+ */
 void    Channel::addClient(std::vector<Client *> &vec, Client *client) {
     rmvClient(client);
     vec.push_back(client);
 }
 
-// Ban message in channel -----> DO THE +o FLAG PRETY 
+/**
+ * @brief       Checks if the user can be banned, if it can adds it to the banned vector
+ * @param user  User to ban 
+ * @param flag  Ban flag
+ */
 void    Channel::banUser(const std::string &flag, Client *user) {
     if (flag[0] == '+' && finder(_ban_users, user)) {
         MSG("User already banned");
@@ -265,6 +272,11 @@ void    Channel::banUser(const std::string &flag, Client *user) {
     (flag[0] == '+') ? addClient(_ban_users, user) : rmvClient(user);
 }
 
+/**
+ * @brief       Checks if the user can be promoted to chop, if it can adds it to the chops vector
+ * @param user  User to promote 
+ * @param flag  Chop promote flag
+ */
 void    Channel::chopMode(const std::string &flag, Client *user) {
     std::string msgSend;
 
@@ -282,6 +294,11 @@ void    Channel::chopMode(const std::string &flag, Client *user) {
     sendMsgToUsers(msgSend);
 }
 
+/**
+ * @brief       Checks if the user can be promoted to moderator, if it can adds it to the moderators vector
+ * @param user  User to promote 
+ * @param flag  Moderator promote flag
+ */
 void    Channel::moderatorMode(const std::string &flag, Client *user) {
     std::string msgSend;
 
@@ -303,27 +320,29 @@ void    Channel::moderatorMode(const std::string &flag, Client *user) {
     sendMsgToUsers(msgSend);
 }
 
-
+/**
+ * @brief           Channels the user mode related flags
+ * @param client    Client to promote 
+ * @param flag      Chop promote flag
+ */
 void    Channel::userMode(const std::string &flags, Client *user) {
-    if (!usersOnChannel(user->getNick()))
-        MSG("441 ERR_USERNOTINCHANNEL ");
+    if (!usersOnChannel(user))
+        ERR_USERNOTINCHANNEL(_name, user->getNick(), user->getFd(), _errMsg);
     if (flags[1] == 'b')
         banUser(flags, user);
     else if (flags[1] == 'o')
         chopMode(flags, user);
     else if (flags[1] == 'v')
         moderatorMode(flags, user);
-
 }
-
 
 void Channel::cmdMode(std::string const &flags, std::string const &args, Client *chop)
 {
     std::string msgSend;
 
-    if (!finder(_users, chop->getNick()) && !finder(_chops, chop->getNick()))
+    if (!finder(_users, chop) && !finder(_chops, chop))
         ERR_NOTONCHANNEL(getName(), chop->getFd(), _errMsg);
-    if (!finder(_chops, chop->getNick()))
+    if (!finder(_chops, chop))
         ERR_CHANOPRIVSNEEDED(getName(), chop->getFd(), _errMsg);
     char set = flags[0];
 
@@ -344,9 +363,6 @@ void Channel::cmdMode(std::string const &flags, std::string const &args, Client 
                 case 'b':                                       
                     (set == '+') ? addToVector(chop->getFd(), getName(), args, _ban_users, _users) : rmvFromVector(chop->getFd(), getName(), args, _ban_users);
                     break;
-                case 'v':                                      
-                    (set == '+') ? addToVector(chop->getFd(), getName(), args, _muted_users, _users) : rmvFromVector(chop->getFd(), getName(), args, _muted_users);
-                    break;
                 case 'k':                                   
                     changePassword(chop->getFd(), set, args);
                     break;               // Apply moderated to private messages and +v flag on users and channels vec of +v
@@ -360,6 +376,10 @@ void Channel::cmdMode(std::string const &flags, std::string const &args, Client 
     }
 }
 
+/**
+ * @brief           Prints channel topic to client
+ * @param client    Client that requested
+ */
 void Channel::sendTopic(Client *client) {
     std::string msg;
     std::map<char, bool>::iterator it = _flags.find('t');
@@ -379,9 +399,14 @@ void Channel::sendTopic(Client *client) {
     }
 }
 
+/**
+ * @brief           Sets channel topic message
+ * @param client    Client that sends the topic message
+ * @param topic     Topic message
+ */
 void Channel::cmdTopic(const std::string &topic, Client *client) {
     std::map<char, bool>::iterator it = _flags.find('t');
-    if (finder(_chops, client->getNick()) && it->second == true) {
+    if (finder(_chops, client) && it->second == true) {
         setTopic(topic);
         sendTopic(client);
     }
@@ -389,29 +414,32 @@ void Channel::cmdTopic(const std::string &topic, Client *client) {
         ERR_CHANOPRIVSNEEDED(getName(), client->getFd(), _errMsg);
 }
 
-// LOOK AT CODES: 377, 470, 485, 495
-void Channel::cmdKick(Client *kicked, const std::string &kicker, int fd) {
+/**
+ * @brief           Kicks user
+ * @param kicked    User to be kicked
+ * @param kicker    Chop that kicks
+ */
+void Channel::cmdKick(Client *kicked, Client *kicker) {
     std::string msgSend;
-    std::string kick = kicked->getNick();
 
     if (finder(_users, kicker))
-        ERR_NOTONCHANNEL(getName(), fd, _errMsg);
+        ERR_NOTONCHANNEL(getName(), kicked->getFd(), _errMsg);
     if (!finder(_chops, kicker))
-        ERR_CHANOPRIVSNEEDED(getName(), fd, _errMsg);
-    if (finder(_users, kick)) {
-        msgSend =":" + kicker + " KICK " + _name + ' ' + kick + '\n';
+        ERR_CHANOPRIVSNEEDED(getName(), kicked->getFd(), _errMsg);
+    if (finder(_users, kicked)) {
+        msgSend =":" + kicker->getNick() + " KICK " + _name + ' ' + kicked->getNick() + '\n';
         kicked->rmvChannel(_name);
         sendMsgToUsers(msgSend);
         rmvClient(kicked);
     }
     else
-        ERR_NOSUCHNICK(getName(), fd, _errMsg);
+        ERR_NOSUCHNICK(getName(), kicked->getFd(), _errMsg);
 }
 
 void        Channel::cmdInvite(Client *inviter, Client *invited) {
     std::string msgSend;
     
-    if (!finder(_chops, inviter->getNick()))
+    if (!finder(_chops, inviter))
 		ERR_CHANOPRIVSNEEDED(_name, inviter->getFd(), _errMsg);
     msgSend =":" + inviter->getNick() + " INVITE " + invited->getNick() + ' ' + getName() + '\n';
     send(invited->getFd(), msgSend.c_str(), msgSend.length(), 0);
@@ -427,7 +455,7 @@ void        Channel::cmdInvite(Client *inviter, Client *invited) {
 void Channel::partChannel(Client *client) {                 // Channel ends when there are no more users
     std::string msgSend;
 
-    if (finder(_users, client->getNick()) || finder(_chops, client->getNick())) {
+    if (finder(_users, client) || finder(_chops, client)) {
         msgSend = ":" + client->getNick() + "!" + client->getUser() + "@" + client->getIp() + " PART :" + _name + "\r\n";
         sendMsgToUsers(msgSend);
         client->rmvChannel(_name);
@@ -437,8 +465,8 @@ void Channel::partChannel(Client *client) {                 // Channel ends when
     ERR_NOSUCHCHANNEL(_name, client->getFd(), _errMsg);
 }
 
-bool Channel::retStateFlag(const char &flag, const std::string &nick) {
-    if (finder(_invited_users, nick)) {
+bool Channel::retStateFlag(const char &flag, Client *client) {
+    if (finder(_invited_users, client)) {
         return false;
     }
     std::map<char, bool>::iterator it = _flags.find(flag);
@@ -449,11 +477,3 @@ bool Channel::retStateFlag(const char &flag) {
     std::map<char, bool>::iterator it = _flags.find(flag);
     return (it->second);
 }
-
-bool Channel::checkBan(std::string const &nick)
-{
-    if (!finder(_ban_users, nick))
-        return (false);
-    return (true);
-}
-
