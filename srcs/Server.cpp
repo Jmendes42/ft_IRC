@@ -34,12 +34,6 @@ void	Server::activity()
 		std::cout << "New connection , socket fd is " << _sock.getNewSocket() 
 			<< ", IP is: " << inet_ntoa(_sock.getHint().sin_addr) 
 				<< ", port: " << ntohs(_sock.getHint().sin_port) << std::endl;
-		// Send new connection greeting message
-		/*if (send(_sock.getNewSocket(), message.c_str(), strlen(message.c_str()), 0) != strlen(message.c_str()))
-		{
-			MSG("Sending Message Error");
-			throw ConnectionException();
-		}*/
 		// Add new socket to array of sockets
 		for (int i = 0; i < _sock.getMaxClients(); i++)
 		{
@@ -69,7 +63,8 @@ void	Server::activity()
 				// Close the socket and mark as 0 in list for reuse
 				close(_sock.getSd());
 				_sock.setClientSocket(i, 0);
-				quitCmd(_clientHandler.finder(ntohs(_sock.getHint().sin_port)));
+				if (_clientHandler.finder(ntohs(_sock.getHint().sin_port)))
+					quitCmd(_clientHandler.finder(ntohs(_sock.getHint().sin_port)));
 			}
 			// Echo back the message that came in
 			else {
@@ -95,24 +90,24 @@ void    Server::interpreter(std::string const &msg, int const &sockFd) {
     std::string cmd = msg.substr(0, msg.find(' '));
 	std::string copy = msg;
 
-	copy.erase(copy.find('\r'), 2);
 	MSG(copy);
+	copy.erase(copy.find('\r'), 2);
 	if (!cmd.compare("QUIT"))
 		quitCmd(_clientHandler.finder(sockFd));
-	if (!cmd.compare("PRIVMSG"))
-		privMsg(copy, sockFd);
+	else if (!cmd.compare("PRIVMSG"))
+		privMsg(copy, _clientHandler.finder(sockFd));
 	else if (!cmd.compare("JOIN"))
-		joinChannel(ft_split(copy, ' '), sockFd);
+		joinChannel(ft_split(copy, ' '), _clientHandler.finder(sockFd));
 	else if (!cmd.compare("NICK"))
 		setClientNick(copy, _clientHandler.finder(sockFd));
 	else if (!cmd.compare("USER"))
 		setClientUser(copy.substr(copy.find(' ') + 1), _clientHandler.finder(sockFd));
 	else if (!cmd.compare("INVITE"))
-		inviteToChannel(ft_split(copy, ' '), sockFd);
+		inviteToChannel(ft_split(copy, ' '), _clientHandler.finder(sockFd));
 	else if (!cmd.compare("PART"))
-		partCmd(copy.substr(5, copy.find(' ', 5) - 5), sockFd);
+		partCmd(copy.substr(5, copy.find(' ', 5) - 5), _clientHandler.finder(sockFd));
 	else if (!cmd.compare("MODE"))
-		_channelHandler.opMode(copy, _clientHandler.finder(sockFd));
+		opMode(ft_split(copy, ' '), _clientHandler.finder(sockFd));
 	else if (!cmd.compare("TOPIC"))
 		_channelHandler.opTopic(copy, _clientHandler.finder(sockFd));
 	else if (!cmd.compare("KICK"))
@@ -121,129 +116,151 @@ void    Server::interpreter(std::string const &msg, int const &sockFd) {
 		_clientHandler.addClient(copy, _password, sockFd, std::string(inet_ntoa(_sock.getHint().sin_addr)), ntohs(_sock.getHint().sin_port));
 }
 
-void	Server::inviteToChannel(const std::vector<std::string> &info, const int &sockFd) {
-	// INVITE  - Invite a client to an invite-only channel (mode +i), should it be just on this ocasion?
-	// On the mode +i there should be a flag indicating wich users where invited?
+// Check - and +
+void Server::opMode(const std::vector<std::string> &msg, Client *chop) {
+    std::string	args;
+    Channel		*channel;
+	std::string	flags = msg[2];
+
+    if (!(channel = _channelHandler.finder(msg[1])))
+        ERR_NOSUCHCHANNEL(msg[1], chop->getFd(), _errMsg);
+    if (msg.size() < 3)
+        ERR_NEEDMOREPARAMS(std::string("MODE"), chop->getFd(), _errMsg)
+
+    for (long unsigned int i = 3; i < msg.size(); i++) {
+        args += msg[i] + ' ';
+	}
+	if (!args.empty())
+		args.erase(args.find(' '), 1);
+	if (flags[1] == 'o' || flags[1] == 'b' || flags[1] == 'v') {
+		if (!_clientHandler.finder(args)) {
+			MSG("ERR no such user");
+			return ;
+		}
+        channel->userMode(flags, _clientHandler.finder(args));
+	}
+	else
+    	channel->cmdMode(msg[2], args, chop);
+}
+
+// ERR_NEEDMOREPARAMS
+// ERR_USERONCHANNEL
+// RPL_INVITING           RPL_AWAY
+void	Server::inviteToChannel(const std::vector<std::string> &info, Client *inviter) {
 	Client	*invited = _clientHandler.finder(info[1]);
 	Channel	*channel = _channelHandler.finder(info[2]);
 
-	if (invited != NULL) {													// missing invited user error?
-		if (channel == NULL) {
-			std::string toSend = "JOIN " + info[2];
-
-			joinChannel(ft_split(toSend, ' '), sockFd);
-			channel = _channelHandler.finder(info[2]);
-		}
-		std::cout << "INVITE\n";
-		channel->cmdInvite(_clientHandler.finder(sockFd), invited);
-	}
+	if (!invited)
+		ERR_NOSUCHNICK(info[1], inviter->getFd(), _errMsg);
+	if (!channel) 
+		ERR_NOSUCHCHANNEL(info[2],inviter->getFd(), _errMsg);
+	if (!channel->usersOnChannel(inviter->getNick()))
+		ERR_NOTONCHANNEL(channel->getName(), inviter->getFd(), _errMsg);
+	channel->cmdInvite(inviter, invited);
 }
 
-void    Server::joinChannel(const std::vector<std::string> &msg, const int &sockFd) { // Put Client *
+void    Server::joinChannel(const std::vector<std::string> &msg, Client *client) {
 	// Limit of ten channels per user
 	// User already in channel error
+	// Join must come with the '#' or noSuchChannel ERR
+
+	std::vector<std::string>::iterator	it;
+	std::vector<std::string>			channels;
+	int									fd = client->getFd();
+	std::string							ip = client->getIp();
+	std::string							nick = client->getNick();
+	std::string							user = client->getUser();
+	std::string 						channelMsg = msg[1].substr(msg[1].find(' ') + 1);
 
 	if (msg.size() < 2) 
-		ERR_NEEDMOREPARAMS(std::string("JOIN"), sockFd, _errMsg);
-
-	std::string 						channelMsg = msg[1].substr(msg[1].find(' ') + 1);
-	std::string							nick = _clientHandler.finder(sockFd)->getNick();
-	std::string							user = _clientHandler.finder(sockFd)->getUser();
-	std::string							ip = _clientHandler.finder(sockFd)->getIp();
-	std::vector<std::string>			channels = ft_split(channelMsg, ',');
-	std::vector<std::string>::iterator	it;
-
+		ERR_NEEDMOREPARAMS(std::string("JOIN"), fd, _errMsg);
+	channels = ft_split(channelMsg, ',');
 	for (it = channels.begin(); it != channels.end(); it++) {
-		if ((*it)[0] != '#' && (*it)[0] != '&')
+		if ((*it)[0] != '#')
 			(*it).insert(0, 1, '#');
 		if (Channel *channel = _channelHandler.finder(*it)) {
 			std::string	joinMsg;
-
-			if (channel->finder(channel->getChops(), nick) || channel->finder(channel->getUsers(), nick) || channel->finder(channel->getMuted(), nick)) {
-				MSG("User already in channel");
-				return ;
-			}
-			if (channel->retStateFlag('i', _clientHandler.finder(sockFd)->getNick()))
-				ERR_INVITEONLYCHAN(channel->getName(), sockFd, _errMsg);
+			if (channel->usersOnChannel(nick))
+				ERR_USERONCHANNEL(channel->getName(), client->getFd(), _errMsg);
+			if (channel->retStateFlag('i', client->getNick()))
+				ERR_INVITEONLYCHAN(channel->getName(), fd, _errMsg);
 			if (channel->retStateFlag('l') && ((channel->getUsersTotal() + 1) > channel->getLimit()))
-				ERR_CHANNELISFULL(channel->getName(), sockFd, _errMsg);
+				ERR_CHANNELISFULL(channel->getName(), fd, _errMsg);
 			if (channel->checkBan(nick))
-				ERR_BANNEDFROMCHAN(channel->getName(), sockFd, _errMsg);
+				ERR_BANNEDFROMCHAN(channel->getName(), fd, _errMsg);
 			if (channel->retStateFlag('k')) {
 				if (msg.size() < 3)
-					ERR_NEEDMOREPARAMS(channel->getName(), sockFd, _errMsg);
+					ERR_NEEDMOREPARAMS(channel->getName(), fd, _errMsg);
 				if (msg[2] != channel->getPass())
-					ERR_BADCHANNELKEY(channel->getName(), sockFd, _errMsg);
+					ERR_BADCHANNELKEY(channel->getName(), fd, _errMsg);
 			}
 			joinMsg = ':' + nick + '!' + user + '@' + ip + " JOIN " + (*it) + '\n';
 			channel->sendMsgToUsers(joinMsg);
-			if (channel->getChops().empty())
-				channel->addChop(_clientHandler.finder(sockFd));
-			else
-				channel->addUser(_clientHandler.finder(sockFd));
-			_clientHandler.finder(sockFd)->addChannel(_channelHandler.finder((*it)));
+			channel->addClient(channel->getUsers(), client);
+			client->addChannel(_channelHandler.finder((*it)));
 		}
 		else {
-			_channelHandler.addChannel((*it), _clientHandler.finder(sockFd));
-			_clientHandler.finder(sockFd)->addChannel(_channelHandler.finder((*it)));
+			_channelHandler.addChannel((*it), client);
+			client->addChannel(_channelHandler.finder((*it)));
 		}
 		channelMsg = ":" + nick + "!" + user + "@" + ip + " JOIN :" + (*it) + "\n";
 		channelMsg += "353 " + nick + " = " + (*it) + " :";
 		channelMsg += _channelHandler.finder((*it))->getUsersString() + "\n";
-		send(sockFd, channelMsg.c_str(), channelMsg.length(), 0);
-		_channelHandler.finder((*it))->sendTopic(_clientHandler.finder(sockFd));
+		send(fd, channelMsg.c_str(), channelMsg.length(), 0);
+		_channelHandler.finder((*it))->sendTopic(client);
 	}
 }
-
 
 // ERR_NEEDMOREPARAMS              ERR_BANNEDFROMCHAN
 // ERR_INVITEONLYCHAN              ERR_BADCHANNELKEY
 // ERR_CHANNELISFULL               ERR_BADCHANMASK
-// ERR_NOSUCHCHANNEL               ERR_TOOMANYCHANNELS
+// ERR_TOOMANYCHANNELS
 // RPL_TOPIC
-void    Server::privMsg(const std::string &msg, const int &sockFd) {
-	// If nick not found Exception
-	// See codes - 412, 717, 
+void    Server::privMsg(const std::string &msg, Client *sender) {
 	std::string sendMsg;
 
 	if (msg.find('#') != std::string::npos) {
+		Channel		*channel;
 		std::string channelName = msg.substr(msg.find('#'), msg.find(':') - msg.find('#') - 1);
 
-		if (!_clientHandler.finder(sockFd)->findChannel(channelName)) {
-			MSG(_clientHandler.finder(sockFd)->getNick() + " is not in this channel anymore");				// ERR
+		if (!(channel = _channelHandler.finder(channelName)))
+			ERR_NOSUCHCHANNEL(channelName, sender->getFd(), _errMsg);
+		if (channel->retStateFlag('m') && (!channel->finder(channel->getModerator(), sender) || !channel->finder(channel->getChops(), sender))) {
+			MSG("Moderated channel, user is not a moderator"); // Check in libera if it still prints on sender chat
 			return ;
 		}
-		if (Channel *channel = _channelHandler.finder(channelName)) {
-			sendMsg = ':' + _clientHandler.finder(sockFd)->getNick();
-			sendMsg += " PRIVMSG " + channelName + ' ' + msg.substr(msg.find(':')) + "\r\n";
-			channel->sendMsgToUsers(sendMsg, sockFd);
+
+		if (!sender->findChannel(channelName)) {
+			MSG(sender->getNick() + " is not in this channel anymore");				// ERR
+			return ;
 		}
+		sendMsg = ':' + sender->getNick();
+		sendMsg += " PRIVMSG " + channelName + ' ' + msg.substr(msg.find(':')) + "\r\n";
+		channel->sendMsgToUsers(sendMsg, sender->getFd());
 	}
 	else if (Client * client = _clientHandler.finder(msg.substr(8, msg.find(' ', 8) - 8))) {
-		sendMsg = ":" + _clientHandler.finder(sockFd)->getNick() + " PRIVMSG ";
+		sendMsg = ":" + sender->getNick() + " PRIVMSG ";
 		sendMsg += client->getNick() + ' ' + msg.substr(msg.find(':')) + "\r\n";
 		send(client->getFd(), sendMsg.c_str(), sendMsg.length(), 0);
 	}
 }
 
 // ERR_NONICKNAMEGIVEN             ERR_ERRONEUSNICKNAME
-// ERR_NICKNAMEINUSE               ERR_NICKCOLLISION
+// ERR_NICKCOLLISION
 void    Server::setClientNick(const std::string &msg, Client *client) { // Change nick in channel
 	std::vector<Channel *>::iterator	it;
 	std::string							sendMsg;
 	std::vector<Channel *>				channels = client->getChannels();
 	std::string							nick = msg.substr(5, msg.find('\0', 5));
 
-	if (_clientHandler.finder(nick)) {							// ERR
-		MSG("Nick repeated");
-		return ;
-	}
+	if (_clientHandler.finder(nick))
+		ERR_NICKNAMEINUSE(nick, client->getFd(), _errMsg);
 	if (client->getNick().empty()) {
 		client->setNick(nick);
 		return ;
 	}
 	sendMsg = ':' + client->getNick();
-	sendMsg += " NICK " + nick + '\n';
+	sendMsg += " NICK " + nick + "\r\n";
 	client->setNick(nick);
 	send(client->getFd(), sendMsg.c_str(), sendMsg.length(), 0);
 	for (it = channels.begin(); it != channels.end(); it++)
@@ -252,14 +269,14 @@ void    Server::setClientNick(const std::string &msg, Client *client) { // Chang
 
 // ERR_NEEDMOREPARAMS
 // ERR_ALREADYREGISTRED
-void    Server::setClientUser(const std::string &msg, Client *client) {   // Exception if there is no nick or warever
+void    Server::setClientUser(const std::string &msg, Client *client) {
 	std::string welcomeMsg;
 	std::string user = msg.substr(0, msg.find(' '));
 	std::string	realName = msg.substr(msg.find(':') + 1);
 
 	client->setUser(user);
 	client->setReal(realName);
-	welcomeMsg = "001 " + client->getNick() + " :Welcome to **HiTeK** Server\n";
+	welcomeMsg = "\n001 " + client->getNick() + " :Welcome to **HiTeK** Server\r\n";
 	send(client->getFd(), welcomeMsg.c_str(), welcomeMsg.length(), 0);
 }
 
@@ -276,16 +293,27 @@ void	Server::opKick(const std::vector<std::string> &info, const std::string &cho
     ERR_NEEDMOREPARAMS(std::string("KICK"), fd, _errMsg);
 }
 
-void	Server::partCmd(const std::string &channel, const int &fd) {
+void	Server::partCmd(const std::string &channel, Client *parter) {
 	if (Channel *part = _channelHandler.finder(channel)) {
-		part->partChannel(_clientHandler.finder(fd));
+		part->partChannel(parter);
 		if (!part->usersOnChannel())
 			_channelHandler.rmvChannel(channel);
 	}
 	else
-		ERR_NOSUCHCHANNEL(channel, fd, _errMsg);
+		ERR_NOSUCHCHANNEL(channel, parter->getFd(), _errMsg);
 }
 
 void	Server::quitCmd(Client *quiter) {
+	std::vector<Channel *>::iterator	it;
+	std::vector<Channel *>				channels;
+
+	if (!quiter->getChannels().empty()) {
+		channels = quiter->getChannels();
+		for (it = channels.begin(); it != channels.end(); it++) {
+			(*it)->rmvClient(quiter);
+			if (!(*it)->usersOnChannel())
+				_channelHandler.rmvChannel((*it)->getName());
+		}
+	}
 	_clientHandler.rmvClient(quiter->getNick());
 }

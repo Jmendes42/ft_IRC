@@ -8,22 +8,9 @@ void    ChannelHandler::addChannel(std::string const &channelName, Client *chop)
     _channels.push_back(new Channel(channelName, chop));
 }
 
-// REMOVE BY NICK ! CHECK THE COMMAND TO REMOVE USER TO CHECK WHAT IS NEEDED
-void    ChannelHandler::rmvClient(std::string const &nick)
-{
-    std::vector<Channel *>::iterator it;
-    for (it = _channels.begin(); it != _channels.end(); it++)
-    {
-        if (!((*it)->getName().compare(nick)))
-        {
-            _channels.erase(it);
-            return ;
-        }
-    }
-    // THIS SHOULD BE AN EXCEPTION Exception
-    std::cout << "THIS CLIENT IS NOT IN THE CHANNEL" << std::endl;
-}
-
+// ERR_NEEDMOREPARAMS              ERR_NOTONCHANNEL
+// RPL_NOTOPIC                     RPL_TOPIC
+// ERR_CHANOPRIVSNEEDED
 void ChannelHandler::opTopic(std::string const &msg, Client *client) {
     std::vector<std::string> info = ft_split(msg, ' ');
     
@@ -33,21 +20,7 @@ void ChannelHandler::opTopic(std::string const &msg, Client *client) {
         finder(info[1])->cmdTopic(msg.substr(msg.find(':')), client);
 }
 
-void ChannelHandler::opMode(std::string const &msg, Client *chop)
-{
-    std::vector<std::string> info = ft_split(msg, ' ');
-    Channel *channel;
-    std::string args;
 
-    if (!(channel = finder(info[1])))
-        ERR_NOSUCHCHANNEL(info[1], chop->getFd(), _errMsg);
-    if (info.size() == 2)
-        ERR_NEEDMOREPARAMS(std::string("MODE"), chop->getFd(), _errMsg)
-    for (int i = 3; i < info.size(); i++)
-        args += info[i] + " ";
-    args.pop_back();
-    channel->cmdMode(info[2], args, chop);
-}
 
 Channel *ChannelHandler::finder(const std::string &channelName) {
     for (_it = _channels.begin(); _it != _channels.end(); _it++) {

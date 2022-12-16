@@ -2,10 +2,8 @@
 #include "../include/Client.hpp"
 #include "../include/Socket.hpp"
 
-
-
 void sighandler(int signum) {
-    MSG("Turning off server");
+    std::cout << signum << "Turning off server" << std::endl;
     exit(1);
 }
 

@@ -4,6 +4,7 @@
 # include <vector>
 # include <string>
 # include <iostream>
+# include <stdint.h>
 
 #include "Socket.hpp"
 #include "ClientHandler.hpp"
@@ -25,13 +26,14 @@ class Server
 
         void    sockSet();
 		void	activity();
-        void    privMsg(const std::string &, const int &);
-        void    interpreter(const std::string &, int const &);
-        void    joinChannel(const std::vector<std::string> &, const int &);
+        void    privMsg(const std::string &, Client *);
+        void	partCmd(const std::string &, Client *);
         void    setClientNick(const std::string &, Client *);
         void    setClientUser(const std::string &, Client *);
-        void	inviteToChannel(const std::vector<std::string> &, const int &);
-        void	partCmd(const std::string &, const int &);
+        void    interpreter(const std::string &, int const &);
+        void    opMode(const std::vector<std::string> &, Client *);
+        void    joinChannel(const std::vector<std::string> &, Client *);
+        void	inviteToChannel(const std::vector<std::string> &, Client *);
         void	quitCmd(Client *);
         
         void    opKick(const std::vector<std::string> &, const std::string &, const int &);

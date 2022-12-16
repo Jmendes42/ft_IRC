@@ -21,13 +21,12 @@ class ChannelHandler
         ~ChannelHandler() {};
 
         void    rmvChannel(std::string const &);
-        void    rmvClient(std::string const &msg);
         void    addChannel(std::string const &msg, Client *chop);
 
         //operators
         Channel *finder(const std::string &);
         void opTopic(const std::string &, Client *);
-        void opMode(std::string const &msg, Client *chop);
+        void opMode(const std::vector<std::string> &, Client *);
 
         std::vector<Channel *>  &getChannels()  {return _channels;};
 

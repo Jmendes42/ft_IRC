@@ -4,6 +4,7 @@
 # include <string>
 # include <vector>
 # include <iostream>
+# include <stdint.h>
 
 class Channel;
 
@@ -11,9 +12,9 @@ class Client
 {
     private:
 
-        std::vector<Channel *>::iterator    _it;
-        std::string                         _ip;
         int                                 _fd;
+        std::string                         _ip;
+        std::vector<Channel *>::iterator    _it;
         int                                 _pass;
         uint16_t                            _port;
         std::string                         _nickname;

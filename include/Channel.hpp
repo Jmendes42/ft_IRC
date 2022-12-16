@@ -21,17 +21,19 @@ class Channel
         std::vector<Client *>::iterator _it;
         std::string                     _name;
         std::vector<Client *>           _users;
+        std::vector<Client *>           _chops;
         std::string                     _errMsg;
-        std::vector<Client *>           _sec_chops;
         std::vector<Client *>           _ban_users;
+        std::vector<Client *>           _moderators;
         std::vector<Client *>           _muted_users;
         std::vector<Client *>           _invited_users;
 
         //operators
-        std::string _topic;
+        std::string         _topic;
         std::map<char, bool> _flags;
-        std::string _password;
-        int _user_limit;
+        std::string         _password;
+        int                 _user_limit;
+        bool                _moderatedChannel;
 
     public:
 
@@ -40,35 +42,36 @@ class Channel
         ~Channel() {};
 
         void setName(std::string const &set) { _name = set; };
-        // void setCHOP(Client *set) { _chop = set; };
         void setTopic(std::string const &set) { _topic = set; };
 
         std::string             &getName() { return (_name); };
+        std::vector<Client *>   &getChop() { return (_chops); };
         std::string             &getTopic() { return (_topic); };
         std::string             &getPass() { return (_password); };
-        std::vector<Client *>   &getChop() { return (_sec_chops); };
 
-        void    addBan(Client *);
-        void    addUser(Client *);
-        void    addChop(Client *);
-        void    addMute(Client *);
+        void    rmvClient(Client *);
         void    addInvited(Client *);
-        void    rmvClient(std::string const &nickname);
+        void    addClient(std::vector<Client *> &, Client *);
 
         void    initFlags();
         void    cmdKick(Client *, const std::string &, int fd);
         void    cmdMode(std::string const &flags, std::string const &args, Client *client);
         void    cmdInvite(Client *client, Client *toInv);
         void    sendTopic(Client *);
+        void    banUser(const std::string &, Client *);
         void    cmdTopic(const std::string &, Client *);
+        void    chopMode(const std::string &, Client *);
+        void    userMode(const std::string &, Client *);
+        void    moderatorMode(const std::string &, Client *);
 
         std::string getUsersString();
 
         std::vector<Client *>   &getUsers() {return _users;};
-        std::vector<Client *>   &getChops() {return _sec_chops;};
-        std::vector<Client *>   &getMuted() {return _muted_users;};
+        std::vector<Client *>   &getChops() {return _chops;};
         int                     getLimit()  {return _user_limit;};
-        int                     getUsersTotal()  {return (_users.size() + _sec_chops.size());};
+        std::vector<Client *>   &getMuted() {return _muted_users;};
+        std::vector<Client *>   &getModerator() {return _moderators;};
+        int                     getUsersTotal()  {return (_users.size() + _chops.size());};
 
 
 
@@ -80,13 +83,15 @@ class Channel
         void    sendMsgToUsers(const std::string &);
         void    sendMsgToUsers(const std::string &, const int &);
         
+        Client  *finder(std::vector<Client *> &, Client *);
         Client  *finder(std::vector<Client *> &, const std::string &);
         bool    usersOnChannel();
 
-        void partChannel(Client *client);
-        bool retStateFlag(const char &flag);
-        bool retStateFlag(const char &, const std::string &);
-        bool checkBan(std::string const &nick);
+        void    partChannel(Client *);
+        bool    retStateFlag(const char &);
+        bool    checkBan(std::string const &);
+        bool    usersOnChannel(std::string const &);
+        bool    retStateFlag(const char &, const std::string &);
 
 };
 
