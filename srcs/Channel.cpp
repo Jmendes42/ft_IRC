@@ -12,8 +12,8 @@ Channel::Channel(std::string const &name, Client *chop) : _name(name), _topic(""
 }
 
 /**
- * @brief Searches user on the provided vector
- * @param client User to search for
+ * @brief           Searches user on the provided vector
+ * @param client    User to search for
 **/
 Client  *Channel::finder(std::vector<Client *> &vec, Client *client) {
     std::string nick = client->getNick();
@@ -26,8 +26,8 @@ Client  *Channel::finder(std::vector<Client *> &vec, Client *client) {
 }
 
 /**
- * @brief returns true if the user is on the channel and false if it's not
- * @param nick nickname to search for
+ * @brief       returns true if the user is on the channel and false if it's not
+ * @param nick  nickname to search for
 **/
 bool    Channel::usersOnChannel(Client *find) {
     if (finder(_users, find) || finder(_chops, find) || finder(_muted_users, find)
@@ -37,7 +37,7 @@ bool    Channel::usersOnChannel(Client *find) {
 }
 
 /**
- * @brief returns true if there's users on the channel and false it's empty
+ * @brief   returns true if there's users on the channel and false it's empty
 **/
 bool    Channel::usersOnChannel() {
     if (_users.empty() && _chops.empty() && _muted_users.empty())
@@ -113,13 +113,13 @@ void    Channel::addInvited(Client *client) {
 void    Channel::rmvClient(Client *rmv) {
     if (finder(_chops, rmv))
         _chops.erase(_it);
-    if (finder(_users, rmv))
+    else if (finder(_users, rmv))
         _users.erase(_it);
-    if (finder(_ban_users, rmv))
+    else if (finder(_ban_users, rmv))
         _ban_users.erase(_it);
-    if (finder(_moderators, rmv))
+    else if (finder(_moderators, rmv))
         _moderators.erase(_it);
-    if (finder(_muted_users, rmv))
+    else if (finder(_muted_users, rmv))
         _muted_users.erase(_it);
 }
 
@@ -139,8 +139,8 @@ void Channel::initFlags()
 }
 
 /**
- * @brief Checks if the flag is Simple, PS or Complex
- * @param flag to be checked
+ * @brief       Checks if the flag is Simple, PS or Complex
+ * @param flag  Flag to be checked
 **/
 int checkFlag(char flag)
 {
@@ -157,9 +157,9 @@ int checkFlag(char flag)
 }
 
 /**
- * @brief Change the state of "simple flags". What is true, will be false and vice-versa. A warning will be throwed if flag was already set.
- * @param set control if the function will set the flag to true or false (+/-)
- * @param flag the flag of the channel that will change state
+ * @brief       Change the state of "simple flags". What is true, will be false and vice-versa. A warning will be throwed if flag was already set.
+ * @param set   Control if the function will set the flag to true or false (+/-)
+ * @param flag  the flag of the channel that will change state
 **/
 void Channel::changeSimpleFlag(int fd, char set, char flag, std::string const &channel_name)
 {
@@ -173,9 +173,9 @@ void Channel::changeSimpleFlag(int fd, char set, char flag, std::string const &c
 }
 
 /**
- * @brief Change the state of '-p' or '-s' flag. Notice that both flags can't be 'true' at the same time. If you set one to true, the other will be set to false. More info in README
- * @param set control if the function will set the flag to true or false (+/-)
- * @param flag the flag of the channel that will change state
+ * @brief       Change the state of '-p' or '-s' flag. Notice that both flags can't be 'true' at the same time. If you set one to true, the other will be set to false. More info in README
+ * @param set   control if the function will set the flag to true or false (+/-)
+ * @param flag  the flag of the channel that will change state
 **/
 void Channel::changeModePS(int fd, char set, char flag, std::string const &channel_name)
 {
@@ -196,9 +196,9 @@ void Channel::changeModePS(int fd, char set, char flag, std::string const &chann
 }
 
 /**
- * @brief Set the password of the Channel.
- * @param set control if the function will set or unset the password
- * @param args the new password for the channel.
+ * @brief       Set the password of the Channel.
+ * @param set   Control if the function will set or unset the password
+ * @param args  The new password for the channel.
 **/
 void Channel::changePassword(int fd, char set, std::string const &args)
 {
@@ -221,9 +221,9 @@ void Channel::changePassword(int fd, char set, std::string const &args)
 }
 
 /**
- * @brief Set the User limit of the Channel.
- * @param set control if the function will set or unset the limit 
- * @param args the new password for the channel.
+ * @brief       Set the User limit of the Channel.
+ * @param set   Control if the function will set or unset the limit 
+ * @param args  The new password for the channel.
 **/
 void Channel::setLimit(int fd, char set, std::string const &args)
 {
@@ -289,8 +289,7 @@ void    Channel::chopMode(const std::string &flag, Client *user) {
         return ;
     }
     (flag[0] == '+') ? addClient(_chops, user) : addClient(_users, user);
-    msgSend = "353 " + user->getNick() + " = " + _name + " :" + getUsersString() + "\r\n";
-    MSG("CHOP -> " + getUsersString() + '+');
+    msgSend = ":jmendes!jmendes@127.0.0.1 MODE " + _name + " +o " + user->getNick() + "\r\n";
     sendMsgToUsers(msgSend);
 }
 
@@ -315,7 +314,8 @@ void    Channel::moderatorMode(const std::string &flag, Client *user) {
         return ;
     }
     (flag[0] == '+') ? addClient(_moderators, user) : addClient(_users, user);
-    msgSend = "353 " + user->getNick() + " = " + _name + " :" + getUsersString() + '\n';
+    msgSend = ":jmendes!jmendes@127.0.0.1 MODE " + _name + " +v " + user->getNick() + "\r\n";
+    //msgSend = "353 " + user->getNick() + " = " + _name + " :" + getUsersString() + "\r\n";
     MSG("MOD -> " + getUsersString() + '+');
     sendMsgToUsers(msgSend);
 }
@@ -449,8 +449,8 @@ void        Channel::cmdInvite(Client *inviter, Client *invited) {
 
 
 /**
- * @brief Leave the Channel (using PART Command)
- * @param client a Pointer to the client that wants to leave the Channel
+ * @brief           Leave the Channel (using PART Command)
+ * @param client    A Pointer to the client that wants to leave the Channel
 **/
 void Channel::partChannel(Client *client) {                 // Channel ends when there are no more users
     std::string msgSend;
