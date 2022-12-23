@@ -2,6 +2,8 @@
 # define MACROS_HPP
 
 #define ERR_NICKNAMEINUSE(client, fd, errMsg)           {errMsg = "433 " + client + " :Nikname in use\r\n"; send(fd, errMsg.c_str(), errMsg.length(), 0); return ;}
+#define ERR_NICKCOLLISION(client, fd, errMsg)           {errMsg = "436 " + client + " :Nickname collision KILL\r\n"; send(fd, errMsg.c_str(), errMsg.length(), 0); return ;}
+
 #define ERR_NOSUCHNICK_CONT(client, fd, errMsg)         {errMsg = "401 " + client + " :No such nickname\r\n"; send(fd, errMsg.c_str(), errMsg.length(), 0); continue ;}
 #define ERR_NOSUCHNICK(client, fd, errMsg)              {errMsg = "401 " + client + " :No such nickname\r\n"; send(fd, errMsg.c_str(), errMsg.length(), 0); return ;}
 #define ERR_NOSUCHCHANNEL(channel, fd, errMsg)          {errMsg = "403 " + channel + " :No such channel\r\n"; send(fd, errMsg.c_str(), errMsg.length(), 0); return ;}
@@ -25,6 +27,5 @@
 #define ERR_NORECIPIENT(fd, errMsg)       {errMsg = "411 :No recipient given (PRIVMSG)\r\n"; send(fd, errMsg.c_str(), errMsg.length(), 0); return ;}
 
 #define ERASE_VEC(vec, _it)       { delete (*_it); vec.erase(_it); return; }
-
 
 #endif

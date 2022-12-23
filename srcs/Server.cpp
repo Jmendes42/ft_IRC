@@ -127,7 +127,7 @@ void    Server::interpreter(std::string const &msg, int const &sockFd) {
 	else if (!cmd.compare("PRIVMSG") || !cmd.compare("NOTICE"))
 		message(ft_split(copy, ' '), client);
 	else if (!cmd.compare("NICK"))
-		setClientNick(copy, client);
+		setClientNick(ft_split(copy, ' '), client);
 	else if (!cmd.compare("KICK"))
 		opKick(ft_split(copy, ' '), client);
 	else if (!cmd.compare("MODE"))
@@ -343,18 +343,25 @@ void    Server::message(const std::vector<std::string> &info, Client *sender) {
 
 // ERR_NONICKNAMEGIVEN             ERR_ERRONEUSNICKNAME
 // ERR_NICKCOLLISION
-void    Server::setClientNick(const std::string &msg, Client *client) { // Change nick in channel
+void    Server::setClientNick(std::vector<std::string> msg, Client *client) { // Change nick in channel
 	std::vector<Channel *>::iterator	it;
 	std::string							sendMsg;
 	std::vector<Channel *>				channels = client->getChannels();
-	std::string							nick = msg.substr(5, msg.find('\0', 5));
+	std::string							nick = msg[1].erase(msg[1].length() - 2, 2);
 
-	if (_clientHandler.finder(nick))
-		ERR_NICKNAMEINUSE(nick, client->getFd(), _errMsg);
-	if (client->getNick().empty()) {
+
+	if (client->getNick().empty())
+	{
+		if (_clientHandler.finder(nick))
+			ERR_NICKCOLLISION(nick, client->getFd(), _errMsg);
 		client->setNick(nick);
+		MSG("NICK TO CHECK: ." + client->getNick() + ".");
+
 		return ;
 	}
+	if (_clientHandler.finder(nick))
+		ERR_NICKNAMEINUSE(nick, client->getFd(), _errMsg);
+
 	sendMsg = ':' + client->getNick();
 	sendMsg += " NICK " + nick + "\r\n";
 	client->setNick(nick);
@@ -370,11 +377,10 @@ void    Server::setClientUser(const std::string &msg, Client *client) {
 	std::string user = msg.substr(0, msg.find(' '));
 	std::string	realName = msg.substr(msg.find(':') + 1);
 
-	if (!client->getUser().empty())
-		return ;
 	client->setUser(user);
 	client->setReal(realName);
-	welcomeMsg = "\r\n001 " + client->getNick() + " :Welcome to **HiTeK** Server\r\n";
+	MSG("NICK TO SEND: ." + client->getNick() + ".");
+	welcomeMsg = ":127.0.0.1 001 " + client->getNick() + " :Welcome to '**HiTeK**' Server\r\n";
 	send(client->getFd(), welcomeMsg.c_str(), welcomeMsg.length(), 0);
 }
 

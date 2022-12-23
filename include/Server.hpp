@@ -30,7 +30,7 @@ class Server
 	void	activity();
 
         void	partCmd(const std::string &, Client *);
-        void    setClientNick(const std::string &, Client *);
+        void    setClientNick(std::vector<std::string> msg, Client *);
         void    setClientUser(const std::string &, Client *);
         void    interpreter(const std::string &, int const &);
         void    opMode(const std::vector<std::string> &, Client *);
