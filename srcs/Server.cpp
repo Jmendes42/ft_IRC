@@ -96,7 +96,7 @@ void    Server::interpreter(std::string const &msg, int const &sockFd) {
 	if (!cmd.compare("QUIT"))
 		quitCmd(client);
 	else if (!cmd.compare("PRIVMSG"))
-		privMsg(copy, client);
+		privMsg(ft_split(copy, ' '), client);
 	else if (!cmd.compare("NICK"))
 		setClientNick(copy, client);
 	else if (!cmd.compare("KICK"))
@@ -118,6 +118,38 @@ void    Server::interpreter(std::string const &msg, int const &sockFd) {
 			std::string(inet_ntoa(_sock.getHint().sin_addr)), ntohs(_sock.getHint().sin_port));
 }
 
+/*void    Server::interpreter(std::string const &msg, int const &sockFd) {
+	std::vector<std::string>	copy = ft_split(msg, ' ');
+    std::string					cmd = msg.substr(0, msg.find(' '));
+	Client						*client = _clientHandler.finder(sockFd);
+
+	MSG(msg);
+	copy.back().erase(copy.back().find('\r'), 2);
+	if (!cmd.compare("QUIT"))
+		quitCmd(client);
+	else if (!cmd.compare("NICK"))
+		setClientNick(msg, client);
+	else if (!cmd.compare("KICK"))
+		opKick(copy, client);
+	else if (!cmd.compare("MODE"))
+		opMode(copy, client);
+	else if (!cmd.compare("TOPIC"))
+		_channelHandler.opTopic(msg, client);
+	else if (!cmd.compare("JOIN"))
+		joinChannel(copy, client);
+	else if (!cmd.compare("INVITE"))
+		inviteToChannel(copy, client);
+	else if (!cmd.compare("PRIVMSG"))
+		privMsg(copy, client);
+	else if (!cmd.compare("USER"))
+		setClientUser(msg.substr(msg.find(' ') + 1), client);
+	else if (!cmd.compare("PART"))
+		partCmd(msg.substr(5, msg.find(' ', 5) - 5), client);
+	else if (!cmd.compare("PASS"))
+		_clientHandler.addClient(msg, _password, sockFd,
+			std::string(inet_ntoa(_sock.getHint().sin_addr)), ntohs(_sock.getHint().sin_port));
+}*/
+
 // Check - and +
 void Server::opMode(const std::vector<std::string> &msg, Client *chop) {
     std::string	args;
@@ -138,7 +170,7 @@ void Server::opMode(const std::vector<std::string> &msg, Client *chop) {
 			MSG("ERR no such user");
 			return ;
 		}
-        channel->userMode(flags, _clientHandler.finder(args));
+        channel->userMode(flags, _clientHandler.finder(args), chop);
 	}
 	else
     	channel->cmdMode(msg[2], args, chop);
@@ -147,17 +179,24 @@ void Server::opMode(const std::vector<std::string> &msg, Client *chop) {
 // ERR_NEEDMOREPARAMS
 // ERR_USERONCHANNEL
 // RPL_INVITING           RPL_AWAY
-void	Server::inviteToChannel(const std::vector<std::string> &info, Client *inviter) {
-	Client	*invited = _clientHandler.finder(info[1]);
-	Channel	*channel = _channelHandler.finder(info[2]);
+void	Server::inviteToChannel(std::vector<std::string> info, Client *inviter) {
+	std::vector<std::string>::iterator	it;
+	Client *invited;
+	Channel	*channel = _channelHandler.finder(info.back());
 
-	if (!invited)
-		ERR_NOSUCHNICK(info[1], inviter->getFd(), _errMsg);
 	if (!channel) 
 		ERR_NOSUCHCHANNEL(info[2],inviter->getFd(), _errMsg);
 	if (!channel->usersOnChannel(inviter))
 		ERR_NOTONCHANNEL(channel->getName(), inviter->getFd(), _errMsg);
-	channel->cmdInvite(inviter, invited);
+	for (it = info.begin(); it != info.end(); it++) {
+		if (!(*it).compare("INVITE"))
+			continue;
+		if ((*it).find('#') != std::string::npos)
+			continue ;
+		if (!(invited = _clientHandler.finder((*it))))
+			ERR_NOSUCHNICK1(info[1], inviter->getFd(), _errMsg);
+		channel->cmdInvite(inviter, invited);
+	}
 }
 
 void    Server::joinChannel(const std::vector<std::string> &msg, Client *client) {
@@ -182,13 +221,14 @@ void    Server::joinChannel(const std::vector<std::string> &msg, Client *client)
 			std::string	joinMsg;
 			if (channel->usersOnChannel(client))
 				ERR_USERONCHANNEL(channel->getName(), client->getFd(), _errMsg);
-			if (channel->retStateFlag('i', client))
+			if (channel->retStateFlag('i', client, channel->getInvited()))
 				ERR_INVITEONLYCHAN(channel->getName(), fd, _errMsg);
 			if (channel->retStateFlag('l') && ((channel->getUsersTotal() + 1) > channel->getLimit()))
 				ERR_CHANNELISFULL(channel->getName(), fd, _errMsg);
 			if (channel->finder(channel->getBan(), client))
 				ERR_BANNEDFROMCHAN(channel->getName(), fd, _errMsg);
 			if (channel->retStateFlag('k')) {
+				MSG("HERE");
 				if (msg.size() < 3)
 					ERR_NEEDMOREPARAMS(channel->getName(), fd, _errMsg);
 				if (msg[2] != channel->getPass())
@@ -211,38 +251,50 @@ void    Server::joinChannel(const std::vector<std::string> &msg, Client *client)
 	}
 }
 
-// ERR_NEEDMOREPARAMS              ERR_BANNEDFROMCHAN
-// ERR_INVITEONLYCHAN              ERR_BADCHANNELKEY
-// ERR_CHANNELISFULL               ERR_BADCHANMASK
-// ERR_TOOMANYCHANNELS
-// RPL_TOPIC
-void    Server::privMsg(const std::string &msg, Client *sender) {
+// ERR_NOTOPLEVEL
+// ERR_WILDTOPLEVEL                ERR_TOOMANYTARGETS
+// RPL_AWAY
+void    Server::privMsg(const std::vector<std::string> &info, Client *sender) {
+	std::string msg;
 	std::string sendMsg;
 
-	if (msg.find('#') != std::string::npos) {
+	if (info.size() == 1)
+		ERR_NORECIPIENT(sender->getFd(), _errMsg);
+	if (info.size() == 2)
+		ERR_NEEDMOREPARAMS(info[0], sender->getFd(), _errMsg);
+	if (info[2].length() == 1)	// Check in libera if this error is if msg is only ":" or if info[2] doesn't exist .. Needs to be tested with nc .. weechat always puts the ':'
+		ERR_NOTEXTTOSEND(info[1], sender->getFd(), _errMsg)
+
+	if (info.size() > 3)
+	{
+		msg = info[2];
+		for(long unsigned int i = 3; i < info.size(); i++)
+			msg += ' ' + info[i];
+	}
+	if (info[1][0] == '#')
+	{
 		Channel		*channel;
-		std::string channelName = msg.substr(msg.find('#'), msg.find(':') - msg.find('#') - 1);
-
-		if (!(channel = _channelHandler.finder(channelName)))
-			ERR_NOSUCHCHANNEL(channelName, sender->getFd(), _errMsg);
-		if (channel->retStateFlag('m') && (!channel->finder(channel->getModerator(), sender) || !channel->finder(channel->getChops(), sender))) {
-			MSG("Moderated channel, user is not a moderator"); // Check in libera if it still prints on sender chat
-			return ;
-		}
-
-		if (!sender->findChannel(channelName)) {
-			MSG(sender->getNick() + " is not in this channel anymore");				// ERR
-			return ;
-		}
+		if (!(channel = _channelHandler.finder(info[1])))
+			ERR_NOSUCHCHANNEL(info[1], sender->getFd(), _errMsg);
+		if (info[2].length() == 1)	// Check in libera if this error is if msg is only ":" or if info[2] doesn't exist
+			ERR_NOTEXTTOSEND(channel->getName(), sender->getFd(), _errMsg)
+		if (channel->retStateFlag('m') && (!channel->finder(channel->getModerator(), sender) || !channel->finder(channel->getChops(), sender))) 
+			ERR_CANNOTSENDTOCHAN(channel->getName(), sender->getFd(), _errMsg); // Check in libera if it still prints on sender chat
+		if (!sender->findChannel(info[1]) && channel->retStateFlag('n')) 
+			ERR_CANNOTSENDTOCHAN(channel->getName(), sender->getFd(), _errMsg);
+		std::string channel_name = info[2];
 		sendMsg = ':' + sender->getNick();
-		sendMsg += " PRIVMSG " + channelName + ' ' + msg.substr(msg.find(':')) + "\r\n";
+		sendMsg += " PRIVMSG " + info[1] + ' ' + channel_name.erase(0, 1) + "\r\n";
 		channel->sendMsgToUsers(sendMsg, sender->getFd());
 	}
-	else if (Client * client = _clientHandler.finder(msg.substr(8, msg.find(' ', 8) - 8))) {
+	else if (Client * client = _clientHandler.finder(info[1])) {
+		std::string channel_name = info[2];
 		sendMsg = ":" + sender->getNick() + " PRIVMSG ";
-		sendMsg += client->getNick() + ' ' + msg.substr(msg.find(':')) + "\r\n";
+		sendMsg += client->getNick() + ' ' + channel_name.erase(0, 1) + "\r\n";
 		send(client->getFd(), sendMsg.c_str(), sendMsg.length(), 0);
 	}
+	else
+		ERR_NOSUCHNICK(info[1], sender->getFd(), _errMsg);
 }
 
 // ERR_NONICKNAMEGIVEN             ERR_ERRONEUSNICKNAME
@@ -305,11 +357,14 @@ void	Server::partCmd(const std::string &channel, Client *parter) {
 
 void	Server::quitCmd(Client *quiter) {
 	std::vector<Channel *>::iterator	it;
+	std::string							msgSend;
 	std::vector<Channel *>				channels;
 
 	if (!quiter->getChannels().empty()) {
 		channels = quiter->getChannels();
 		for (it = channels.begin(); it != channels.end(); it++) {
+        	msgSend = ":" + quiter->getNick() + " QUIT " + (*it)->getName() + "\r\n";
+			(*it)->sendMsgToUsers(msgSend);
 			(*it)->rmvClient(quiter);
 			if (!(*it)->usersOnChannel())
 				_channelHandler.rmvChannel((*it)->getName());

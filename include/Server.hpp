@@ -26,20 +26,20 @@ class Server
 
         void    sockSet();
 		void	activity();
-        void    privMsg(const std::string &, Client *);
+        void	quitCmd(Client *);
         void	partCmd(const std::string &, Client *);
         void    setClientNick(const std::string &, Client *);
         void    setClientUser(const std::string &, Client *);
         void    interpreter(const std::string &, int const &);
         void    opMode(const std::vector<std::string> &, Client *);
-        void    joinChannel(const std::vector<std::string> &, Client *);
-        void	inviteToChannel(const std::vector<std::string> &, Client *);
-        void	quitCmd(Client *);
-        
         void    opKick(const std::vector<std::string> &, Client *);
+        void    privMsg(const std::vector<std::string> &, Client *);
+        void	inviteToChannel(std::vector<std::string>, Client *);
+        void    joinChannel(const std::vector<std::string> &, Client *);
+
+
 
         Socket  &getSocket()    {return _sock;};
-
 };
 
 #endif

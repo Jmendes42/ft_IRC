@@ -31,7 +31,7 @@ Client  *Channel::finder(std::vector<Client *> &vec, Client *client) {
 **/
 bool    Channel::usersOnChannel(Client *find) {
     if (finder(_users, find) || finder(_chops, find) || finder(_muted_users, find)
-            || finder(_moderators, find))
+            || finder(_moderators, find) || finder(_ban_users, find))
         return true;
     return false;
 }
@@ -73,6 +73,8 @@ void    Channel::sendMsgToUsers(const std::string &msg) {
         send((*_it)->getFd(), msg.c_str(), msg.length(), 0);
     for (_it = _muted_users.begin(); _it != _muted_users.end(); _it++)
         send((*_it)->getFd(), msg.c_str(), msg.length(), 0);
+    for (_it = _ban_users.begin(); _it != _ban_users.end(); _it++)
+        send((*_it)->getFd(), msg.c_str(), msg.length(), 0);
 }
 
 /**
@@ -92,6 +94,11 @@ void    Channel::sendMsgToUsers(const std::string &msg, const int &fd) {
         send((*_it)->getFd(), msg.c_str(), msg.length(), 0);
     }
     for (_it = _muted_users.begin(); _it != _muted_users.end(); _it++) {
+        if ((*_it)->getFd() == fd)
+            continue;
+        send((*_it)->getFd(), msg.c_str(), msg.length(), 0);
+    }
+    for (_it = _ban_users.begin(); _it != _ban_users.end(); _it++) {
         if ((*_it)->getFd() == fd)
             continue;
         send((*_it)->getFd(), msg.c_str(), msg.length(), 0);
@@ -123,87 +130,16 @@ void    Channel::rmvClient(Client *rmv) {
         _muted_users.erase(_it);
 }
 
-void Channel::initFlags()
-{
-    _flags.insert(std::pair<char, bool>('o', false));
-    _flags.insert(std::pair<char, bool>('p', false));
-    _flags.insert(std::pair<char, bool>('s', false));
-    _flags.insert(std::pair<char, bool>('i', false));
-    _flags.insert(std::pair<char, bool>('t', false));
-    _flags.insert(std::pair<char, bool>('n', false));
-    _flags.insert(std::pair<char, bool>('m', false));
-    _flags.insert(std::pair<char, bool>('l', false));
-    _flags.insert(std::pair<char, bool>('b', false));
-    _flags.insert(std::pair<char, bool>('v', false));
-    _flags.insert(std::pair<char, bool>('k', false));
-}
-
-/**
- * @brief       Checks if the flag is Simple, PS or Complex
- * @param flag  Flag to be checked
-**/
-int checkFlag(char flag)
-{
-    if (flag == 'p' || flag == 's')
-    {
-        std::cout << "FLAG = " << flag << std::endl;
-        return (1);
-    }
-    else if (flag == 'i' || flag == 't' || flag == 'n' || flag == 'm')
-        return (2);
-    else if (flag == 'o' || flag == 'l' || flag == 'b' || flag == 'v' || flag == 'k')
-        return (3);
-    return (0);
-}
-
-/**
- * @brief       Change the state of "simple flags". What is true, will be false and vice-versa. A warning will be throwed if flag was already set.
- * @param set   Control if the function will set the flag to true or false (+/-)
- * @param flag  the flag of the channel that will change state
-**/
-void Channel::changeSimpleFlag(int fd, char set, char flag, std::string const &channel_name)
-{
-    std::map<char, bool>::iterator it = _flags.find(flag);
-    if (set == '+' && it->second == false)
-        it->second = true;
-    else if (set == '-' && it->second == true)
-        it->second = false;
-    else
-        ERR_KEYSET(channel_name, fd, _errMsg);
-}
-
-/**
- * @brief       Change the state of '-p' or '-s' flag. Notice that both flags can't be 'true' at the same time. If you set one to true, the other will be set to false. More info in README
- * @param set   control if the function will set the flag to true or false (+/-)
- * @param flag  the flag of the channel that will change state
-**/
-void Channel::changeModePS(int fd, char set, char flag, std::string const &channel_name)
-{
-    std::map<char, bool>::iterator it = _flags.find(flag);
-    std::map<char, bool>::iterator temp;
-    
-    temp = (it->first == 'p') ?  _flags.find('s') : _flags.find('p');
-    if (set == '+' && it->second == false)
-    {
-        it->second = true;
-        if (temp->second == true)
-            temp->second = false;
-    }
-    else if (set == '-' && it->second == true)
-        it->second = false;
-    else
-        ERR_KEYSET(channel_name, fd, _errMsg);
-}
-
 /**
  * @brief       Set the password of the Channel.
- * @param set   Control if the function will set or unset the password
  * @param args  The new password for the channel.
+ * @param set   Control if the function will set or unset the password
 **/
-void Channel::changePassword(int fd, char set, std::string const &args)
+void Channel::changePassword(int fd, char set, std::string const &args) 
 {
     std::map<char, bool>::iterator it = _flags.find('k');
 
+        MSG("HERE K");
     if (set == '-')
     {
         _password.clear();
@@ -218,6 +154,116 @@ void Channel::changePassword(int fd, char set, std::string const &args)
     }
     else
         ERR_NEEDMOREPARAMS(std::string("MODE"), fd, _errMsg);
+}
+
+
+/**
+ * @brief           Searches all the client groups for the user, if it exists in any removes it and adds it to the vector provided
+ * @param client    Client to search 
+ * @param vec       Vector to insert 
+ */
+void    Channel::addClient(std::vector<Client *> &vec, Client *client) {
+    rmvClient(client);
+    vec.push_back(client);
+}
+
+/**
+ * @brief       Checks if the user can be banned, if it can adds it to the banned vector
+ * @param user  User to ban 
+ * @param flag  Ban flag
+ */
+void    Channel::banUser(const std::string &flag, Client *user, Client *chop) {
+    std::string msgSend;
+
+    if (flag[0] == '+' && finder(_ban_users, user)) {
+        MSG("User already banned");
+        return ;
+    }
+    else if (flag[0] == '-' && !finder(_ban_users, user)) {
+        MSG("User not banned");
+        return ;
+    }
+    (flag[0] == '+') ? addClient(_ban_users, user) : addClient(_users, user);
+    msgSend = ':' + chop->getNick() + " MODE " + _name + ' ' + flag + ' ' + user->getNick() + "\r\n";
+    sendMsgToUsers(msgSend);
+}
+
+/**
+ * @brief       Checks if the user can be promoted to chop, if it can adds it to the chops vector
+ * @param user  User to promote 
+ * @param flag  Chop promote flag
+ */
+void    Channel::chopMode(const std::string &flag, Client *user, Client *chop) {
+    std::string msgSend;
+
+    if (flag[0] == '+' && finder(_chops, user)) {
+        MSG("ERR user is already a chop");
+        return ;
+    }
+    if (flag[0] == '-' && !finder(_chops, user)) {
+        MSG("ERR user is not a chop");
+        return ;
+    }
+    (flag[0] == '+') ? addClient(_chops, user) : addClient(_users, user);
+    msgSend = ':' + chop->getNick() + " MODE " + _name + ' ' + flag + ' ' + user->getNick() + "\r\n";
+    sendMsgToUsers(msgSend);
+}
+
+/**
+ * @brief       Checks if the user can be promoted to moderator, if it can adds it to the moderators vector
+ * @param user  User to promote 
+ * @param flag  Moderator promote flag
+ */
+void    Channel::moderatorMode(const std::string &flag, Client *user, Client *chop) {
+    std::string msgSend;
+
+    if (flag[0] == '+' && finder(_chops, user)) {
+        MSG("ERR user is already a chop");
+        return ;
+    }
+    if (flag[0] == '+' && finder(_moderators, user)) {
+        MSG("ERR user is already a moderator");
+        return ;
+    }
+    if (flag[0] == '-' && !finder(_moderators, user)) {
+        MSG("ERR user is not a moderator");
+        return ;
+    }
+    (flag[0] == '+') ? addClient(_moderators, user) : addClient(_users, user);
+
+    msgSend = ':' + chop->getNick() + " MODE " + _name + ' ' + flag + ' ' + user->getNick() + "\r\n";
+    sendMsgToUsers(msgSend);
+}
+
+/**
+ * @brief           Channels the user mode related flags
+ * @param client    Client to promote 
+ * @param flag      Chop promote flag
+ */
+void    Channel::userMode(const std::string &flags, Client *user, Client *chop) {
+    if (!usersOnChannel(user))
+        ERR_USERNOTINCHANNEL(_name, user->getNick(), user->getFd(), _errMsg);
+    if (flags[1] == 'b')
+        banUser(flags, user, chop);
+    else if (flags[1] == 'o')
+        chopMode(flags, user, chop);
+    else if (flags[1] == 'v')
+        moderatorMode(flags, user, chop);
+}
+
+void Channel::initFlags()
+{
+    _flags.insert(std::pair<char, bool>('o', false));
+    _flags.insert(std::pair<char, bool>('p', false));
+    _flags.insert(std::pair<char, bool>('s', false));
+    _flags.insert(std::pair<char, bool>('i', false));
+    _flags.insert(std::pair<char, bool>('t', false));
+    _flags.insert(std::pair<char, bool>('n', true));
+    _flags.insert(std::pair<char, bool>('m', false));
+    _flags.insert(std::pair<char, bool>('l', false));
+    _flags.insert(std::pair<char, bool>('b', false));
+    _flags.insert(std::pair<char, bool>('v', false));
+    _flags.insert(std::pair<char, bool>('k', false));
 }
 
 /**
@@ -246,98 +292,78 @@ void Channel::setLimit(int fd, char set, std::string const &args)
 }
 
 /**
- * @brief           Searches all the client groups for the user, if it exists in any removes it and adds it to the vector provided
- * @param client    Client to search 
- * @param vec       Vector to insert 
- */
-void    Channel::addClient(std::vector<Client *> &vec, Client *client) {
-    rmvClient(client);
-    vec.push_back(client);
-}
-
-/**
- * @brief       Checks if the user can be banned, if it can adds it to the banned vector
- * @param user  User to ban 
- * @param flag  Ban flag
- */
-void    Channel::banUser(const std::string &flag, Client *user) {
-    if (flag[0] == '+' && finder(_ban_users, user)) {
-        MSG("User already banned");
-        return ;
-    }
-    else if (flag[0] == '-' && !finder(_ban_users, user)) {
-        MSG("User not banned");
-        return ;
-    }
-    (flag[0] == '+') ? addClient(_ban_users, user) : rmvClient(user);
-}
-
-/**
- * @brief       Checks if the user can be promoted to chop, if it can adds it to the chops vector
- * @param user  User to promote 
- * @param flag  Chop promote flag
- */
-void    Channel::chopMode(const std::string &flag, Client *user) {
-    std::string msgSend;
-
-    if (flag[0] == '+' && finder(_chops, user)) {
-        MSG("ERR user is already a chop");
-        return ;
-    }
-    if (flag[0] == '-' && !finder(_chops, user)) {
-        MSG("ERR user is not a chop");
-        return ;
-    }
-    (flag[0] == '+') ? addClient(_chops, user) : addClient(_users, user);
-    msgSend = ":jmendes!jmendes@127.0.0.1 MODE " + _name + " +o " + user->getNick() + "\r\n";
-    sendMsgToUsers(msgSend);
-}
-
-/**
- * @brief       Checks if the user can be promoted to moderator, if it can adds it to the moderators vector
- * @param user  User to promote 
- * @param flag  Moderator promote flag
- */
-void    Channel::moderatorMode(const std::string &flag, Client *user) {
-    std::string msgSend;
-
-    if (flag[0] == '+' && finder(_chops, user)) {
-        MSG("ERR user is already a chop");
-        return ;
-    }
-    if (flag[0] == '+' && finder(_moderators, user)) {
-        MSG("ERR user is already a moderator");
-        return ;
-    }
-    if (flag[0] == '-' && !finder(_moderators, user)) {
-        MSG("ERR user is not a moderator");
-        return ;
-    }
-    (flag[0] == '+') ? addClient(_moderators, user) : addClient(_users, user);
-    msgSend = ":jmendes!jmendes@127.0.0.1 MODE " + _name + " +v " + user->getNick() + "\r\n";
-    //msgSend = "353 " + user->getNick() + " = " + _name + " :" + getUsersString() + "\r\n";
-    MSG("MOD -> " + getUsersString() + '+');
-    sendMsgToUsers(msgSend);
-}
-
-/**
- * @brief           Channels the user mode related flags
- * @param client    Client to promote 
- * @param flag      Chop promote flag
- */
-void    Channel::userMode(const std::string &flags, Client *user) {
-    if (!usersOnChannel(user))
-        ERR_USERNOTINCHANNEL(_name, user->getNick(), user->getFd(), _errMsg);
-    if (flags[1] == 'b')
-        banUser(flags, user);
-    else if (flags[1] == 'o')
-        chopMode(flags, user);
-    else if (flags[1] == 'v')
-        moderatorMode(flags, user);
-}
-
-void Channel::cmdMode(std::string const &flags, std::string const &args, Client *chop)
+ * @brief       Change the state of '-p' or '-s' flag. Notice that both flags can't be 'true' at the same time. If you set one to true, the other will be set to false. More info in README
+ * @param set   control if the function will set the flag to true or false (+/-)
+ * @param flag  the flag of the channel that will change state
+**/
+void Channel::changeModePS(int fd, char set, char flag, std::string const &channel_name)
 {
+    std::map<char, bool>::iterator it = _flags.find(flag);
+    std::map<char, bool>::iterator temp;
+    
+    temp = (it->first == 'p') ?  _flags.find('s') : _flags.find('p');
+    if (set == '+' && it->second == false)
+    {
+        it->second = true;
+        if (temp->second == true)
+            temp->second = false;
+    }
+    else if (set == '-' && it->second == true)
+        it->second = false;
+    else
+        ERR_KEYSET(channel_name, fd, _errMsg);
+}
+
+/**
+ * @brief       Checks if the flag is Simple, PS or Complex
+ * @param flag  Flag to be checked
+**/
+int checkFlag(char flag)
+{
+    if (flag == 'p' || flag == 's') {
+        std::cout << "FLAG = " << flag << std::endl;
+        return (1);
+    }
+    else if (flag == 'i' || flag == 't' || flag == 'n' || flag == 'm')
+        return (2);
+    else if (flag == 'o' || flag == 'l' || flag == 'k')
+        return (3);
+    return (0);
+}
+
+/**
+ * @brief       Change the state of "simple flags". What is true, will be false and vice-versa. A warning will be throwed if flag was already set.
+ * @param set   Control if the function will set the flag to true or false (+/-)
+ * @param flag  the flag of the channel that will change state
+**/
+void Channel::changeSimpleFlag(const std::string &flag, Client *chop) {
+    std::string msgSend;
+
+    std::map<char, bool>::iterator it = _flags.find(flag[1]);
+    if (flag[0] == '+' && it->second == false)
+        it->second = true;
+    else if (flag[0] == '-' && it->second == true)
+        it->second = false;
+    else
+        ERR_KEYSET(_name, chop->getFd(), _errMsg);
+    msgSend = ':' + chop->getNick() + " MODE " + _name + ' ' + flag + "\r\n";
+    sendMsgToUsers(msgSend);
+
+}
+
+void    Channel::changeComposedFlag(const std::string &flag, const std::string &arg, Client *chop) {
+    std::string msgSend;
+
+    if (flag[1] == 'l') 
+        setLimit(chop->getFd(), flag[0], arg);
+    if (flag[1] == 'k') {
+        changePassword(chop->getFd(), flag[0], arg);
+    }
+    msgSend = ':' + chop->getNick() + " MODE " + _name + ' ' + flag + ' ' + arg + "\r\n";
+    sendMsgToUsers(msgSend);
+}
+
+void Channel::cmdMode(std::string const &flags, std::string const &args, Client *chop) {
     std::string msgSend;
 
     if (!finder(_users, chop) && !finder(_chops, chop))
@@ -346,33 +372,17 @@ void Channel::cmdMode(std::string const &flags, std::string const &args, Client 
         ERR_CHANOPRIVSNEEDED(getName(), chop->getFd(), _errMsg);
     char set = flags[0];
 
-    MSG(flags);
     for (long unsigned int i = 1; i < flags.length(); i++) {
         // In case of P or S ! Only one can be set at a time
         if (checkFlag(flags[i]) == 1)
             changeModePS(chop->getFd(), set, flags[i], getName());
         else if (checkFlag(flags[i]) == 2)                          
-            changeSimpleFlag(chop->getFd(), set, flags[i], getName());
-        else                                                    
-        {
-            switch (flags[i])
-            {
-                case 'l':                                           
-                    setLimit(chop->getFd(), set, args);
-                    break;
-                case 'b':                                       
-                    (set == '+') ? addToVector(chop->getFd(), getName(), args, _ban_users, _users) : rmvFromVector(chop->getFd(), getName(), args, _ban_users);
-                    break;
-                case 'k':                                   
-                    changePassword(chop->getFd(), set, args);
-                    break;               // Apply moderated to private messages and +v flag on users and channels vec of +v
-                case 'm':                                       
-                    (set == '+') ? _moderatedChannel = true : _moderatedChannel = false;
-                    break;               
-                default:
-                    ERR_UNKNOWNMODE(getName(), chop->getFd(), _errMsg);
-            }
-        }
+            changeSimpleFlag(flags, chop);
+        else if (checkFlag(flags[i]) == 3)
+            changeComposedFlag(flags, args, chop);
+        else
+            ERR_UNKNOWNMODE(getName(), chop->getFd(), _errMsg);
+        
     }
 }
 
@@ -436,6 +446,11 @@ void Channel::cmdKick(Client *kicked, Client *kicker) {
         ERR_NOSUCHNICK(getName(), kicked->getFd(), _errMsg);
 }
 
+/**
+ * @brief           Sends invite message to a user
+ * @param invited   User to be invited
+ * @param inviter   Chop that invites
+ */
 void        Channel::cmdInvite(Client *inviter, Client *invited) {
     std::string msgSend;
     
@@ -445,8 +460,6 @@ void        Channel::cmdInvite(Client *inviter, Client *invited) {
     send(invited->getFd(), msgSend.c_str(), msgSend.length(), 0);
     addInvited(invited);
 }
-
-
 
 /**
  * @brief           Leave the Channel (using PART Command)
@@ -465,8 +478,8 @@ void Channel::partChannel(Client *client) {                 // Channel ends when
     ERR_NOSUCHCHANNEL(_name, client->getFd(), _errMsg);
 }
 
-bool Channel::retStateFlag(const char &flag, Client *client) {
-    if (finder(_invited_users, client)) {
+bool Channel::retStateFlag(const char &flag, Client *client, std::vector<Client *> &vec) {
+    if (finder(vec, client)) {
         return false;
     }
     std::map<char, bool>::iterator it = _flags.find(flag);

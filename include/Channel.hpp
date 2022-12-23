@@ -58,11 +58,11 @@ class Channel
         void    cmdMode(std::string const &flags, std::string const &args, Client *client);
         void    cmdInvite(Client *client, Client *toInv);
         void    sendTopic(Client *);
-        void    banUser(const std::string &, Client *);
+        void    banUser(const std::string &, Client *, Client *);
         void    cmdTopic(const std::string &, Client *);
-        void    chopMode(const std::string &, Client *);
-        void    userMode(const std::string &, Client *);
-        void    moderatorMode(const std::string &, Client *);
+        void    chopMode(const std::string &, Client *, Client *);
+        void    userMode(const std::string &, Client *, Client *);
+        void    moderatorMode(const std::string &, Client *, Client *);
 
         std::string getUsersString();
 
@@ -72,14 +72,16 @@ class Channel
         int                     getLimit()  {return _user_limit;};
         std::vector<Client *>   &getMuted() {return _muted_users;};
         std::vector<Client *>   &getModerator() {return _moderators;};
+        std::vector<Client *>   &getInvited() {return _invited_users;};
         int                     getUsersTotal()  {return (_users.size() + _chops.size());};
 
 
 
-        void changeSimpleFlag(int fd, char set, char flag, std::string const &channel_name);
-        void changeModePS(int fd, char set, char flag, std::string const &channel_name);
-        void changePassword(int fd, char set, std::string const &args);
-        void setLimit(int fd, char set, std::string const &args);
+        void    changeSimpleFlag(const std::string &, Client *);
+        void    changeModePS(int fd, char set, char flag, std::string const &channel_name);
+        void    changePassword(int fd, char set, std::string const &args);
+        void    setLimit(int fd, char set, std::string const &args);
+        void    changeComposedFlag(const std::string &, const std::string &, Client *);
 
         void    sendMsgToUsers(const std::string &);
         void    sendMsgToUsers(const std::string &, const int &);
@@ -92,7 +94,7 @@ class Channel
         bool    retStateFlag(const char &);
         //bool    checkBan(std::string const &);
         bool    usersOnChannel(Client *);
-        bool    retStateFlag(const char &, Client *);
+        bool    retStateFlag(const char &, Client *, std::vector<Client *> &);
 
 };
 
