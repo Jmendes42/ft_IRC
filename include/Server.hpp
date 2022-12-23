@@ -24,20 +24,24 @@ class Server
         Server(const int &port, const std::string &password):
             _port(port), _sock(_port), _password(password) {};
 
+        void    new_connection();
+        void	io_operations(char *buffer, int i);
         void    sockSet();
-		void	activity();
-        void	quitCmd(Client *);
+	void	activity();
+
         void	partCmd(const std::string &, Client *);
         void    setClientNick(const std::string &, Client *);
         void    setClientUser(const std::string &, Client *);
         void    interpreter(const std::string &, int const &);
         void    opMode(const std::vector<std::string> &, Client *);
+
+        void	quitCmd(Client *);
+        void	pong(Client *);
+        
         void    opKick(const std::vector<std::string> &, Client *);
-        void    privMsg(const std::vector<std::string> &, Client *);
+        void    message(const std::vector<std::string> &, Client *);
         void	inviteToChannel(std::vector<std::string>, Client *);
         void    joinChannel(const std::vector<std::string> &, Client *);
-
-
 
         Socket  &getSocket()    {return _sock;};
 };

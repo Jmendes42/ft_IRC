@@ -9,6 +9,85 @@
 #include "../include/Socket.hpp"
 #include "../include/Macros.hpp"
 
+
+/**
+ * @brief Handle a new connection in the "master" socket and add it to the array of sockets
+ */
+void Server::new_connection()
+{
+	_sock.setNewSocket(accept(_sock.getSocketFd(), (struct sockaddr *)&_sock.getHint(), (socklen_t*)&_sock.getClientSize()));
+	if (_sock.getNewSocket() < 0)
+	{
+		MSG("Accepting Error");
+		throw ConnectionException();
+	}
+	// Inform user of socket number - used in send and receive commands   -- WE DON'T NEED THIS. JUST FOR DEBUG
+	std::cout << "New connection , socket fd is " << _sock.getNewSocket() 
+		<< ", IP is: " << inet_ntoa(_sock.getHint().sin_addr) 
+			<< ", port: " << ntohs(_sock.getHint().sin_port) << std::endl;
+
+	// //send new connection greeting message -- IS THIS NEEDED??
+	// if( send(_sock.getNewSocket(), "001 WELCOME isousa \r\n", 22, 0) != 22 )
+	// {
+	// 	MSG("Sending Message Error");
+	// 	exit(2);
+	// }
+
+	// Add new socket to array of sockets
+	for (int i = 0; i < _sock.getMaxClients(); i++)
+	{
+		// If position is empty
+		if (_sock.getClientSocket(i) == 0 )
+		{
+			_sock.setClientSocket(i, _sock.getNewSocket());
+			printf("Adding to list of sockets as %d\n" , i);
+			break;
+		}
+	}
+}
+
+/**
+ * @brief 			Handle each input and output operation (receive and send messages)
+ * @param buffer    Message to read
+ * @param i    		socket index
+ */
+void	Server::io_operations(char *buffer, int i)
+{
+	_sock.setSd(_sock.getClientSocket(i));
+	if (FD_ISSET(_sock.getSd() , &_sock.getReadFds()))
+	{
+		// Check if it was for closing , and also read the
+		// incoming message
+		_sock.setValRead(read(_sock.getSd(), buffer, 1024));
+		printf("NEW MESSAGE BEGIN = .%s.\n", buffer);
+		if (_sock.getValRead() == 0)
+		{
+			// Somebody disconnected , get his details and print
+			getpeername(_sock.getSd(), (struct sockaddr*)&_sock.getHint(), (socklen_t*)&_sock.getClientSize());
+			printf("Host disconnected , ip %s , port %d \n", inet_ntoa(_sock.getHint().sin_addr), ntohs(_sock.getHint().sin_port));
+			// Close the socket and mark as 0 in list for reuse
+			close(_sock.getSd());
+			_sock.setClientSocket(i, 0);
+			if (_clientHandler.finder(ntohs(_sock.getHint().sin_port)))
+				quitCmd(_clientHandler.finder(ntohs(_sock.getHint().sin_port)));
+		}
+		// Echo back the message that came in
+		else {
+			try
+			{
+				interpreter(std::string(buffer, _sock.getValRead()), _sock.getSd());
+			}
+			catch(std::exception &error)
+			{
+				MSG(error.what());
+			}
+		}
+	}
+}
+
+/**
+ * @brief Main function to handle connections and activities
+ */
 void	Server::activity()
 {
 	char		buffer[1024];
@@ -23,62 +102,10 @@ void	Server::activity()
 	// If something happened on the master socket,
 	// then its an incoming connection
 	if (FD_ISSET(_sock.getSocketFd(), &_sock.getReadFds()))
-	{
-		_sock.setNewSocket(accept(_sock.getSocketFd(), (struct sockaddr *)&_sock.getHint(), (socklen_t*)&_sock.getClientSize()));
-		if (_sock.getNewSocket() < 0)
-		{
-			MSG("Accepting Error");
-			throw ConnectionException();
-		}
-		// Inform user of socket number - used in send and receive commands
-		std::cout << "New connection , socket fd is " << _sock.getNewSocket() 
-			<< ", IP is: " << inet_ntoa(_sock.getHint().sin_addr) 
-				<< ", port: " << ntohs(_sock.getHint().sin_port) << std::endl;
-		// Add new socket to array of sockets
-		for (int i = 0; i < _sock.getMaxClients(); i++)
-		{
-			// If position is empty
-			if (_sock.getClientSocket(i) == 0 )
-			{
-				_sock.setClientSocket(i, _sock.getNewSocket());
-				printf("Adding to list of sockets as %d\n" , i);
-				break;
-			}
-		}
-	}
+		new_connection();
 	// Else its some IO operation on some other socket
 	for (int i = 0; i < _sock.getMaxClients(); i++)
-	{
-		_sock.setSd(_sock.getClientSocket(i));
-		if (FD_ISSET(_sock.getSd() , &_sock.getReadFds()))
-		{
-			// Check if it was for closing , and also read the
-			// incoming message
-			_sock.setValRead(read(_sock.getSd(), buffer, 1024));
-			if (_sock.getValRead() == 0)
-			{
-				// Somebody disconnected , get his details and print
-				getpeername(_sock.getSd(), (struct sockaddr*)&_sock.getHint(), (socklen_t*)&_sock.getClientSize());
-				printf("Host disconnected , ip %s , port %d \n", inet_ntoa(_sock.getHint().sin_addr), ntohs(_sock.getHint().sin_port));
-				// Close the socket and mark as 0 in list for reuse
-				close(_sock.getSd());
-				_sock.setClientSocket(i, 0);
-				if (_clientHandler.finder(ntohs(_sock.getHint().sin_port)))
-					quitCmd(_clientHandler.finder(ntohs(_sock.getHint().sin_port)));
-			}
-			// Echo back the message that came in
-			else {
-				try
-				{
-					interpreter(std::string(buffer, _sock.getValRead()), _sock.getSd());
-				}
-				catch(std::exception &error)
-				{
-					MSG(error.what());
-				}
-			}
-		}
-	}
+		io_operations(buffer, i);
 }
 
 void    Server::sockSet() {
@@ -95,8 +122,10 @@ void    Server::interpreter(std::string const &msg, int const &sockFd) {
 	copy.erase(copy.find('\r'), 2);
 	if (!cmd.compare("QUIT"))
 		quitCmd(client);
-	else if (!cmd.compare("PRIVMSG"))
-		privMsg(ft_split(copy, ' '), client);
+	else if (!cmd.compare("PING"))
+		pong(client);
+	else if (!cmd.compare("PRIVMSG") || !cmd.compare("NOTICE"))
+		message(ft_split(copy, ' '), client);
 	else if (!cmd.compare("NICK"))
 		setClientNick(copy, client);
 	else if (!cmd.compare("KICK"))
@@ -176,13 +205,15 @@ void Server::opMode(const std::vector<std::string> &msg, Client *chop) {
     	channel->cmdMode(msg[2], args, chop);
 }
 
-// ERR_NEEDMOREPARAMS
-// ERR_USERONCHANNEL
+// ERR_NEEDMOREPARAMS (need test using nc)
 // RPL_INVITING           RPL_AWAY
 void	Server::inviteToChannel(std::vector<std::string> info, Client *inviter) {
 	std::vector<std::string>::iterator	it;
 	Client *invited;
 	Channel	*channel = _channelHandler.finder(info.back());
+
+	if (info.size() < 3)
+		ERR_NEEDMOREPARAMS(info[0], inviter->getFd(), _errMsg);
 
 	if (!channel) 
 		ERR_NOSUCHCHANNEL(info[2],inviter->getFd(), _errMsg);
@@ -194,10 +225,18 @@ void	Server::inviteToChannel(std::vector<std::string> info, Client *inviter) {
 		if ((*it).find('#') != std::string::npos)
 			continue ;
 		if (!(invited = _clientHandler.finder((*it))))
-			ERR_NOSUCHNICK1(info[1], inviter->getFd(), _errMsg);
+			ERR_NOSUCHNICK_CONT(info[1], inviter->getFd(), _errMsg);
+		if (channel->usersOnChannel(invited))
+			ERR_USERONCHANNEL_CONT(channel->getName(), inviter->getFd(), _errMsg);
 		channel->cmdInvite(inviter, invited);
 	}
 }
+
+// ERR_NEEDMOREPARAMS              ERR_BANNEDFROMCHAN
+// ERR_INVITEONLYCHAN              ERR_BADCHANNELKEY
+// ERR_CHANNELISFULL               ERR_BADCHANMASK
+// ERR_TOOMANYCHANNELS
+// RPL_TOPIC
 
 void    Server::joinChannel(const std::vector<std::string> &msg, Client *client) {
 	// Limit of ten channels per user
@@ -254,9 +293,11 @@ void    Server::joinChannel(const std::vector<std::string> &msg, Client *client)
 // ERR_NOTOPLEVEL
 // ERR_WILDTOPLEVEL                ERR_TOOMANYTARGETS
 // RPL_AWAY
-void    Server::privMsg(const std::vector<std::string> &info, Client *sender) {
-	std::string msg;
+void    Server::message(const std::vector<std::string> &info, Client *sender) {
+
 	std::string sendMsg;
+	std::string msg;
+	std::string cmd;
 
 	if (info.size() == 1)
 		ERR_NORECIPIENT(sender->getFd(), _errMsg);
@@ -264,13 +305,14 @@ void    Server::privMsg(const std::vector<std::string> &info, Client *sender) {
 		ERR_NEEDMOREPARAMS(info[0], sender->getFd(), _errMsg);
 	if (info[2].length() == 1)	// Check in libera if this error is if msg is only ":" or if info[2] doesn't exist .. Needs to be tested with nc .. weechat always puts the ':'
 		ERR_NOTEXTTOSEND(info[1], sender->getFd(), _errMsg)
-
 	if (info.size() > 3)
 	{
 		msg = info[2];
 		for(long unsigned int i = 3; i < info.size(); i++)
 			msg += ' ' + info[i];
 	}
+ 	(!info[0].compare("PRIVMSG")) ? cmd = " PRIVMSG " : cmd = " NOTICE ";
+
 	if (info[1][0] == '#')
 	{
 		Channel		*channel;
@@ -284,18 +326,20 @@ void    Server::privMsg(const std::vector<std::string> &info, Client *sender) {
 			ERR_CANNOTSENDTOCHAN(channel->getName(), sender->getFd(), _errMsg);
 		std::string channel_name = info[2];
 		sendMsg = ':' + sender->getNick();
-		sendMsg += " PRIVMSG " + info[1] + ' ' + channel_name.erase(0, 1) + "\r\n";
+		sendMsg += cmd + info[1] + ' ' + channel_name.erase(0, 1) + "\r\n";
 		channel->sendMsgToUsers(sendMsg, sender->getFd());
 	}
 	else if (Client * client = _clientHandler.finder(info[1])) {
 		std::string channel_name = info[2];
-		sendMsg = ":" + sender->getNick() + " PRIVMSG ";
+		sendMsg = ":" + sender->getNick() + cmd;
 		sendMsg += client->getNick() + ' ' + channel_name.erase(0, 1) + "\r\n";
 		send(client->getFd(), sendMsg.c_str(), sendMsg.length(), 0);
 	}
 	else
 		ERR_NOSUCHNICK(info[1], sender->getFd(), _errMsg);
 }
+
+
 
 // ERR_NONICKNAMEGIVEN             ERR_ERRONEUSNICKNAME
 // ERR_NICKCOLLISION
@@ -326,9 +370,12 @@ void    Server::setClientUser(const std::string &msg, Client *client) {
 	std::string user = msg.substr(0, msg.find(' '));
 	std::string	realName = msg.substr(msg.find(':') + 1);
 
+	if (!client->getUser().empty())
+		return ;
+	MSG("This shit is HERE");
 	client->setUser(user);
 	client->setReal(realName);
-	welcomeMsg = "\n001 " + client->getNick() + " :Welcome to **HiTeK** Server\r\n";
+	welcomeMsg = "001 " + client->getNick() + " :Welcome to **HiTeK** Server\r\n";
 	send(client->getFd(), welcomeMsg.c_str(), welcomeMsg.length(), 0);
 }
 
@@ -371,4 +418,11 @@ void	Server::quitCmd(Client *quiter) {
 		}
 	}
 	_clientHandler.rmvClient(quiter->getNick());
+}
+
+
+void	Server::pong(Client *pinger) 
+{
+	std::string sendMsg = "PONG 127.0.0.1";
+	send(pinger->getFd(), sendMsg.c_str(), sendMsg.length(), 0);
 }
