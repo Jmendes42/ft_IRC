@@ -7,6 +7,8 @@
 
 # include "Client.hpp"
 # include "Socket.hpp"
+# include "Macros.hpp"
+
 
 class Client;
 

@@ -119,15 +119,15 @@ void    Channel::addInvited(Client *client) {
  */
 void    Channel::rmvClient(Client *rmv) {
     if (finder(_chops, rmv))
-        _chops.erase(_it);
-    else if (finder(_users, rmv))
-        _users.erase(_it);
-    else if (finder(_ban_users, rmv))
-        _ban_users.erase(_it);
-    else if (finder(_moderators, rmv))
-        _moderators.erase(_it);
-    else if (finder(_muted_users, rmv))
-        _muted_users.erase(_it);
+        ERASE_VEC(_chops, _it);
+    if (finder(_users, rmv))
+        ERASE_VEC(_users, _it);
+    if (finder(_ban_users, rmv))
+        ERASE_VEC(_ban_users, _it);
+    if (finder(_moderators, rmv))
+        ERASE_VEC(_moderators, _it);
+    if (finder(_muted_users, rmv))
+        ERASE_VEC(_muted_users, _it);
 }
 
 /**

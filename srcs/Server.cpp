@@ -372,10 +372,9 @@ void    Server::setClientUser(const std::string &msg, Client *client) {
 
 	if (!client->getUser().empty())
 		return ;
-	MSG("This shit is HERE");
 	client->setUser(user);
 	client->setReal(realName);
-	welcomeMsg = "001 " + client->getNick() + " :Welcome to **HiTeK** Server\r\n";
+	welcomeMsg = "\r\n001 " + client->getNick() + " :Welcome to **HiTeK** Server\r\n";
 	send(client->getFd(), welcomeMsg.c_str(), welcomeMsg.length(), 0);
 }
 

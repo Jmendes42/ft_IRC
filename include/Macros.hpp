@@ -24,4 +24,7 @@
 #define ERR_CANNOTSENDTOCHAN(channel, fd, errMsg)       {errMsg = "404 " + channel + " :Cannot send to channel\r\n"; send(fd, errMsg.c_str(), errMsg.length(), 0); return ;}
 #define ERR_NORECIPIENT(fd, errMsg)       {errMsg = "411 :No recipient given (PRIVMSG)\r\n"; send(fd, errMsg.c_str(), errMsg.length(), 0); return ;}
 
+#define ERASE_VEC(vec, _it)       { delete (*_it); vec.erase(_it); return; }
+
+
 #endif

@@ -26,7 +26,7 @@ class Client
     public:
 
         Client() {};
-        ~Client() {};
+       ~Client() {};
         Client(const int &fd, const std::string &ip, const uint16_t &port):_fd(fd), _ip(ip), _pass(1), _port(port) {};
 
         int                     &getFd()        { return (_fd); };
