@@ -29,9 +29,9 @@ class Server
         void    sockSet();
 	void	activity();
 
-        void	partCmd(const std::string &, Client *);
+        void	partCmd(const std::vector<std::string> &info, Client *);
         void    setClientNick(std::vector<std::string> msg, Client *);
-        void    setClientUser(const std::string &, Client *);
+        void    setClientUser(std::vector<std::string> args, Client *);
         void    interpreter(const std::string &, int const &);
         void    opMode(const std::vector<std::string> &, Client *);
 

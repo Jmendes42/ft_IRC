@@ -59,7 +59,6 @@ void	Server::io_operations(char *buffer, int i)
 		// Check if it was for closing , and also read the
 		// incoming message
 		_sock.setValRead(read(_sock.getSd(), buffer, 1024));
-		printf("NEW MESSAGE BEGIN = .%s.\n", buffer);
 		if (_sock.getValRead() == 0)
 		{
 			// Somebody disconnected , get his details and print
@@ -113,38 +112,52 @@ void    Server::sockSet() {
     _sock.bindSocket();
 }
 
-void    Server::interpreter(std::string const &msg, int const &sockFd) {
+void    Server::interpreter(const std::string &msg, int const &sockFd) 
+{
 	std::string copy = msg;
-    std::string cmd = msg.substr(0, msg.find(' '));
 	Client		*client = _clientHandler.finder(sockFd);
 
-	MSG(copy);
-	copy.erase(copy.find('\r'), 2);
-	if (!cmd.compare("QUIT"))
-		quitCmd(client);
-	else if (!cmd.compare("PING"))
-		pong(client);
-	else if (!cmd.compare("PRIVMSG") || !cmd.compare("NOTICE"))
-		message(ft_split(copy, ' '), client);
-	else if (!cmd.compare("NICK"))
-		setClientNick(ft_split(copy, ' '), client);
-	else if (!cmd.compare("KICK"))
-		opKick(ft_split(copy, ' '), client);
-	else if (!cmd.compare("MODE"))
-		opMode(ft_split(copy, ' '), client);
-	else if (!cmd.compare("TOPIC"))
-		_channelHandler.opTopic(copy, client);
-	else if (!cmd.compare("JOIN"))
-		joinChannel(ft_split(copy, ' '), client);
-	else if (!cmd.compare("INVITE"))
-		inviteToChannel(ft_split(copy, ' '), client);
-	else if (!cmd.compare("USER"))
-		setClientUser(copy.substr(copy.find(' ') + 1), client);
-	else if (!cmd.compare("PART"))
-		partCmd(copy.substr(5, copy.find(' ', 5) - 5), client);
-	else if (!cmd.compare("PASS"))
-		_clientHandler.addClient(copy, _password, sockFd,
-			std::string(inet_ntoa(_sock.getHint().sin_addr)), ntohs(_sock.getHint().sin_port));
+	MSG("TESTE MSG  = ." + copy + ".");
+	copy.erase(copy.size() - 1, 1);
+	std::vector<std::string> commands = ft_split(copy, '\n');
+
+	std::vector<std::string>::iterator it;
+	for (it = commands.begin(); it != commands.end(); it++)
+		(*it).erase((*it).find('\r'), 1);
+
+	size_t i = 0;
+	while (i < commands.size())
+	{
+		std::vector<std::string> args = ft_split(commands[i], ' ');
+
+		if (!args[0].compare("QUIT"))
+			quitCmd(client);
+		else if (!args[0].compare("PING"))
+			pong(client);
+		else if (!args[0].compare("PRIVMSG") || !args[0].compare("NOTICE"))
+			message(args, client);
+		else if (!args[0].compare("NICK"))
+			setClientNick(args, client);
+		else if (!args[0].compare("KICK"))
+			opKick(args, client);
+		else if (!args[0].compare("MODE"))
+			opMode(args, client);
+		else if (!args[0].compare("TOPIC"))
+			_channelHandler.opTopic(args, client);
+		else if (!args[0].compare("JOIN"))
+			joinChannel(args, client);
+		else if (!args[0].compare("INVITE"))
+			inviteToChannel(args, client);
+		else if (!args[0].compare("USER"))
+			setClientUser(args, client);
+		else if (!args[0].compare("PART"))
+			partCmd(args, client);
+		else if (!args[0].compare("PASS"))
+			_clientHandler.addClient(args[1], _password, sockFd,
+				std::string(inet_ntoa(_sock.getHint().sin_addr)), ntohs(_sock.getHint().sin_port));
+		i++;
+	}
+
 }
 
 /*void    Server::interpreter(std::string const &msg, int const &sockFd) {
@@ -347,16 +360,19 @@ void    Server::setClientNick(std::vector<std::string> msg, Client *client) { //
 	std::vector<Channel *>::iterator	it;
 	std::string							sendMsg;
 	std::vector<Channel *>				channels = client->getChannels();
-	std::string							nick = msg[1].erase(msg[1].length() - 2, 2);
-
+	std::string							nick = msg[1];
 
 	if (client->getNick().empty())
 	{
 		if (_clientHandler.finder(nick))
-			ERR_NICKCOLLISION(nick, client->getFd(), _errMsg);
+			ERR_NICKNAMEINUSE(nick, client->getFd(), _errMsg);
 		client->setNick(nick);
 		MSG("NICK TO CHECK: ." + client->getNick() + ".");
-
+		if (!client->getUser().empty())
+		{
+			std::string welcomeMsg = "001 " + client->getNick() + " :Welcome to '**HiTeK**' Server\r\n";
+			send(client->getFd(), welcomeMsg.c_str(), welcomeMsg.length(), 0);
+		}
 		return ;
 	}
 	if (_clientHandler.finder(nick))
@@ -372,16 +388,21 @@ void    Server::setClientNick(std::vector<std::string> msg, Client *client) { //
 
 // ERR_NEEDMOREPARAMS
 // ERR_ALREADYREGISTRED
-void    Server::setClientUser(const std::string &msg, Client *client) {
-	std::string welcomeMsg;
-	std::string user = msg.substr(0, msg.find(' '));
-	std::string	realName = msg.substr(msg.find(':') + 1);
+void    Server::setClientUser(std::vector<std::string> args, Client *client) {
 
-	client->setUser(user);
-	client->setReal(realName);
+	
+	std::string welcomeMsg;
+	// std::string user = msg.substr(0, msg.find(' '));
+	// std::string	realName = msg.substr(msg.find(':') + 1);
+
+	client->setUser(args[1]);
+	client->setReal(args[2]);
 	MSG("NICK TO SEND: ." + client->getNick() + ".");
-	welcomeMsg = ":127.0.0.1 001 " + client->getNick() + " :Welcome to '**HiTeK**' Server\r\n";
-	send(client->getFd(), welcomeMsg.c_str(), welcomeMsg.length(), 0);
+	if (!client->getNick().empty())
+	{
+		welcomeMsg = "001 " + client->getNick() + " :Welcome to '**HiTeK**' Server\r\n";
+		send(client->getFd(), welcomeMsg.c_str(), welcomeMsg.length(), 0);
+	}
 }
 
 void	Server::opKick(const std::vector<std::string> &info, Client *kicker) {
@@ -397,14 +418,14 @@ void	Server::opKick(const std::vector<std::string> &info, Client *kicker) {
     ERR_NEEDMOREPARAMS(std::string("KICK"), kicker->getFd(), _errMsg);
 }
 
-void	Server::partCmd(const std::string &channel, Client *parter) {
-	if (Channel *part = _channelHandler.finder(channel)) {
+void	Server::partCmd(const std::vector<std::string> &info, Client *parter) {
+	if (Channel *part = _channelHandler.finder(info[1])) {
 		part->partChannel(parter);
 		if (!part->usersOnChannel())
-			_channelHandler.rmvChannel(channel);
+			_channelHandler.rmvChannel(info[1]);
 	}
 	else
-		ERR_NOSUCHCHANNEL(channel, parter->getFd(), _errMsg);
+		ERR_NOSUCHCHANNEL(info[1], parter->getFd(), _errMsg);
 }
 
 void	Server::quitCmd(Client *quiter) {
@@ -431,3 +452,5 @@ void	Server::pong(Client *pinger)
 	std::string sendMsg = "PONG 127.0.0.1";
 	send(pinger->getFd(), sendMsg.c_str(), sendMsg.length(), 0);
 }
+
+

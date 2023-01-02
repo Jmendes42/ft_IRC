@@ -29,9 +29,9 @@ Client *ClientHandler::finder(const uint16_t &port) {
 void    ClientHandler::addClient(std::string const &msg, std::string const &pass, const int &fd,
                                     const std::string &ip, const uint16_t &port)
 {
-    std::string msgPass = msg.substr(msg.find(' ') + 1, msg.find(' ') - 1);
+    // std::string msgPass = msg.substr(msg.find(' ') + 1, msg.find(' ') - 1);
 
-    if (!msgPass.compare(pass))
+    if (!msg.compare(pass))
         _clients.push_back(new Client(fd, ip, port));
     else {
         MSG("Error: Wrong password!");

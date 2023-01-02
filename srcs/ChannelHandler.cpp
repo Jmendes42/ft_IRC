@@ -11,13 +11,12 @@ void    ChannelHandler::addChannel(std::string const &channelName, Client *chop)
 // ERR_NEEDMOREPARAMS              ERR_NOTONCHANNEL
 // RPL_NOTOPIC                     RPL_TOPIC
 // ERR_CHANOPRIVSNEEDED
-void ChannelHandler::opTopic(std::string const &msg, Client *client) {
-    std::vector<std::string> info = ft_split(msg, ' ');
+void ChannelHandler::opTopic(std::vector<std::string> info, Client *client) {
     
-    if (msg.find(':') == std::string::npos)
+    if (info[2].empty())
         finder(info[1])->sendTopic(client);
     else
-        finder(info[1])->cmdTopic(msg.substr(msg.find(':')), client);
+        finder(info[1])->cmdTopic(info[2], client);
 }
 
 
