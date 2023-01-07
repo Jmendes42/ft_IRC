@@ -27,19 +27,19 @@ class Server
         Server() {};
         Server(const int &port, const std::string &password):
             _port(port), _sock(_port), _password(password) 
-                {_opUserName = "Hitek"; _opPassword = "de4";}
+                {_opUserName = "H"; _opPassword = "4";}
 
         void    new_connection();
         void	io_operations(char *buffer, int i);
         void    sockSet();
 	    void	activity();
 
-        void	partCmd(const std::vector<std::string> &info, Client *);
-        void	killCmd(const std::vector<std::string> &info, Client *);
-        void    setClientNick(std::vector<std::string> msg, Client *);
-        void    setClientUser(std::vector<std::string> args, Client *);
-        void    interpreter(const std::string &, int const &);
+        void    interperter(const std::string &, int const &);
+        void    setClientNick(std::vector<std::string>, Client *);
+        void    setClientUser(std::vector<std::string>, Client *);
         void    opMode(const std::vector<std::string> &, Client *);
+        void	partCmd(const std::vector<std::string> &, Client *);
+        void	killCmd(const std::vector<std::string> &, Client *);
 
         void	pong(Client *);
         void	quitCmd(Client *);
@@ -53,6 +53,7 @@ class Server
         void	addOper(Client *);
         void	delOper(Client *);
         Client *operFinder(Client *);
+        void	destroyClient(Client *);
 
         Socket  &getSocket()    {return _sock;};
 };

@@ -30,6 +30,6 @@ Channel *ChannelHandler::finder(const std::string &channelName) {
 }
 
 void    ChannelHandler::rmvChannel(std::string const &name) {
-    finder(name);
-    ERASE_VEC(_channels, _it);
+    if (finder(name)) 
+        ERASE_DEL_VEC(_channels, _it)
 }

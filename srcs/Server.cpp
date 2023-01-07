@@ -74,7 +74,7 @@ void	Server::io_operations(char *buffer, int i)
 		else {
 			try
 			{
-				interpreter(std::string(buffer, _sock.getValRead()), _sock.getSd());
+				interperter(std::string(buffer, _sock.getValRead()), _sock.getSd());
 			}
 			catch(std::exception &error)
 			{
@@ -107,17 +107,25 @@ void	Server::activity()
 		io_operations(buffer, i);
 }
 
+/**
+ * @brief Initiates and binds Server _socket
+ */
 void    Server::sockSet() {
 	_sock.initSockets();
     _sock.bindSocket();
 }
 
-void    Server::interpreter(const std::string &msg, int const &sockFd) 
+/**
+ * @param sockFd	Client fd
+ * @param msg		Message to interprete
+ * @brief			Searches messages coming from _socket for commands and executes them
+ */
+void    Server::interperter(const std::string &msg, int const &sockFd) 
 {
 	std::string copy = msg;
 	Client		*client = _clientHandler.finder(sockFd);
 
-	MSG("TESTE MSG  = ." + copy + ".");
+	MSG(copy);
 	copy.erase(copy.size() - 1, 1);
 	std::vector<std::string> commands = ft_split(copy, '\n');
 
@@ -159,7 +167,6 @@ void    Server::interpreter(const std::string &msg, int const &sockFd)
 		else if (!args[0].compare("PASS"))
 			_clientHandler.addClient(args[1], _password, sockFd,
 				std::string(inet_ntoa(_sock.getHint().sin_addr)), ntohs(_sock.getHint().sin_port));
-		i++;
 	}
 
 }
@@ -167,6 +174,7 @@ void    Server::interpreter(const std::string &msg, int const &sockFd)
 void    Server::killCmd(const std::vector<std::string> &args, Client *killer) {
 	Client		*killed;
 	std::string	sendMsg;
+	std::vector<Channel *>::iterator	it;
 
 	if (!operFinder(killer))
 		ERR_NOPRIVILEGES(killer->getNick(), killer->getFd(), _errMsg)
@@ -175,16 +183,10 @@ void    Server::killCmd(const std::vector<std::string> &args, Client *killer) {
 	if (!(killed = _clientHandler.finder(args[1])))
 		ERR_NOSUCHNICK(args[1], killer->getFd(), _errMsg)
 	if (args.size() >= 3)
-		sendMsg = ":jmendes!jmendes@127.0.0.1 KILL joao :killed by admin \n";
+		sendMsg = ':' + killer->getNick() + " KILL " + killed->getNick() + ' ' + args[2] + "\r\nERROR :Closing Link:\r\n";
 	else if (args.size() == 2)
-		sendMsg = ":jmendes!jmendes@127.0.0.1 KILL joao\r\n";
-		//sendMsg = "KILL :" + args[1] + "/n";
-	MSG("KILLED -> " + killed->getNick());
-	MSG(sendMsg);
-	send(killed->getFd(), sendMsg.c_str(), sendMsg.length(), 0);
-	close(killed->getFd());
-	_sock.setClientSocket(killed->getFd() - 4, 0);
-	//SEND(killed->getFd(), sendMsg)
+		sendMsg = ':' + killer->getNick() + " KILL " + killed->getNick() + "\r\nERROR :Closing Link:\r\n";
+	SEND(killed->getFd(), sendMsg)
 }
 
 // irc: failed to parse command
@@ -369,7 +371,6 @@ void    Server::setClientNick(std::vector<std::string> msg, Client *client) { //
 		if (_clientHandler.finder(nick))
 			ERR_NICKNAMEINUSE(nick, client->getFd(), _errMsg);
 		client->setNick(nick);
-		MSG("NICK TO CHECK: ." + client->getNick() + ".");
 		if (!client->getUser().empty())
 		{
 			std::string welcomeMsg = "001 " + client->getNick() + " :Welcome to '**HiTeK**' Server\r\n";
@@ -379,7 +380,7 @@ void    Server::setClientNick(std::vector<std::string> msg, Client *client) { //
 	}
 	if (_clientHandler.finder(nick))
 		ERR_NICKNAMEINUSE(nick, client->getFd(), _errMsg);
-
+	MSG("QUIT");
 	sendMsg = ':' + client->getNick();
 	sendMsg += " NICK " + nick + "\r\n";
 	client->setNick(nick);
@@ -399,7 +400,6 @@ void    Server::setClientUser(std::vector<std::string> args, Client *client) {
 
 	client->setUser(args[1]);
 	client->setReal(args[2]);
-	MSG("NICK TO SEND: ." + client->getNick() + ".");
 	if (!client->getNick().empty())
 	{
 		welcomeMsg = "001 " + client->getNick() + " :Welcome to '**HiTeK**' Server\r\n";
@@ -433,21 +433,21 @@ void	Server::partCmd(const std::vector<std::string> &info, Client *parter) {
 // SEGFAULT
 void	Server::quitCmd(Client *quiter) {
 	std::vector<Channel *>::iterator	it;
-	std::string							msgSend;
-	std::vector<Channel *>				channels;
+	std::string							sendMsg;
 
 	if (!quiter->getChannels().empty()) {
-		channels = quiter->getChannels();
+		std::vector<Channel *>	channels = quiter->getChannels();
+
 		for (it = channels.begin(); it != channels.end(); it++) {
-        	msgSend = ":" + quiter->getNick() + " QUIT " + (*it)->getName() + "\r\n";
-			(*it)->sendMsgToUsers(msgSend);
+        	sendMsg = ":" + quiter->getNick() + " QUIT " + (*it)->getName() + "\r\n";
+			(*it)->sendMsgToUsers(sendMsg);
 			(*it)->rmvClient(quiter);
-			if (!(*it)->usersOnChannel())
+			if (!(*it)->usersOnChannel()){
 				_channelHandler.rmvChannel((*it)->getName());
+			}
 		}
 	}
-	delOper(quiter);
-	_clientHandler.rmvClient(quiter->getNick());
+	destroyClient(quiter);
 }
 
 void	Server::pong(Client *pinger) 
@@ -474,4 +474,11 @@ void	Server::addOper(Client *client) {
 void	Server::delOper(Client *client) {
 	if (operFinder(client))
 		ERASE_VEC(_opers, _it)
+}
+
+void	Server::destroyClient(Client *client) {
+	delOper(client);
+	close(client->getFd());
+	_sock.setClientSocket(client->getFd() - 4, 0);
+	_clientHandler.rmvClient(client->getNick());
 }

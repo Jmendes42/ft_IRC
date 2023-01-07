@@ -41,6 +41,6 @@ void    ClientHandler::addClient(std::string const &msg, std::string const &pass
 
 void    ClientHandler::rmvClient(std::string const &rmv) {
     if (finder(rmv))
-        ERASE_VEC(_clients, _it);
+        ERASE_DEL_VEC(_clients, _it);
 }
 
