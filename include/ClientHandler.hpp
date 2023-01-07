@@ -10,6 +10,7 @@
 # include "Macros.hpp"
 
 
+
 class Client;
 
 class ClientHandler
@@ -25,14 +26,15 @@ class ClientHandler
         ~ClientHandler() {};
 
         void    rmvClient(std::string const &);
-        void    addClient(std::string const &, std::string const &, const int &,
-                            const std::string &, const uint16_t &);
+        void    addClient(const int &fd, const std::string &ip, const uint16_t &port);
 
         Client  *finder(const int &);
         Client  *finder(const uint16_t &);
         Client  *finder(const std::string &);
 
         std::vector<Client *>   &getClients()   {return _clients;};
+
+        std::string  processCmd(const std::string &msg, int const &sockFd);
 };
 
 #endif

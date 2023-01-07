@@ -6,8 +6,9 @@
 
 
 #define RPL_YOUREOPER(fd, errMsg)                       {errMsg = "381 :You are now an IRC operator\r\n"; send(fd, errMsg.c_str(), errMsg.length(), 0); return ;}
-#define ERR_PASSWDMISMATCH(fd, errMsg)                  {errMsg = "464 :Password incorrect\r\n"; send(fd, errMsg.c_str(), errMsg.length(), 0); return ;}
 #define ERR_NOPRIVILEGES(client, fd, errMsg)                    {errMsg = "481 " + client + " :Permission Denied - You're not an IRC operator\r\n"; send(fd, errMsg.c_str(), errMsg.length(), 0); return ;}
+
+#define ERR_PASSWDMISMATCH(client, fd, errMsg)                    {errMsg = "464 " + client + " :Incorrect Password\r\n"; send(fd, errMsg.c_str(), errMsg.length(), 0); return ;}
 
 
 #define ERR_NOSUCHNICK_CONT(client, fd, errMsg)         {errMsg = "401 " + client + " :No such nickname\r\n"; send(fd, errMsg.c_str(), errMsg.length(), 0); continue ;}

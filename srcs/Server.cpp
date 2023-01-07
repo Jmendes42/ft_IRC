@@ -25,13 +25,7 @@ void Server::new_connection()
 	std::cout << "New connection , socket fd is " << _sock.getNewSocket() 
 		<< ", IP is: " << inet_ntoa(_sock.getHint().sin_addr) 
 			<< ", port: " << ntohs(_sock.getHint().sin_port) << std::endl;
-
-	// //send new connection greeting message -- IS THIS NEEDED??
-	// if( send(_sock.getNewSocket(), "001 WELCOME isousa \r\n", 22, 0) != 22 )
-	// {
-	// 	MSG("Sending Message Error");
-	// 	exit(2);
-	// }
+	_clientHandler.addClient(_sock.getNewSocket(), std::string(inet_ntoa(_sock.getHint().sin_addr)), ntohs(_sock.getHint().sin_port));
 
 	// Add new socket to array of sockets
 	for (int i = 0; i < _sock.getMaxClients(); i++)
@@ -74,7 +68,10 @@ void	Server::io_operations(char *buffer, int i)
 		else {
 			try
 			{
-				interperter(std::string(buffer, _sock.getValRead()), _sock.getSd());
+				std::string cmd;
+				cmd = _clientHandler.processCmd(std::string(buffer, _sock.getValRead()), _sock.getSd());
+				if (!cmd.empty())
+					interpreter(cmd, _sock.getSd());
 			}
 			catch(std::exception &error)
 			{
@@ -83,6 +80,12 @@ void	Server::io_operations(char *buffer, int i)
 		}
 	}
 }
+
+// PASS 012
+// CAP LS 302
+// NICK isousa
+// USER isousa 0 * :isousa
+
 
 /**
  * @brief Main function to handle connections and activities
@@ -120,19 +123,22 @@ void    Server::sockSet() {
  * @param msg		Message to interprete
  * @brief			Searches messages coming from _socket for commands and executes them
  */
-void    Server::interperter(const std::string &msg, int const &sockFd) 
+void    Server::interpreter(const std::string &msg, int const &sockFd) 
 {
+	MSG("INT = ." + msg + ".");
 	std::string copy = msg;
 	Client		*client = _clientHandler.finder(sockFd);
 
-	MSG(copy);
-	copy.erase(copy.size() - 1, 1);
-	std::vector<std::string> commands = ft_split(copy, '\n');
 
+	if (copy[copy.length() - 1] == '\n')
+		copy.erase(copy.size() - 1, 1);
+	std::vector<std::string> commands = ft_split(copy, '\n');
 	std::vector<std::string>::iterator it;
 	for (it = commands.begin(); it != commands.end(); it++)
-		(*it).erase((*it).find('\r'), 1);
-
+	{
+		if ((*it).find('\r') != std::string::npos)
+			(*it).erase((*it).find('\r'), 1);
+	}
 	size_t i = -1;
 	while (++i < commands.size())
 	{
@@ -165,10 +171,12 @@ void    Server::interperter(const std::string &msg, int const &sockFd)
 		else if (!args[0].compare("PRIVMSG") || !args[0].compare("NOTICE"))
 			message(args, client);
 		else if (!args[0].compare("PASS"))
-			_clientHandler.addClient(args[1], _password, sockFd,
-				std::string(inet_ntoa(_sock.getHint().sin_addr)), ntohs(_sock.getHint().sin_port));
+		{
+			if (_password.compare(args[1]))
+				client->setPass();
+			// else
+		}
 	}
-
 }
 
 void    Server::killCmd(const std::vector<std::string> &args, Client *killer) {
@@ -189,10 +197,6 @@ void    Server::killCmd(const std::vector<std::string> &args, Client *killer) {
 	SEND(killed->getFd(), sendMsg)
 }
 
-// irc: failed to parse command
-//          │                     | "464" (please report to
-//          │                     | developers): "464 :Password
-//          │                     | incorrect"
 void    Server::operCmd(const std::vector<std::string> &args, Client *client) {
 
     if (args.size() < 3)
@@ -202,7 +206,7 @@ void    Server::operCmd(const std::vector<std::string> &args, Client *client) {
 			addOper(client);
 			RPL_YOUREOPER(client->getFd(), _errMsg)
 		}
-	ERR_PASSWDMISMATCH(client->getFd(), _errMsg)
+	ERR_PASSWDMISMATCH(client->getNick(), client->getFd(), _errMsg)
 }
 
 // Check - and +
