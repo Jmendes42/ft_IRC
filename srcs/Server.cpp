@@ -434,7 +434,6 @@ void	Server::partCmd(const std::vector<std::string> &info, Client *parter) {
 		ERR_NOSUCHCHANNEL(info[1], parter->getFd(), _errMsg);
 }
 
-// SEGFAULT
 void	Server::quitCmd(Client *quiter) {
 	std::vector<Channel *>::iterator	it;
 	std::string							sendMsg;
