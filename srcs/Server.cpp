@@ -125,10 +125,9 @@ void    Server::sockSet() {
  */
 void    Server::interpreter(const std::string &msg, int const &sockFd) 
 {
-	MSG("INT = ." + msg + ".");
+	MSG("Interpreter: ." + msg + ".");
 	std::string copy = msg;
 	Client		*client = _clientHandler.finder(sockFd);
-
 
 	if (copy[copy.length() - 1] == '\n')
 		copy.erase(copy.size() - 1, 1);
@@ -226,8 +225,9 @@ void Server::opMode(const std::vector<std::string> &msg, Client *chop) {
 		args.erase(args.find(' '), 1);
 	if (flags[1] == 'o' || flags[1] == 'b' || flags[1] == 'v') {
 		if (!_clientHandler.finder(args)) {
-			MSG("ERR no such user");
-			return ;
+			ERR_NOSUCHNICK(channel->getName(), chop->getFd(), _errMsg)
+			// MSG("ERR no such user");
+			// return ;
 		}
         channel->userMode(flags, _clientHandler.finder(args), chop);
 	}
@@ -265,6 +265,9 @@ void	Server::inviteToChannel(std::vector<std::string> info, Client *inviter) {
 // ERR_BADCHANMASK
 // ERR_TOOMANYCHANNELS
 void    Server::joinChannel(const std::vector<std::string> &msg, Client *client) {
+
+	MSG("Join: ." + msg[0] + ".");
+
 	std::vector<std::string>::iterator	it;
 	std::vector<std::string>			channels;
 	int									fd = client->getFd();
@@ -277,24 +280,25 @@ void    Server::joinChannel(const std::vector<std::string> &msg, Client *client)
 		ERR_NEEDMOREPARAMS(std::string("JOIN"), fd, _errMsg)
 	channels = ft_split(channelMsg, ',');
 	for (it = channels.begin(); it != channels.end(); it++) {
+			MSG("Join LOOP: ." + (*it) + ".");
+
 		if ((*it)[0] != '#')
-			(*it).insert(0, 1, '#');
+			ERR_NOSUCHCHANNEL_CONT((*it), client->getFd(), _errMsg)
 		if (Channel *channel = _channelHandler.finder(*it)) {
 			std::string	joinMsg;
-
 			if (channel->usersOnChannel(client))
-				ERR_USERONCHANNEL(channel->getName(), client->getFd(), _errMsg)
+				ERR_USERONCHANNEL_CONT(channel->getName(), client->getFd(), _errMsg)
 			if (channel->retStateFlag('i', client, channel->getInvited()))
-				ERR_INVITEONLYCHAN(channel->getName(), fd, _errMsg)
+				ERR_INVITEONLYCHAN_CONT(channel->getName(), fd, _errMsg)
 			if (channel->retStateFlag('l') && ((channel->getUsersTotal() + 1) > channel->getLimit()))
-				ERR_CHANNELISFULL(channel->getName(), fd, _errMsg)
+				ERR_CHANNELISFULL_CONT(channel->getName(), fd, _errMsg)
 			if (channel->finder(channel->getBan(), client))
-				ERR_BANNEDFROMCHAN(channel->getName(), fd, _errMsg)
+				ERR_BANNEDFROMCHAN_CONT(channel->getName(), fd, _errMsg)
 			if (channel->retStateFlag('k')) {
 				if (msg.size() < 3)
-					ERR_NEEDMOREPARAMS(channel->getName(), fd, _errMsg)
+					ERR_NEEDMOREPARAMS_CONT(channel->getName(), fd, _errMsg)
 				if (msg[2] != channel->getPass())
-					ERR_BADCHANNELKEY(channel->getName(), fd, _errMsg)
+					ERR_BADCHANNELKEY_CONT(channel->getName(), fd, _errMsg)
 			}
 			joinMsg = ':' + nick + '!' + user + '@' + ip + " JOIN " + (*it) + '\n';
 			channel->sendMsgToUsers(joinMsg);

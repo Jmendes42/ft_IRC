@@ -296,10 +296,11 @@ void Channel::setLimit(int fd, char set, std::string const &args)
  * @param set   control if the function will set the flag to true or false (+/-)
  * @param flag  the flag of the channel that will change state
 **/
-void Channel::changeModePS(int fd, char set, char flag, std::string const &channel_name)
+void Channel::changeModePS(Client *client, char set, char flag, std::string const &channel_name)
 {
     std::map<char, bool>::iterator it = _flags.find(flag);
     std::map<char, bool>::iterator temp;
+    std::string msgSend;
     
     temp = (it->first == 'p') ?  _flags.find('s') : _flags.find('p');
     if (set == '+' && it->second == false)
@@ -307,11 +308,17 @@ void Channel::changeModePS(int fd, char set, char flag, std::string const &chann
         it->second = true;
         if (temp->second == true)
             temp->second = false;
+        msgSend = ':' + client->getNick() + " MODE " + channel_name + " +" + flag + "\r\n";
+        sendMsgToUsers(msgSend);
     }
     else if (set == '-' && it->second == true)
+    {
         it->second = false;
+        msgSend = ':' + client->getNick() + " MODE " + channel_name + " -" + flag + "\r\n";
+        sendMsgToUsers(msgSend);
+    }
     else
-        ERR_KEYSET(channel_name, fd, _errMsg);
+        ERR_KEYSET(channel_name, client->getFd(), _errMsg);
 }
 
 /**
@@ -320,10 +327,8 @@ void Channel::changeModePS(int fd, char set, char flag, std::string const &chann
 **/
 int checkFlag(char flag)
 {
-    if (flag == 'p' || flag == 's') {
-        std::cout << "FLAG = " << flag << std::endl;
+    if (flag == 'p' || flag == 's')
         return (1);
-    }
     else if (flag == 'i' || flag == 't' || flag == 'n' || flag == 'm')
         return (2);
     else if (flag == 'o' || flag == 'l' || flag == 'k')
@@ -375,7 +380,7 @@ void Channel::cmdMode(std::string const &flags, std::string const &args, Client 
     for (long unsigned int i = 1; i < flags.length(); i++) {
         // In case of P or S ! Only one can be set at a time
         if (checkFlag(flags[i]) == 1)
-            changeModePS(chop->getFd(), set, flags[i], getName());
+            changeModePS(chop, set, flags[i], getName());
         else if (checkFlag(flags[i]) == 2)                          
             changeSimpleFlag(flags, chop);
         else if (checkFlag(flags[i]) == 3)

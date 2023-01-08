@@ -78,7 +78,7 @@ class Channel
 
 
         void    changeSimpleFlag(const std::string &, Client *);
-        void    changeModePS(int fd, char set, char flag, std::string const &channel_name);
+        void    changeModePS(Client *client, char set, char flag, std::string const &channel_name);
         void    changePassword(int fd, char set, std::string const &args);
         void    setLimit(int fd, char set, std::string const &args);
         void    changeComposedFlag(const std::string &, const std::string &, Client *);
