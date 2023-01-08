@@ -253,17 +253,17 @@ void    Channel::userMode(const std::string &flags, Client *user, Client *chop) 
 
 void Channel::initFlags()
 {
-    _flags.insert(std::pair<char, bool>('o', false));
-    _flags.insert(std::pair<char, bool>('p', false));
-    _flags.insert(std::pair<char, bool>('s', false));
-    _flags.insert(std::pair<char, bool>('i', false));
-    _flags.insert(std::pair<char, bool>('t', false));
-    _flags.insert(std::pair<char, bool>('n', true));
-    _flags.insert(std::pair<char, bool>('m', false));
-    _flags.insert(std::pair<char, bool>('l', false));
-    _flags.insert(std::pair<char, bool>('b', false));
-    _flags.insert(std::pair<char, bool>('v', false));
-    _flags.insert(std::pair<char, bool>('k', false));
+    _flags.insert(std::pair<char, bool>('o', false));       //  o - give/take channel operator privileges;
+    _flags.insert(std::pair<char, bool>('p', false));       //  p - private channel flag;
+    _flags.insert(std::pair<char, bool>('s', false));       //  s - secret channel flag;
+    _flags.insert(std::pair<char, bool>('i', false));       //  i - invite-only channel flag;
+    _flags.insert(std::pair<char, bool>('t', false));       //  t - topic settable by channel operator only flag;
+    _flags.insert(std::pair<char, bool>('n', true));        //  n - no messages to channel from clients on the outside;
+    _flags.insert(std::pair<char, bool>('m', false));       //  m - moderated channel;
+    _flags.insert(std::pair<char, bool>('l', false));       //  l - set the user limit to channel;
+    _flags.insert(std::pair<char, bool>('b', false));       //  b - set a ban mask to keep users out;
+    _flags.insert(std::pair<char, bool>('v', false));       //  v - give/take the ability to speak on a moderated channel;
+    _flags.insert(std::pair<char, bool>('k', false));       //  k - set a channel key (password).
 }
 
 /**
