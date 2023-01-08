@@ -39,7 +39,7 @@ class Server
         void    setClientUser(std::vector<std::string>, Client *);
         void    opMode(const std::vector<std::string> &, Client *);
         void	partCmd(const std::vector<std::string> &, Client *);
-        void	killCmd(const std::vector<std::string> &, Client *);
+        void	killCmd(const std::string &, Client *);
 
         void	pong(Client *);
         void	quitCmd(Client *);

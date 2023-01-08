@@ -25,14 +25,6 @@ void Server::new_connection()
 	std::cout << "New connection , socket fd is " << _sock.getNewSocket() 
 		<< ", IP is: " << inet_ntoa(_sock.getHint().sin_addr) 
 			<< ", port: " << ntohs(_sock.getHint().sin_port) << std::endl;
-
-	// //send new connection greeting message -- IS THIS NEEDED??
-	// if( send(_sock.getNewSocket(), "001 WELCOME isousa \r\n", 22, 0) != 22 )
-	// {
-	// 	MSG("Sending Message Error");
-	// 	exit(2);
-	// }
-
 	// Add new socket to array of sockets
 	for (int i = 0; i < _sock.getMaxClients(); i++)
 	{
@@ -116,9 +108,9 @@ void    Server::sockSet() {
 }
 
 /**
- * @param sockFd	Client fd
- * @param msg		Message to interprete
  * @brief			Searches messages coming from _socket for commands and executes them
+ * @param msg		Message to interprete
+ * @param sockFd	Client fd
  */
 void    Server::interperter(const std::string &msg, int const &sockFd) 
 {
@@ -145,7 +137,7 @@ void    Server::interperter(const std::string &msg, int const &sockFd)
 		else if (!args[0].compare("OPER"))
 			operCmd(args, client);
 		else if (!args[0].compare("KILL"))
-			killCmd(args, client);
+			killCmd(commands[i], client);
 		else if (!args[0].compare("KICK"))
 			opKick(args, client);
 		else if (!args[0].compare("MODE"))
@@ -171,21 +163,28 @@ void    Server::interperter(const std::string &msg, int const &sockFd)
 
 }
 
-void    Server::killCmd(const std::vector<std::string> &args, Client *killer) {
+/**
+ * @brief			Searches messages coming from _socket for commands and executes them
+ * @param args		String vector with the nick of the client to kill and arguments to use
+ * @param killer	Client issuing the kill command
+ */
+void    Server::killCmd(const std::string &args, Client *killer) {
 	Client		*killed;
 	std::string	sendMsg;
-	std::vector<Channel *>::iterator	it;
+	std::string	argsMsg;
 
 	if (!operFinder(killer))
 		ERR_NOPRIVILEGES(killer->getNick(), killer->getFd(), _errMsg)
 	if (args.size() < 2)
         ERR_NEEDMOREPARAMS(std::string("OPER"), killer->getFd(), _errMsg)
-	if (!(killed = _clientHandler.finder(args[1])))
-		ERR_NOSUCHNICK(args[1], killer->getFd(), _errMsg)
+	if (!(killed = _clientHandler.finder(args.substr(5, args.find(" :") - 5))))
+		ERR_NOSUCHNICK(args.substr(5, args.find(" :") - 5), killer->getFd(), _errMsg)					//changed the vector to be a string and change the message to the full string -> KILL joao :a puta da tua mae
 	if (args.size() >= 3)
-		sendMsg = ':' + killer->getNick() + " KILL " + killed->getNick() + ' ' + args[2] + "\r\nERROR :Closing Link:\r\n";
+		sendMsg = ':' + killer->getNick() + ' ' + args + "\r\nERROR :Closing Link:\r\n";
 	else if (args.size() == 2)
-		sendMsg = ':' + killer->getNick() + " KILL " + killed->getNick() + "\r\nERROR :Closing Link:\r\n";
+		sendMsg = ':' + killer->getNick() + ' ' + args + "\r\nERROR :Closing Link:\r\n";
+	MSG("KILL -> " + sendMsg);
+	MSG(killed->getFd());
 	SEND(killed->getFd(), sendMsg)
 }
 
