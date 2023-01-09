@@ -171,7 +171,7 @@ void    Server::interpreter(const std::string &msg, int const &sockFd)
 			message(args, client);
 		else if (!args[0].compare("PASS"))
 		{
-			if (_password.compare(args[1]))
+			if (!_password.compare(args[1]))
 				client->setPass();
 			// else
 		}
@@ -216,7 +216,7 @@ void Server::opMode(const std::vector<std::string> &msg, Client *chop) {
 
     if (!(channel = _channelHandler.finder(msg[1])))
         ERR_NOSUCHCHANNEL(msg[1], chop->getFd(), _errMsg)
-    if (msg.size() < 3)
+    if (msg.size() < 4)
         ERR_NEEDMOREPARAMS(std::string("MODE"), chop->getFd(), _errMsg)
     for (long unsigned int i = 3; i < msg.size(); i++) {
         args += msg[i] + ' ';
@@ -224,11 +224,8 @@ void Server::opMode(const std::vector<std::string> &msg, Client *chop) {
 	if (!args.empty())
 		args.erase(args.find(' '), 1);
 	if (flags[1] == 'o' || flags[1] == 'b' || flags[1] == 'v') {
-		if (!_clientHandler.finder(args)) {
+		if (!_clientHandler.finder(args))
 			ERR_NOSUCHNICK(channel->getName(), chop->getFd(), _errMsg)
-			// MSG("ERR no such user");
-			// return ;
-		}
         channel->userMode(flags, _clientHandler.finder(args), chop);
 	}
 	else
@@ -408,11 +405,19 @@ void    Server::setClientUser(std::vector<std::string> args, Client *client) {
 
 	client->setUser(args[1]);
 	client->setReal(args[2]);
-	if (!client->getNick().empty())
+	if (client->getPass())
 	{
-		welcomeMsg = "001 " + client->getNick() + " :Welcome to '**HiTeK**' Server\r\n";
-		send(client->getFd(), welcomeMsg.c_str(), welcomeMsg.length(), 0);
+		if (!client->getNick().empty())
+		{
+			welcomeMsg = "001 " + client->getNick() + " :Welcome to '**HiTeK**' Server\r\n";
+			send(client->getFd(), welcomeMsg.c_str(), welcomeMsg.length(), 0);
+		}
 	}
+	else
+	{
+		ERR_PASSWDMISMATCH(client->getNick(), client->getFd(), _errMsg)
+	}
+
 }
 
 void	Server::opKick(const std::vector<std::string> &info, Client *kicker) {

@@ -196,15 +196,12 @@ void    Channel::banUser(const std::string &flag, Client *user, Client *chop) {
 void    Channel::chopMode(const std::string &flag, Client *user, Client *chop) {
     std::string msgSend;
 
-    if (flag[0] == '+' && finder(_chops, user)) {
-        MSG("ERR user is already a chop");
-        return ;
-    }
-    if (flag[0] == '-' && !finder(_chops, user)) {
-        MSG("ERR user is not a chop");
-        return ;
-    }
+    if (!finder(_chops, chop))
+        ERR_CHANOPRIVSNEEDED(_name, chop->getFd(), _errMsg)
+    if ((flag[0] == '+' && finder(_chops, user)) || (flag[0] == '-' && !finder(_chops, user)))
+        ERR_KEYSET(_name, chop->getFd(), _errMsg)
     (flag[0] == '+') ? addClient(_chops, user) : addClient(_users, user);
+    std::cout << "FLAGGG = " << flag << std::endl;
     msgSend = ':' + chop->getNick() + " MODE " + _name + ' ' + flag + ' ' + user->getNick() + "\r\n";
     sendMsgToUsers(msgSend);
 }
