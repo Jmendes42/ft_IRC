@@ -277,8 +277,6 @@ void    Server::joinChannel(const std::vector<std::string> &msg, Client *client)
 		ERR_NEEDMOREPARAMS(std::string("JOIN"), fd, _errMsg)
 	channels = ft_split(channelMsg, ',');
 	for (it = channels.begin(); it != channels.end(); it++) {
-			MSG("Join LOOP: ." + (*it) + ".");
-
 		if ((*it)[0] != '#')
 			ERR_NOSUCHCHANNEL_CONT((*it), client->getFd(), _errMsg)
 		if (Channel *channel = _channelHandler.finder(*it)) {
@@ -464,7 +462,7 @@ void	Server::quitCmd(Client *quiter) {
 
 void	Server::pong(Client *pinger) 
 {
-	std::string sendMsg = "PONG 127.0.0.1";
+	std::string sendMsg = "PONG :" + pinger->getHost() + "\r\n";
 	send(pinger->getFd(), sendMsg.c_str(), sendMsg.length(), 0);
 }
 

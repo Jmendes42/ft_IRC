@@ -201,7 +201,6 @@ void    Channel::chopMode(const std::string &flag, Client *user, Client *chop) {
     if ((flag[0] == '+' && finder(_chops, user)) || (flag[0] == '-' && !finder(_chops, user)))
         ERR_KEYSET(_name, chop->getFd(), _errMsg)
     (flag[0] == '+') ? addClient(_chops, user) : addClient(_users, user);
-    std::cout << "FLAGGG = " << flag << std::endl;
     msgSend = ':' + chop->getNick() + " MODE " + _name + ' ' + flag + ' ' + user->getNick() + "\r\n";
     sendMsgToUsers(msgSend);
 }
@@ -214,18 +213,10 @@ void    Channel::chopMode(const std::string &flag, Client *user, Client *chop) {
 void    Channel::moderatorMode(const std::string &flag, Client *user, Client *chop) {
     std::string msgSend;
 
-    if (flag[0] == '+' && finder(_chops, user)) {
-        MSG("ERR user is already a chop");
-        return ;
-    }
-    if (flag[0] == '+' && finder(_moderators, user)) {
-        MSG("ERR user is already a moderator");
-        return ;
-    }
-    if (flag[0] == '-' && !finder(_moderators, user)) {
-        MSG("ERR user is not a moderator");
-        return ;
-    }
+    if (!finder(_chops, chop))
+        ERR_CHANOPRIVSNEEDED(_name, chop->getFd(), _errMsg)
+    if ((flag[0] == '+' && finder(_moderators, user)) || (flag[0] == '-' && !finder(_moderators, user)))
+        ERR_KEYSET(_name, chop->getFd(), _errMsg)
     (flag[0] == '+') ? addClient(_moderators, user) : addClient(_users, user);
 
     msgSend = ':' + chop->getNick() + " MODE " + _name + ' ' + flag + ' ' + user->getNick() + "\r\n";
