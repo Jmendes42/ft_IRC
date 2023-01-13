@@ -196,8 +196,6 @@ void    Channel::banUser(const std::string &flag, Client *user, Client *chop) {
 void    Channel::chopMode(const std::string &flag, Client *user, Client *chop) {
     std::string msgSend;
 
-    if (!finder(_chops, chop))
-        ERR_CHANOPRIVSNEEDED(_name, chop->getFd(), _errMsg)
     if ((flag[0] == '+' && finder(_chops, user)) || (flag[0] == '-' && !finder(_chops, user)))
         ERR_KEYSET(_name, chop->getFd(), _errMsg)
     (flag[0] == '+') ? addClient(_chops, user) : addClient(_users, user);
@@ -224,7 +222,7 @@ void    Channel::moderatorMode(const std::string &flag, Client *user, Client *ch
 }
 
 /**
- * @brief           Channels the user mode related flags
+ * @brief           Channels user mode related flags
  * @param client    Client to promote 
  * @param flag      Chop promote flag
  */
@@ -239,6 +237,9 @@ void    Channel::userMode(const std::string &flags, Client *user, Client *chop) 
         moderatorMode(flags, user, chop);
 }
 
+/**
+ * @brief   Create the Flags Map
+ */
 void Channel::initFlags()
 {
     _flags.insert(std::pair<char, bool>('o', false));       //  o - give/take channel operator privileges;
@@ -319,7 +320,7 @@ int checkFlag(char flag)
         return (1);
     else if (flag == 'i' || flag == 't' || flag == 'n' || flag == 'm')
         return (2);
-    else if (flag == 'o' || flag == 'l' || flag == 'k')
+    else if (flag == 'l' || flag == 'k')
         return (3);
     return (0);
 }
@@ -344,6 +345,10 @@ void Channel::changeSimpleFlag(const std::string &flag, Client *chop) {
 
 }
 
+/**
+ * @brief       Change the state of "Composed Flags" and set the key/limit of the channel
+ * @param flag  the flag of the channel that will change state
+**/
 void    Channel::changeComposedFlag(const std::string &flag, const std::string &arg, Client *chop) {
     std::string msgSend;
 
@@ -361,8 +366,6 @@ void Channel::cmdMode(std::string const &flags, std::string const &args, Client 
 
     if (!finder(_users, chop) && !finder(_chops, chop))
         ERR_NOTONCHANNEL(getName(), chop->getFd(), _errMsg);
-    if (!finder(_chops, chop))
-        ERR_CHANOPRIVSNEEDED(getName(), chop->getFd(), _errMsg);
     char set = flags[0];
 
     for (long unsigned int i = 1; i < flags.length(); i++) {
@@ -471,6 +474,12 @@ void Channel::partChannel(Client *client) {                 // Channel ends when
     ERR_NOSUCHCHANNEL(_name, client->getFd(), _errMsg);
 }
 
+/**
+ * @brief         Return the state of a flag in the moment (true or false) - Used for Flags that have a proper vector
+ * @param flag    Key to be checked
+ * @param client  To find in the Flags vector
+ * @param client  Flags vector
+**/
 bool Channel::retStateFlag(const char &flag, Client *client, std::vector<Client *> &vec) {
     if (finder(vec, client)) {
         return false;
@@ -479,6 +488,10 @@ bool Channel::retStateFlag(const char &flag, Client *client, std::vector<Client 
     return (it->second);
 }
 
+/**
+ * @brief         Return the state of a flag in the moment (true or false)
+ * @param flag    Key to be checked
+**/
 bool Channel::retStateFlag(const char &flag) {
     std::map<char, bool>::iterator it = _flags.find(flag);
     return (it->second);

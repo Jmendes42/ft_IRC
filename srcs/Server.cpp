@@ -208,21 +208,33 @@ void    Server::operCmd(const std::vector<std::string> &args, Client *client) {
 	ERR_PASSWDMISMATCH(client->getNick(), client->getFd(), _errMsg)
 }
 
-// Check - and +
+/**
+ * @brief       Simple error handling for MODE cmd and parse the flag used
+ * @param msg   Vector with the Command and Parameters
+ * @param chop  Channel Operator Pointer
+**/
 void Server::opMode(const std::vector<std::string> &msg, Client *chop) {
+
     std::string	args;
     Channel		*channel;
-	std::string	flags = msg[2];
 
+	// Basic Error Handling
+	if ( (msg.size() < 4) || (msg[2].size() < 2) )
+        ERR_NEEDMOREPARAMS(std::string("MODE"), chop->getFd(), _errMsg)
     if (!(channel = _channelHandler.finder(msg[1])))
         ERR_NOSUCHCHANNEL(msg[1], chop->getFd(), _errMsg)
-    if (msg.size() < 4)
-        ERR_NEEDMOREPARAMS(std::string("MODE"), chop->getFd(), _errMsg)
-    for (long unsigned int i = 3; i < msg.size(); i++) {
+	if (!channel->finder(channel->getChops(), chop))
+        ERR_CHANOPRIVSNEEDED(channel->getName(), chop->getFd(), _errMsg);
+
+	// Join the args in a string and erase the last space in args
+    for (size_t i = 3; i < msg.size(); i++) {
         args += msg[i] + ' ';
 	}
 	if (!args.empty())
 		args.erase(args.find(' '), 1);
+
+	// Parse by the flag
+	std::string	flags = msg[2];
 	if (flags[1] == 'o' || flags[1] == 'b' || flags[1] == 'v') {
 		if (!_clientHandler.finder(args))
 			ERR_NOSUCHNICK(channel->getName(), chop->getFd(), _errMsg)
