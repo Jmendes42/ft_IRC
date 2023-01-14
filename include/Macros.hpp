@@ -19,7 +19,7 @@
 #define ERR_ERRONEUSNICKNAME(client, nick, fd, errMsg)  {errMsg = "432 " + client + ' ' + nick + " :Erroneus nickname\r\n"; send(fd, errMsg.c_str(), errMsg.length(), 0); return ;}
 #define ERR_NICKNAMEINUSE(client, fd, errMsg)           {errMsg = "433 " + client + " :Nikname in use\r\n"; send(fd, errMsg.c_str(), errMsg.length(), 0); return ;}
 #define ERR_NICKCOLLISION(client, fd, errMsg)           {errMsg = "436 " + client + " :Nickname collision KILL\r\n"; send(fd, errMsg.c_str(), errMsg.length(), 0); return ;}
-#define ERR_USERNOTINCHANNEL(channel, nick, fd, errMsg) {errMsg = "441 :" + nick + " not in channel " + channel + "\r\n"; send(fd, errMsg.c_str(), errMsg.length(), 0); return ;}  
+#define ERR_USERNOTINCHANNEL(nick, channel, fd, errMsg) {errMsg = "441 :" + nick + " not in channel " + channel + "\r\n"; send(fd, errMsg.c_str(), errMsg.length(), 0); return ;}  
 #define ERR_NOTONCHANNEL(channel, fd, errMsg)           {errMsg = "442 " + channel + " :You're not on that channel\r\n"; send(fd, errMsg.c_str(), errMsg.length(), 0); return ;}
 #define ERR_USERONCHANNEL(channel, fd, errMsg)          {errMsg = "443 " + channel + " :Already on channel\r\n"; send(fd, errMsg.c_str(), errMsg.length(), 0); return ;}
 #define ERR_USERONCHANNEL_CONT(channel, fd, errMsg)     {errMsg = "443 " + channel + " :Already on channel\r\n"; send(fd, errMsg.c_str(), errMsg.length(), 0); continue; ;}

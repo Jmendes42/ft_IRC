@@ -31,7 +31,7 @@ Client  *Channel::finder(std::vector<Client *> &vec, Client *client) {
 **/
 bool    Channel::usersOnChannel(Client *find) {
     if (finder(_users, find) || finder(_chops, find) || finder(_muted_users, find)
-            || finder(_moderators, find) || finder(_ban_users, find))
+            || finder(_moderators, find))
         return true;
     return false;
 }
@@ -73,8 +73,6 @@ void    Channel::sendMsgToUsers(const std::string &msg) {
         send((*_it)->getFd(), msg.c_str(), msg.length(), 0);
     for (_it = _muted_users.begin(); _it != _muted_users.end(); _it++)
         send((*_it)->getFd(), msg.c_str(), msg.length(), 0);
-    for (_it = _ban_users.begin(); _it != _ban_users.end(); _it++)
-        send((*_it)->getFd(), msg.c_str(), msg.length(), 0);
 }
 
 /**
@@ -94,11 +92,6 @@ void    Channel::sendMsgToUsers(const std::string &msg, const int &fd) {
         send((*_it)->getFd(), msg.c_str(), msg.length(), 0);
     }
     for (_it = _muted_users.begin(); _it != _muted_users.end(); _it++) {
-        if ((*_it)->getFd() == fd)
-            continue;
-        send((*_it)->getFd(), msg.c_str(), msg.length(), 0);
-    }
-    for (_it = _ban_users.begin(); _it != _ban_users.end(); _it++) {
         if ((*_it)->getFd() == fd)
             continue;
         send((*_it)->getFd(), msg.c_str(), msg.length(), 0);
@@ -128,6 +121,11 @@ void    Channel::rmvClient(Client *rmv) {
         ERASE_VEC(_moderators, _it);
     if (finder(_muted_users, rmv))
         ERASE_VEC(_muted_users, _it);
+}
+
+void    Channel::rmvClient(Client *rmv, std::vector<Client *> &vec) {
+    if (finder(vec, rmv))
+        ERASE_VEC(vec, _it);
 }
 
 /**
@@ -163,7 +161,8 @@ void Channel::changePassword(int fd, char set, std::string const &args)
  * @param vec       Vector to insert 
  */
 void    Channel::addClient(std::vector<Client *> &vec, Client *client) {
-    rmvClient(client);
+    if (vec != _ban_users)
+        rmvClient(client);
     vec.push_back(client);
 }
 
@@ -175,15 +174,11 @@ void    Channel::addClient(std::vector<Client *> &vec, Client *client) {
 void    Channel::banUser(const std::string &flag, Client *user, Client *chop) {
     std::string msgSend;
 
-    if (flag[0] == '+' && finder(_ban_users, user)) {
-        MSG("User already banned");
+    if (flag[0] == '+' && finder(_ban_users, user))
         return ;
-    }
-    else if (flag[0] == '-' && !finder(_ban_users, user)) {
-        MSG("User not banned");
+    else if (flag[0] == '-' && !finder(_ban_users, user))
         return ;
-    }
-    (flag[0] == '+') ? addClient(_ban_users, user) : addClient(_users, user);
+    (flag[0] == '+') ? addClient(_ban_users, user) : rmvClient(user, _ban_users);
     msgSend = ':' + chop->getNick() + " MODE " + _name + ' ' + flag + ' ' + user->getNick() + "\r\n";
     sendMsgToUsers(msgSend);
 }
@@ -228,7 +223,7 @@ void    Channel::moderatorMode(const std::string &flag, Client *user, Client *ch
  * @param flags     Flag
  */
 void    Channel::userMode(const std::string &flags, Client *user, Client *chop) {
-    if (!usersOnChannel(user))
+    if (!usersOnChannel(user) && !finder(_ban_users, user))
         ERR_USERNOTINCHANNEL(_name, user->getNick(), user->getFd(), _errMsg);
     if (flags[1] == 'b')
         banUser(flags, user, chop);

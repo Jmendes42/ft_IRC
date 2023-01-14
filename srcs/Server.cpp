@@ -376,7 +376,7 @@ void	Server::privMsgLoop(std::vector<std::string> targets, const std::string &ms
 			Channel		*channel;
 			if (!(channel = _channelHandler.finder((*it))))
 				ERR_NOSUCHCHANNEL((*it), sender->getFd(), _errMsg);
-			if (channel->finder(channel->getBan(), sender))
+			if (channel->finder(channel->getBan(), sender) && !channel->finder(channel->getChop(), sender))
 				ERR_BANNEDFROMCHAN_CONT(channel->getName(), sender->getFd(), _errMsg)
 			if (msg.length() == 1)	// Check in libera if this error is if msg is only ":" or if msg doesn't exist
 				ERR_NOTEXTTOSEND(channel->getName(), sender->getFd(), _errMsg)
@@ -491,13 +491,18 @@ void	Server::opKick(const std::string &args, Client *kicker) {
 }
 
 void	Server::partCmd(const std::vector<std::string> &info, Client *parter) {
-	if (Channel *part = _channelHandler.finder(info[1])) {
-		part->partChannel(parter);
-		if (!part->usersOnChannel())
-			_channelHandler.rmvChannel(info[1]);
+	std::vector<std::string> channels = ft_split(info[1], ',');
+	std::vector<std::string>::iterator it;
+
+	for (it = channels.begin(); it != channels.end(); it++) {
+		if (Channel *part = _channelHandler.finder((*it))) {
+			part->partChannel(parter);
+			if (!part->usersOnChannel())
+				_channelHandler.rmvChannel(info[1]);
+		}
+		else
+			ERR_NOSUCHCHANNEL(info[1], parter->getFd(), _errMsg);
 	}
-	else
-		ERR_NOSUCHCHANNEL(info[1], parter->getFd(), _errMsg);
 }
 
 void	Server::quitCmd(Client *quiter) {

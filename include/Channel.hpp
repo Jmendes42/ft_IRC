@@ -50,6 +50,7 @@ class Channel
         std::string             &getPass() { return (_password); };
 
         void    rmvClient(Client *);
+        void    rmvClient(Client *, std::vector<Client *> &);
         void    addInvited(Client *);
         void    addClient(std::vector<Client *> &, Client *);
 
