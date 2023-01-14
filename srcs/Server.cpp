@@ -80,12 +80,6 @@ void	Server::io_operations(char *buffer, int i)
 	}
 }
 
-// PASS 012
-// CAP LS 302
-// NICK isousa
-// USER isousa 0 * :isousa
-
-
 /**
  * @brief Main function to handle connections and activities
  */
@@ -127,7 +121,6 @@ void    Server::interpreter(const std::string &msg, int const &sockFd)
 	MSG(msg);
 	std::string copy = msg;
 	Client		*client = _clientHandler.finder(sockFd);
-
 
 	if (copy[copy.length() - 1] == '\n')
 		copy.erase(copy.size() - 1, 1);
@@ -171,7 +164,7 @@ void    Server::interpreter(const std::string &msg, int const &sockFd)
 			privMsg(args, client);
 		else if (!args[0].compare("PASS"))
 		{
-			if (_password.compare(args[1]))
+			if (!_password.compare(args[1]))
 				client->setPass();
 			// else
 		}
@@ -218,21 +211,33 @@ void    Server::operCmd(const std::vector<std::string> &args, Client *client) {
 	ERR_PASSWDMISMATCH(client->getNick(), client->getFd(), _errMsg)
 }
 
-// Check - and +
+/**
+ * @brief       Simple error handling for MODE cmd and parse the flag used
+ * @param msg   Vector with the Command and Parameters
+ * @param chop  Channel Operator Pointer
+**/
 void Server::opMode(const std::vector<std::string> &msg, Client *chop) {
+
     std::string	args;
     Channel		*channel;
-	std::string	flags = msg[2];
 
+	// Basic Error Handling
+	if ( (msg.size() < 4) || (msg[2].size() < 2) )
+        ERR_NEEDMOREPARAMS(std::string("MODE"), chop->getFd(), _errMsg)
     if (!(channel = _channelHandler.finder(msg[1])))
         ERR_NOSUCHCHANNEL(msg[1], chop->getFd(), _errMsg)
-    if (msg.size() < 3)
-        ERR_NEEDMOREPARAMS(std::string("MODE"), chop->getFd(), _errMsg)
-    for (long unsigned int i = 3; i < msg.size(); i++) {
+	if (!channel->finder(channel->getChops(), chop))
+        ERR_CHANOPRIVSNEEDED(channel->getName(), chop->getFd(), _errMsg);
+
+	// Join the args in a string and erase the last space in args
+    for (size_t i = 3; i < msg.size(); i++) {
         args += msg[i] + ' ';
 	}
 	if (!args.empty())
 		args.erase(args.find(' '), 1);
+
+	// Parse by the flag
+	std::string	flags = msg[2];
 	if (flags[1] == 'o' || flags[1] == 'b' || flags[1] == 'v') {
 		if (!_clientHandler.finder(args))
 			ERR_NOSUCHNICK(chop->getNick(), chop->getFd(), _errMsg)
@@ -272,6 +277,9 @@ void	Server::inviteToChannel(std::vector<std::string> info, Client *inviter) {
 // ERR_BADCHANMASK
 // ERR_TOOMANYCHANNELS
 void    Server::joinChannel(const std::vector<std::string> &msg, Client *client) {
+
+	MSG("Join: ." + msg[0] + ".");
+
 	std::vector<std::string>::iterator	it;
 	std::vector<std::string>			channels;
 	int									fd = client->getFd();
@@ -443,11 +451,19 @@ void    Server::setClientUser(std::vector<std::string> args, Client *client) {
 
 	client->setUser(args[1]);
 	client->setReal(args[2]);
-	if (!client->getNick().empty())
+	if (client->getPass())
 	{
-		welcomeMsg = "001 " + client->getNick() + " :Welcome to '**HiTeK**' Server\r\n";
-		send(client->getFd(), welcomeMsg.c_str(), welcomeMsg.length(), 0);
+		if (!client->getNick().empty())
+		{
+			welcomeMsg = "001 " + client->getNick() + " :Welcome to '**HiTeK**' Server\r\n";
+			send(client->getFd(), welcomeMsg.c_str(), welcomeMsg.length(), 0);
+		}
 	}
+	else
+	{
+		ERR_PASSWDMISMATCH(client->getNick(), client->getFd(), _errMsg)
+	}
+
 }
 
 /**
@@ -509,7 +525,7 @@ void	Server::quitCmd(Client *quiter) {
  */
 void	Server::pong(Client *pinger) 
 {
-	std::string sendMsg = "PONG 127.0.0.1";
+	std::string sendMsg = "PONG :" + pinger->getHost() + "\r\n";
 	send(pinger->getFd(), sendMsg.c_str(), sendMsg.length(), 0);
 }
 

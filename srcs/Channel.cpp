@@ -196,14 +196,8 @@ void    Channel::banUser(const std::string &flag, Client *user, Client *chop) {
 void    Channel::chopMode(const std::string &flag, Client *user, Client *chop) {
     std::string msgSend;
 
-    if (flag[0] == '+' && finder(_chops, user)) {
-        MSG("ERR user is already a chop");
-        return ;
-    }
-    if (flag[0] == '-' && !finder(_chops, user)) {
-        MSG("ERR user is not a chop");
-        return ;
-    }
+    if ((flag[0] == '+' && finder(_chops, user)) || (flag[0] == '-' && !finder(_chops, user)))
+        ERR_KEYSET(_name, chop->getFd(), _errMsg)
     (flag[0] == '+') ? addClient(_chops, user) : addClient(_users, user);
     msgSend = ':' + chop->getNick() + " MODE " + _name + ' ' + flag + ' ' + user->getNick() + "\r\n";
     sendMsgToUsers(msgSend);
@@ -217,18 +211,10 @@ void    Channel::chopMode(const std::string &flag, Client *user, Client *chop) {
 void    Channel::moderatorMode(const std::string &flag, Client *user, Client *chop) {
     std::string msgSend;
 
-    if (flag[0] == '+' && finder(_chops, user)) {
-        MSG("ERR user is already a chop");
-        return ;
-    }
-    if (flag[0] == '+' && finder(_moderators, user)) {
-        MSG("ERR user is already a moderator");
-        return ;
-    }
-    if (flag[0] == '-' && !finder(_moderators, user)) {
-        MSG("ERR user is not a moderator");
-        return ;
-    }
+    if (!finder(_chops, chop))
+        ERR_CHANOPRIVSNEEDED(_name, chop->getFd(), _errMsg)
+    if ((flag[0] == '+' && finder(_moderators, user)) || (flag[0] == '-' && !finder(_moderators, user)))
+        ERR_KEYSET(_name, chop->getFd(), _errMsg)
     (flag[0] == '+') ? addClient(_moderators, user) : addClient(_users, user);
 
     msgSend = ':' + chop->getNick() + " MODE " + _name + ' ' + flag + ' ' + user->getNick() + "\r\n";
@@ -238,7 +224,7 @@ void    Channel::moderatorMode(const std::string &flag, Client *user, Client *ch
 /**
  * @brief           /mode command flag redirect
  * @param chop      Issuer of the command 
- * @param client    Target client 
+ * @param user      Target client 
  * @param flags     Flag
  */
 void    Channel::userMode(const std::string &flags, Client *user, Client *chop) {
@@ -252,6 +238,9 @@ void    Channel::userMode(const std::string &flags, Client *user, Client *chop) 
         moderatorMode(flags, user, chop);
 }
 
+/**
+ * @brief   Create the Flags Map
+ */
 void Channel::initFlags()
 {
     _flags.insert(std::pair<char, bool>('o', false));       //  o - give/take channel operator privileges;
@@ -297,10 +286,11 @@ void Channel::setLimit(int fd, char set, std::string const &args)
  * @param set       control if the function will set the flag to true or false (+/-)
  * @param flag      the flag of the channel that will change state
 **/
-void Channel::changeModePS(int fd, char set, char flag, std::string const &channel_name)
+void Channel::changeModePS(Client *client, char set, char flag, std::string const &channel_name)
 {
     std::map<char, bool>::iterator it = _flags.find(flag);
     std::map<char, bool>::iterator temp;
+    std::string msgSend;
     
     temp = (it->first == 'p') ?  _flags.find('s') : _flags.find('p');
     if (set == '+' && it->second == false)
@@ -308,11 +298,17 @@ void Channel::changeModePS(int fd, char set, char flag, std::string const &chann
         it->second = true;
         if (temp->second == true)
             temp->second = false;
+        msgSend = ':' + client->getNick() + " MODE " + channel_name + " +" + flag + "\r\n";
+        sendMsgToUsers(msgSend);
     }
     else if (set == '-' && it->second == true)
+    {
         it->second = false;
+        msgSend = ':' + client->getNick() + " MODE " + channel_name + " -" + flag + "\r\n";
+        sendMsgToUsers(msgSend);
+    }
     else
-        ERR_KEYSET(channel_name, fd, _errMsg);
+        ERR_KEYSET(channel_name, client->getFd(), _errMsg);
 }
 
 /**
@@ -321,13 +317,11 @@ void Channel::changeModePS(int fd, char set, char flag, std::string const &chann
 **/
 int checkFlag(char flag)
 {
-    if (flag == 'p' || flag == 's') {
-        std::cout << "FLAG = " << flag << std::endl;
+    if (flag == 'p' || flag == 's')
         return (1);
-    }
     else if (flag == 'i' || flag == 't' || flag == 'n' || flag == 'm')
         return (2);
-    else if (flag == 'o' || flag == 'l' || flag == 'k')
+    else if (flag == 'l' || flag == 'k')
         return (3);
     return (0);
 }
@@ -352,6 +346,10 @@ void Channel::changeSimpleFlag(const std::string &flag, Client *chop) {
 
 }
 
+/**
+ * @brief       Change the state of "Composed Flags" and set the key/limit of the channel
+ * @param flag  the flag of the channel that will change state
+**/
 void    Channel::changeComposedFlag(const std::string &flag, const std::string &arg, Client *chop) {
     std::string msgSend;
 
@@ -369,14 +367,12 @@ void Channel::cmdMode(std::string const &flags, std::string const &args, Client 
 
     if (!finder(_users, chop) && !finder(_chops, chop))
         ERR_NOTONCHANNEL(getName(), chop->getFd(), _errMsg);
-    if (!finder(_chops, chop))
-        ERR_CHANOPRIVSNEEDED(getName(), chop->getFd(), _errMsg);
     char set = flags[0];
 
     for (long unsigned int i = 1; i < flags.length(); i++) {
         // In case of P or S ! Only one can be set at a time
         if (checkFlag(flags[i]) == 1)
-            changeModePS(chop->getFd(), set, flags[i], getName());
+            changeModePS(chop, set, flags[i], getName());
         else if (checkFlag(flags[i]) == 2)                          
             changeSimpleFlag(flags, chop);
         else if (checkFlag(flags[i]) == 3)
@@ -475,6 +471,12 @@ void Channel::partChannel(Client *client) {
     ERR_NOSUCHCHANNEL(_name, client->getFd(), _errMsg);
 }
 
+/**
+ * @brief         Return the state of a flag in the moment (true or false) - Used for Flags that have a proper vector
+ * @param flag    Key to be checked
+ * @param client  To find in the Flags vector
+ * @param client  Flags vector
+**/
 bool Channel::retStateFlag(const char &flag, Client *client, std::vector<Client *> &vec) {
     if (finder(vec, client)) {
         return false;
@@ -483,6 +485,10 @@ bool Channel::retStateFlag(const char &flag, Client *client, std::vector<Client 
     return (it->second);
 }
 
+/**
+ * @brief         Return the state of a flag in the moment (true or false)
+ * @param flag    Key to be checked
+**/
 bool Channel::retStateFlag(const char &flag) {
     std::map<char, bool>::iterator it = _flags.find(flag);
     return (it->second);

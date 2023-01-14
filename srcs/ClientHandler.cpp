@@ -50,8 +50,6 @@ std::string  ClientHandler::processCmd(const std::string &msg, int const &sockFd
 
     if (msg.find('\n', 0) == std::string::npos) // in case there is no \n 
     {
-        MSG("First: .");
-
         std::string newCmd = client->getCmdBuffer() + msg;
         client->setCmdBuffer(newCmd);
         return ("");
@@ -60,11 +58,7 @@ std::string  ClientHandler::processCmd(const std::string &msg, int const &sockFd
         return (msg);
     else
     {
-        MSG("Second: ." + client->getCmdBuffer() + ".");
-
         std::string newCmd = client->getCmdBuffer() + msg;
-        MSG("Second NEW: ." + newCmd + ".");
-
         if (newCmd[newCmd.length() - 1] == '\n')
         {
             client->setCmdBuffer("");

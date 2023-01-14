@@ -37,6 +37,7 @@ class Client
         std::string             &getUser()      { return (_username); };
         std::string             &getHost()      { return (_hostname); };
         std::string             &getReal()      { return (_realname); };
+        bool                    getPass()       { return (_pass); };
         std::vector<Channel *>  &getChannels()  { return (_channels); };
         std::string             &getCmdBuffer() { return (_cmdBuffer); };
 
