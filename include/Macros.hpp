@@ -38,5 +38,6 @@
 #define ERR_BADCHANNELKEY_CONT(channel, fd, errMsg)     {errMsg = "475 " + channel + " :Cannot join channel (+k)\r\n"; send(fd, errMsg.c_str(), errMsg.length(), 0); continue; ;}
 #define ERR_NOPRIVILEGES(client, fd, errMsg)            {errMsg = "481 " + client + " :Permission Denied - You're not an IRC operator\r\n"; send(fd, errMsg.c_str(), errMsg.length(), 0); return ;}
 #define ERR_CHANOPRIVSNEEDED(channel, fd, errMsg)       {errMsg = "482 " + channel + " :You're not channel operator\\moderator\r\n"; send(fd, errMsg.c_str(), errMsg.length(), 0); return ;}
+#define ERR_NOTREGISTERED(cmd, fd, errMsg)              {errMsg = "451 " + cmd + " :Not Properly Registered\r\n"; send(fd, errMsg.c_str(), errMsg.length(), 0); return ;}
 
 #endif

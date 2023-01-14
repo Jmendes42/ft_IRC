@@ -25,7 +25,6 @@ class ChannelHandler
 
         //operators
         Channel *finder(const std::string &);
-        void opTopic(std::vector<std::string> info, Client *);
         //void opMode(const std::vector<std::string> &, Client *);
 
         std::vector<Channel *>  &getChannels()  {return _channels;};

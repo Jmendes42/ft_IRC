@@ -15,7 +15,8 @@ class Client
         int                                 _fd;
         std::string                         _ip;
         std::vector<Channel *>::iterator    _it;
-        bool                                 _pass;
+        bool                                _pass;
+        bool                                _registered;
         uint16_t                            _port;
         std::string                         _nickname;
         std::string                         _username;
@@ -28,7 +29,7 @@ class Client
 
         Client() {};
        ~Client() {};
-        Client(const int &fd, const std::string &ip, const uint16_t &port):_fd(fd), _ip(ip), _pass(false), _port(port) {};
+        Client(const int &fd, const std::string &ip, const uint16_t &port):_fd(fd), _ip(ip), _pass(false), _registered(false), _port(port) {};
 
         int                     &getFd()        { return (_fd); };
         std::string             &getIp()        { return (_ip); };
@@ -38,12 +39,14 @@ class Client
         std::string             &getHost()      { return (_hostname); };
         std::string             &getReal()      { return (_realname); };
         bool                    getPass()       { return (_pass); };
+        bool                    getRegistration() { return (_registered); };
         std::vector<Channel *>  &getChannels()  { return (_channels); };
         std::string             &getCmdBuffer() { return (_cmdBuffer); };
 
 
         void    setFd(const int &set)                   { _fd = set; };
         void    setPass()                               { _pass = true; };
+        void    setRegistration()                       { _registered = true; };
         void    setNick(std::string const &set)         { _nickname = set; };
         void    setUser(std::string const &set)         { _username = set; };
         void    setHost(std::string const &set)         { _hostname = set; };

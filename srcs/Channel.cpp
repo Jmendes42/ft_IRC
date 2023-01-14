@@ -247,7 +247,7 @@ void Channel::initFlags()
     _flags.insert(std::pair<char, bool>('p', false));       //  p - private channel flag;
     _flags.insert(std::pair<char, bool>('s', false));       //  s - secret channel flag;
     _flags.insert(std::pair<char, bool>('i', false));       //  i - invite-only channel flag;
-    _flags.insert(std::pair<char, bool>('t', false));       //  t - topic settable by channel operator only flag;
+    _flags.insert(std::pair<char, bool>('t', true));       //  t - topic settable by channel operator only flag;
     _flags.insert(std::pair<char, bool>('n', true));        //  n - no messages to channel from clients on the outside;
     _flags.insert(std::pair<char, bool>('m', false));       //  m - moderated channel;
     _flags.insert(std::pair<char, bool>('l', false));       //  l - set the user limit to channel;
@@ -389,18 +389,13 @@ void Channel::cmdMode(std::string const &flags, std::string const &args, Client 
  */
 void Channel::sendTopic(Client *client) {
     std::string sendMsg;
-    std::map<char, bool>::iterator it = _flags.find('t');
-
-    if (it->second == false)
-        return ;
     if (_topic.empty()) {
         sendMsg = "331 " + client->getNick() + ' ' + _name + '\n';
-        SEND(client->getFd(),sendMsg)
+        SEND(client->getFd(), sendMsg)
+        return ;
     }
-    else {
-        sendMsg = "332 " + client->getNick() + ' ' + _name + ' ' + _topic + '\n';
-        SEND(client->getFd(),sendMsg)
-    }
+    sendMsg = "332 " + client->getNick() + ' ' + _name + ' ' + _topic + '\n';
+    SEND(client->getFd(), sendMsg)
 }
 
 /**
@@ -409,13 +404,11 @@ void Channel::sendTopic(Client *client) {
  * @param topic     Topic message
  */
 void Channel::cmdTopic(const std::string &topic, Client *client) {
-    std::map<char, bool>::iterator it = _flags.find('t');
-    if (finder(_chops, client) && it->second == true) {
-        setTopic(topic);
-        sendTopic(client);
-    }
-    else
-        ERR_CHANOPRIVSNEEDED(getName(), client->getFd(), _errMsg);
+    std::string sendMsg;
+
+    setTopic(topic);
+    sendMsg =":" + client->getNick() + " TOPIC " + _name + " " + _topic + "\r\n";
+    sendMsgToUsers(sendMsg);
 }
 
 /**

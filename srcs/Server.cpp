@@ -131,11 +131,15 @@ void    Server::interpreter(const std::string &msg, int const &sockFd)
 		if ((*it).find('\r') != std::string::npos)
 			(*it).erase((*it).find('\r'), 1);
 	}
+
+
 	size_t i = -1;
 	while (++i < commands.size())
 	{
 		std::vector<std::string> args = ft_split(commands[i], ' ');
 
+		if (!client->getRegistration() && ((args[0].compare("PASS")) || (args[0].compare("USER")) || (args[0].compare("NICK"))))
+			ERR_NOTREGISTERED(args[0], sockFd, _errMsg)
 		if (!args[0].compare("QUIT"))
 			quitCmd(client);
 		else if (!args[0].compare("PING"))
@@ -159,17 +163,48 @@ void    Server::interpreter(const std::string &msg, int const &sockFd)
 		else if (!args[0].compare("INVITE"))
 			inviteToChannel(args, client);
 		else if (!args[0].compare("TOPIC"))
-			_channelHandler.opTopic(args, client);
+			opTopic(args, client);
 		else if (!args[0].compare("PRIVMSG") || !args[0].compare("NOTICE"))
 			privMsg(args, client);
 		else if (!args[0].compare("PASS"))
 		{
 			if (!_password.compare(args[1]))
 				client->setPass();
-			// else
 		}
 	}
 }
+
+// ERR_NEEDMOREPARAMS              ERR_NOTONCHANNEL
+// RPL_NOTOPIC                     RPL_TOPIC
+// ERR_CHANOPRIVSNEEDED
+void Server::opTopic(std::vector<std::string> msg, Client *client) {
+    
+	Channel		*channel;
+
+	// Basic Error Handling
+	if ( (msg.size() < 2) ) // check this with nc
+        ERR_NEEDMOREPARAMS(std::string("TOPIC"), client->getFd(), _errMsg)
+    if (!(channel = _channelHandler.finder(msg[1])))
+        ERR_NOSUCHCHANNEL(msg[1], client->getFd(), _errMsg)
+
+	// Reply with topic
+	if (msg.size() == 2)
+	{
+		channel->sendTopic(client);
+		return ;
+	}
+
+	// Set the topic
+	if ( (channel->retStateFlag('t')) && (!channel->finder(channel->getChops(), client)))
+        ERR_CHANOPRIVSNEEDED(channel->getName(), client->getFd(), _errMsg);
+	// Join the topic in a string and erase the last space in args
+	std::string args;
+    for (size_t i = 2; i < msg.size(); i++) {
+        args += msg[i] + ' ';
+	}
+	channel->cmdTopic(args, client);
+}
+
 
 /**
  * @brief			Parses the kill message, searches for the client to kill and sends kill message
@@ -222,7 +257,7 @@ void Server::opMode(const std::vector<std::string> &msg, Client *chop) {
     Channel		*channel;
 
 	// Basic Error Handling
-	if ( (msg.size() < 4) || (msg[2].size() < 2) )
+	if ( (msg.size() < 3) || (msg[2].size() < 2) )
         ERR_NEEDMOREPARAMS(std::string("MODE"), chop->getFd(), _errMsg)
     if (!(channel = _channelHandler.finder(msg[1])))
         ERR_NOSUCHCHANNEL(msg[1], chop->getFd(), _errMsg)
@@ -239,6 +274,8 @@ void Server::opMode(const std::vector<std::string> &msg, Client *chop) {
 	// Parse by the flag
 	std::string	flags = msg[2];
 	if (flags[1] == 'o' || flags[1] == 'b' || flags[1] == 'v') {
+		if ( (msg.size() < 4))
+        	ERR_NEEDMOREPARAMS(std::string("MODE"), chop->getFd(), _errMsg)
 		if (!_clientHandler.finder(args))
 			ERR_NOSUCHNICK(chop->getNick(), chop->getFd(), _errMsg)
         channel->userMode(flags, _clientHandler.finder(args), chop);
@@ -455,6 +492,7 @@ void    Server::setClientUser(std::vector<std::string> args, Client *client) {
 	{
 		if (!client->getNick().empty())
 		{
+			client->setRegistration();
 			welcomeMsg = "001 " + client->getNick() + " :Welcome to '**HiTeK**' Server\r\n";
 			send(client->getFd(), welcomeMsg.c_str(), welcomeMsg.length(), 0);
 		}
