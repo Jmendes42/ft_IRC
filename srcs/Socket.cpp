@@ -22,7 +22,7 @@ void 		Socket::initSockets()
 
 void	Socket::bindSocket() {
 	_hint.sin_family = AF_INET;
-	_hint.sin_port = htons(_port);									// Little endian for intel processors (Host To Network Short)
+	_hint.sin_port = htons(_port);							// Little endian for intel processors (Host To Network Short)
 	// INADDR_ANY contains the IP address of the host. For 
     // server code, this will always be the IP address of 
     // the machine on which the server is running.

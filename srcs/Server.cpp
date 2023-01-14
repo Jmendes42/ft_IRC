@@ -81,12 +81,6 @@ void	Server::io_operations(char *buffer, int i)
 	}
 }
 
-// PASS 012
-// CAP LS 302
-// NICK isousa
-// USER isousa 0 * :isousa
-
-
 /**
  * @brief Main function to handle connections and activities
  */
