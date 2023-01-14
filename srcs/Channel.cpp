@@ -26,8 +26,8 @@ Client  *Channel::finder(std::vector<Client *> &vec, Client *client) {
 }
 
 /**
- * @brief       returns true if the user is on the channel and false if it's not
- * @param nick  nickname to search for
+ * @brief           returns true if the user is on the channel and false if it's not
+ * @param nick      nickname to search for
 **/
 bool    Channel::usersOnChannel(Client *find) {
     if (finder(_users, find) || finder(_chops, find) || finder(_muted_users, find)
@@ -37,7 +37,7 @@ bool    Channel::usersOnChannel(Client *find) {
 }
 
 /**
- * @brief   returns true if there's users on the channel and false it's empty
+ * @brief           returns true if there's users on the channel and false it's empty
 **/
 bool    Channel::usersOnChannel() {
     if (_users.empty() && _chops.empty() && _muted_users.empty())
@@ -46,7 +46,7 @@ bool    Channel::usersOnChannel() {
 }
 
 /**
- * @brief   Get a string with the nicks of all the clients present in the channel with the respective indicator
+ * @brief           Get a string with the nicks of all the clients present in the channel with the respective indicator
 **/
 std::string Channel::getUsersString() { // + if the user has the rigth to speak in a moderated channel
     std::string users;
@@ -63,8 +63,8 @@ std::string Channel::getUsersString() { // + if the user has the rigth to speak 
 }
 
 /**
- * @brief       Send message to every client in channel
- * @param msg   msg to send
+ * @brief           Send message to every client in channel
+ * @param msg       msg to send
 **/
 void    Channel::sendMsgToUsers(const std::string &msg) {
     for (_it = _chops.begin(); _it != _chops.end(); _it++)
@@ -78,9 +78,9 @@ void    Channel::sendMsgToUsers(const std::string &msg) {
 }
 
 /**
- * @brief       Send message to every client in channel excluding one fd
- * @param fd    fd to exclude
- * @param msg   msg to send
+ * @brief           Send message to every client in channel excluding one fd
+ * @param fd        fd to exclude
+ * @param msg       msg to send
 **/
 void    Channel::sendMsgToUsers(const std::string &msg, const int &fd) {
     for (_it = _chops.begin(); _it != _chops.end(); _it++) {
@@ -114,8 +114,8 @@ void    Channel::addInvited(Client *client) {
 }
 
 /**
- * @brief       Searches all the client groups for the nick and removes it from the channel vectors
- * @param nick  Nick to search 
+ * @brief           Searches all the client groups for the nick and removes it from the channel vectors
+ * @param nick      Nick to search 
  */
 void    Channel::rmvClient(Client *rmv) {
     if (finder(_chops, rmv))
@@ -131,9 +131,9 @@ void    Channel::rmvClient(Client *rmv) {
 }
 
 /**
- * @brief       Set the password of the Channel.
- * @param args  The new password for the channel.
- * @param set   Control if the function will set or unset the password
+ * @brief           Set the password of the Channel.
+ * @param args      The new password for the channel.
+ * @param set       Control if the function will set or unset the password
 **/
 void Channel::changePassword(int fd, char set, std::string const &args) 
 {
@@ -168,9 +168,9 @@ void    Channel::addClient(std::vector<Client *> &vec, Client *client) {
 }
 
 /**
- * @brief       Checks if the user can be banned, if it can adds it to the banned vector
- * @param user  User to ban 
- * @param flag  Ban flag
+ * @brief           Checks if the user can be banned, if it can adds it to the banned vector
+ * @param user      User to ban 
+ * @param flag      Ban flag
  */
 void    Channel::banUser(const std::string &flag, Client *user, Client *chop) {
     std::string msgSend;
@@ -189,9 +189,9 @@ void    Channel::banUser(const std::string &flag, Client *user, Client *chop) {
 }
 
 /**
- * @brief       Checks if the user can be promoted to chop, if it can adds it to the chops vector
- * @param user  User to promote 
- * @param flag  Chop promote flag
+ * @brief           Checks if the user can be promoted to chop, if it can adds it to the chops vector
+ * @param user      User to promote 
+ * @param flag      Chop promote flag
  */
 void    Channel::chopMode(const std::string &flag, Client *user, Client *chop) {
     std::string msgSend;
@@ -210,9 +210,9 @@ void    Channel::chopMode(const std::string &flag, Client *user, Client *chop) {
 }
 
 /**
- * @brief       Checks if the user can be promoted to moderator, if it can adds it to the moderators vector
- * @param user  User to promote 
- * @param flag  Moderator promote flag
+ * @brief           Checks if the user can be promoted to moderator, if it can adds it to the moderators vector
+ * @param user      User to promote 
+ * @param flag      Moderator promote flag
  */
 void    Channel::moderatorMode(const std::string &flag, Client *user, Client *chop) {
     std::string msgSend;
@@ -236,9 +236,10 @@ void    Channel::moderatorMode(const std::string &flag, Client *user, Client *ch
 }
 
 /**
- * @brief           Channels the user mode related flags
- * @param client    Client to promote 
- * @param flag      Chop promote flag
+ * @brief           /mode command flag redirect
+ * @param chop      Issuer of the command 
+ * @param client    Target client 
+ * @param flags     Flag
  */
 void    Channel::userMode(const std::string &flags, Client *user, Client *chop) {
     if (!usersOnChannel(user))
@@ -267,9 +268,9 @@ void Channel::initFlags()
 }
 
 /**
- * @brief       Set the User limit of the Channel.
- * @param set   Control if the function will set or unset the limit 
- * @param args  The new password for the channel.
+ * @brief           Set the User limit of the Channel.
+ * @param set       Control if the function will set or unset the limit 
+ * @param args      The new password for the channel.
 **/
 void Channel::setLimit(int fd, char set, std::string const &args)
 {
@@ -292,9 +293,9 @@ void Channel::setLimit(int fd, char set, std::string const &args)
 }
 
 /**
- * @brief       Change the state of '-p' or '-s' flag. Notice that both flags can't be 'true' at the same time. If you set one to true, the other will be set to false. More info in README
- * @param set   control if the function will set the flag to true or false (+/-)
- * @param flag  the flag of the channel that will change state
+ * @brief           Change the state of '-p' or '-s' flag. Notice that both flags can't be 'true' at the same time. If you set one to true, the other will be set to false. More info in README
+ * @param set       control if the function will set the flag to true or false (+/-)
+ * @param flag      the flag of the channel that will change state
 **/
 void Channel::changeModePS(int fd, char set, char flag, std::string const &channel_name)
 {
@@ -315,8 +316,8 @@ void Channel::changeModePS(int fd, char set, char flag, std::string const &chann
 }
 
 /**
- * @brief       Checks if the flag is Simple, PS or Complex
- * @param flag  Flag to be checked
+ * @brief           Checks if the flag is Simple, PS or Complex
+ * @param flag      Flag to be checked
 **/
 int checkFlag(char flag)
 {
@@ -332,9 +333,9 @@ int checkFlag(char flag)
 }
 
 /**
- * @brief       Change the state of "simple flags". What is true, will be false and vice-versa. A warning will be throwed if flag was already set.
- * @param set   Control if the function will set the flag to true or false (+/-)
- * @param flag  the flag of the channel that will change state
+ * @brief           Change the state of "simple flags". What is true, will be false and vice-versa. A warning will be throwed if flag was already set.
+ * @param set       Control if the function will set the flag to true or false (+/-)
+ * @param flag      the flag of the channel that will change state
 **/
 void Channel::changeSimpleFlag(const std::string &flag, Client *chop) {
     std::string msgSend;
@@ -391,21 +392,18 @@ void Channel::cmdMode(std::string const &flags, std::string const &args, Client 
  * @param client    Client that requested
  */
 void Channel::sendTopic(Client *client) {
-    std::string msg;
+    std::string sendMsg;
     std::map<char, bool>::iterator it = _flags.find('t');
 
-    if (it->second == false) {
-        MSG("flag ERR");
+    if (it->second == false)
         return ;
-    }
-    
     if (_topic.empty()) {
-        msg = "331 " + client->getNick() + ' ' + _name + '\n';
-        send(client->getFd(), msg.c_str(), msg.length(), 0);     // NOTOPICSET
+        sendMsg = "331 " + client->getNick() + ' ' + _name + '\n';
+        SEND(client->getFd(),sendMsg)
     }
     else {
-        msg = "332 " + client->getNick() + ' ' + _name + ' ' + _topic + '\n';
-        send(client->getFd(), msg.c_str(), msg.length(), 0);     // TOPICSET
+        sendMsg = "332 " + client->getNick() + ' ' + _name + ' ' + _topic + '\n';
+        SEND(client->getFd(),sendMsg)
     }
 }
 
@@ -429,21 +427,19 @@ void Channel::cmdTopic(const std::string &topic, Client *client) {
  * @param kicked    User to be kicked
  * @param kicker    Chop that kicks
  */
-void Channel::cmdKick(Client *kicked, Client *kicker) {
+void Channel::cmdKick(Client *kicked, Client *kicker, const std::string &args) {
     std::string msgSend;
 
-    if (finder(_users, kicker))
-        ERR_NOTONCHANNEL(getName(), kicked->getFd(), _errMsg);
+    if (!usersOnChannel(kicker))
+        ERR_NOTONCHANNEL(getName(), kicker->getFd(), _errMsg);
+    if (!usersOnChannel(kicked))
+        ERR_NOSUCHNICK(getName(), kicker->getFd(), _errMsg);
     if (!finder(_chops, kicker))
-        ERR_CHANOPRIVSNEEDED(getName(), kicked->getFd(), _errMsg);
-    if (finder(_users, kicked)) {
-        msgSend =":" + kicker->getNick() + " KICK " + _name + ' ' + kicked->getNick() + '\n';
-        kicked->rmvChannel(_name);
-        sendMsgToUsers(msgSend);
-        rmvClient(kicked);
-    }
-    else
-        ERR_NOSUCHNICK(getName(), kicked->getFd(), _errMsg);
+        ERR_CHANOPRIVSNEEDED(getName(), kicker->getFd(), _errMsg);
+    msgSend = ':' + kicker->getNick() + ' ' + args + "\r\n";
+    kicked->rmvChannel(_name);
+    sendMsgToUsers(msgSend);
+    rmvClient(kicked);
 }
 
 /**
@@ -465,10 +461,11 @@ void        Channel::cmdInvite(Client *inviter, Client *invited) {
  * @brief           Leave the Channel (using PART Command)
  * @param client    A Pointer to the client that wants to leave the Channel
 **/
-void Channel::partChannel(Client *client) {                 // Channel ends when there are no more users
+void Channel::partChannel(Client *client) {
     std::string msgSend;
 
-    if (finder(_users, client) || finder(_chops, client)) {
+    //if (finder(_users, client) || finder(_chops, client)) {
+    if (usersOnChannel(client)) {
         msgSend = ":" + client->getNick() + "!" + client->getUser() + "@" + client->getIp() + " PART :" + _name + "\r\n";
         sendMsgToUsers(msgSend);
         client->rmvChannel(_name);

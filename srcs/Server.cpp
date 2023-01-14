@@ -124,7 +124,7 @@ void    Server::sockSet() {
  */
 void    Server::interpreter(const std::string &msg, int const &sockFd) 
 {
-	MSG("INT = ." + msg + ".");
+	MSG(msg);
 	std::string copy = msg;
 	Client		*client = _clientHandler.finder(sockFd);
 
@@ -152,7 +152,7 @@ void    Server::interpreter(const std::string &msg, int const &sockFd)
 		else if (!args[0].compare("KILL"))
 			killCmd(commands[i], client);
 		else if (!args[0].compare("KICK"))
-			opKick(args, client);
+			opKick(commands[i], client);
 		else if (!args[0].compare("MODE"))
 			opMode(args, client);
 		else if (!args[0].compare("PART"))
@@ -168,7 +168,7 @@ void    Server::interpreter(const std::string &msg, int const &sockFd)
 		else if (!args[0].compare("TOPIC"))
 			_channelHandler.opTopic(args, client);
 		else if (!args[0].compare("PRIVMSG") || !args[0].compare("NOTICE"))
-			message(args, client);
+			privMsg(args, client);
 		else if (!args[0].compare("PASS"))
 		{
 			if (_password.compare(args[1]))
@@ -180,8 +180,8 @@ void    Server::interpreter(const std::string &msg, int const &sockFd)
 
 /**
  * @brief			Parses the kill message, searches for the client to kill and sends kill message
- * @param args		String vector with the nick of the client to kill and arguments to use
- * @param killer	Client issuing the kill command
+ * @param args		String with the nick of the client to kill and arguments to use as motive
+ * @param killer	Client issuing the /kill command
  */
 void    Server::killCmd(const std::string &args, Client *killer) {
 	Client		*killed;
@@ -202,9 +202,9 @@ void    Server::killCmd(const std::string &args, Client *killer) {
 }
 
 /**
- * @brief			Parses the kill message, searches for the client to kill and sends kill message
- * @param args		String vector with the nick of the client to kill and arguments to use
- * @param killer	Client issuing the kill command
+ * @brief			Checks if the username and password for the /oper command are correct and grants operator privileges
+ * @param args		String vector with the username and passowrd required to become operator
+ * @param client	Client issuing the /oper command
  */
 void    Server::operCmd(const std::vector<std::string> &args, Client *client) {
 
@@ -234,10 +234,8 @@ void Server::opMode(const std::vector<std::string> &msg, Client *chop) {
 	if (!args.empty())
 		args.erase(args.find(' '), 1);
 	if (flags[1] == 'o' || flags[1] == 'b' || flags[1] == 'v') {
-		if (!_clientHandler.finder(args)) {
-			MSG("ERR no such user");
-			return ;
-		}
+		if (!_clientHandler.finder(args))
+			ERR_NOSUCHNICK(chop->getNick(), chop->getFd(), _errMsg)
         channel->userMode(flags, _clientHandler.finder(args), chop);
 	}
 	else
@@ -287,25 +285,24 @@ void    Server::joinChannel(const std::vector<std::string> &msg, Client *client)
 	channels = ft_split(channelMsg, ',');
 	for (it = channels.begin(); it != channels.end(); it++) {
 		if ((*it)[0] != '#')
-			(*it).insert(0, 1, '#');
+			ERR_NOSUCHCHANNEL_CONT((*it), client->getFd(), _errMsg)
 		if (Channel *channel = _channelHandler.finder(*it)) {
 			std::string	joinMsg;
-
 			if (channel->usersOnChannel(client))
-				ERR_USERONCHANNEL(channel->getName(), client->getFd(), _errMsg)
+				ERR_USERONCHANNEL_CONT(channel->getName(), client->getFd(), _errMsg)
 			if (channel->retStateFlag('i', client, channel->getInvited()))
-				ERR_INVITEONLYCHAN(channel->getName(), fd, _errMsg)
+				ERR_INVITEONLYCHAN_CONT(channel->getName(), fd, _errMsg)
 			if (channel->retStateFlag('l') && ((channel->getUsersTotal() + 1) > channel->getLimit()))
-				ERR_CHANNELISFULL(channel->getName(), fd, _errMsg)
+				ERR_CHANNELISFULL_CONT(channel->getName(), fd, _errMsg)
 			if (channel->finder(channel->getBan(), client))
-				ERR_BANNEDFROMCHAN(channel->getName(), fd, _errMsg)
+				ERR_BANNEDFROMCHAN_CONT(channel->getName(), fd, _errMsg)
 			if (channel->retStateFlag('k')) {
 				if (msg.size() < 3)
-					ERR_NEEDMOREPARAMS(channel->getName(), fd, _errMsg)
+					ERR_NEEDMOREPARAMS_CONT(channel->getName(), fd, _errMsg)
 				if (msg[2] != channel->getPass())
-					ERR_BADCHANNELKEY(channel->getName(), fd, _errMsg)
+					ERR_BADCHANNELKEY_CONT(channel->getName(), fd, _errMsg)
 			}
-			joinMsg = ':' + nick + '!' + user + '@' + ip + " JOIN " + (*it) + '\n';
+			joinMsg = ':' + nick + '!' + user + '@' + ip + " JOIN " + (*it) + "\r\n";
 			channel->sendMsgToUsers(joinMsg);
 			channel->addClient(channel->getUsers(), client);
 			client->addChannel(_channelHandler.finder((*it)));
@@ -314,10 +311,11 @@ void    Server::joinChannel(const std::vector<std::string> &msg, Client *client)
 			_channelHandler.addChannel((*it), client);
 			client->addChannel(_channelHandler.finder((*it)));
 		}
-		channelMsg = ":" + nick + "!" + user + "@" + ip + " JOIN :" + (*it) + "\n";
-		channelMsg += "353 " + nick + " = " + (*it) + " :";
-		channelMsg += _channelHandler.finder((*it))->getUsersString() + "\n";
-		send(fd, channelMsg.c_str(), channelMsg.length(), 0);
+		channelMsg = ":" + nick + "!" + user + "@" + ip + " JOIN :" + (*it) + "\r\n";
+		SEND(fd, channelMsg)
+		channelMsg = "353 " + nick + " = " + (*it) + " :";
+		channelMsg += _channelHandler.finder((*it))->getUsersString() + "\r\n";
+		SEND(fd, channelMsg)
 		_channelHandler.finder((*it))->sendTopic(client);
 	}
 }
@@ -325,11 +323,17 @@ void    Server::joinChannel(const std::vector<std::string> &msg, Client *client)
 // ERR_NOTOPLEVEL
 // ERR_WILDTOPLEVEL                ERR_TOOMANYTARGETS
 // RPL_AWAY
-void    Server::message(const std::vector<std::string> &info, Client *sender) {
-
-	std::string sendMsg;
-	std::string msg;
-	std::string cmd;
+/**
+ * @brief			PRIVMSG and NOTICE command -> Sends messages to targets of /msg command
+ * @param info		String vector with the PRIVMSG command, targets and the message to send
+ * @param sender	Client issuing the /msg command
+ */
+void    Server::privMsg(const std::vector<std::string> &info, Client *sender) {
+	std::vector<std::string>::iterator	it;
+	std::string							msg;
+	std::string							cmd;
+	std::string							sendMsg;
+	std::vector<std::string>			targets;
 
 	if (info.size() == 1)
 		ERR_NORECIPIENT(sender->getFd(), _errMsg);
@@ -337,79 +341,105 @@ void    Server::message(const std::vector<std::string> &info, Client *sender) {
 		ERR_NEEDMOREPARAMS(info[0], sender->getFd(), _errMsg);
 	if (info[2].length() == 1)	// Check in libera if this error is if msg is only ":" or if info[2] doesn't exist .. Needs to be tested with nc .. weechat always puts the ':'
 		ERR_NOTEXTTOSEND(info[1], sender->getFd(), _errMsg)
-	if (info.size() > 3)
-	{
+	if (info.size() > 3) {
 		msg = info[2];
-		for(long unsigned int i = 3; i < info.size(); i++)
+		for(size_t i = 3; i < info.size(); i++)
 			msg += ' ' + info[i];
 	}
  	(!info[0].compare("PRIVMSG")) ? cmd = " PRIVMSG " : cmd = " NOTICE ";
-
-	if (info[1][0] == '#')
-	{
-		Channel		*channel;
-		if (!(channel = _channelHandler.finder(info[1])))
-			ERR_NOSUCHCHANNEL(info[1], sender->getFd(), _errMsg);
-		if (info[2].length() == 1)	// Check in libera if this error is if msg is only ":" or if info[2] doesn't exist
-			ERR_NOTEXTTOSEND(channel->getName(), sender->getFd(), _errMsg)
-		if (channel->retStateFlag('m') && (!channel->finder(channel->getModerator(), sender) || !channel->finder(channel->getChops(), sender))) 
-			ERR_CANNOTSENDTOCHAN(channel->getName(), sender->getFd(), _errMsg); // Check in libera if it still prints on sender chat
-		if (!sender->findChannel(info[1]) && channel->retStateFlag('n')) 
-			ERR_CANNOTSENDTOCHAN(channel->getName(), sender->getFd(), _errMsg);
-		std::string channel_name = info[2];
-		sendMsg = ':' + sender->getNick();
-		sendMsg += cmd + info[1] + ' ' + channel_name.erase(0, 1) + "\r\n";
-		channel->sendMsgToUsers(sendMsg, sender->getFd());
-	}
-	else if (Client * client = _clientHandler.finder(info[1])) {
-		std::string channel_name = info[2];
-		sendMsg = ":" + sender->getNick() + cmd;
-		sendMsg += client->getNick() + ' ' + channel_name.erase(0, 1) + "\r\n";
-		send(client->getFd(), sendMsg.c_str(), sendMsg.length(), 0);
-	}
-	else
-		ERR_NOSUCHNICK(info[1], sender->getFd(), _errMsg);
+	privMsgLoop(ft_split(info[1], ','), info[2], cmd, sender);
 }
 
-// ERR_NONICKNAMEGIVEN             ERR_ERRONEUSNICKNAME
-// ERR_NICKCOLLISION
-void    Server::setClientNick(std::vector<std::string> msg, Client *client) { // Change nick in channel
+/**
+ * @brief			PRIVMSG and NOTICE command send loop
+ * @param targets	String vector with the targets to send the message
+ * @param msg		Message to send
+ * @param cmd		Command issued PRIVMSG/NOTICE
+ * @param sender	Client issuing the /msg command
+ */
+void	Server::privMsgLoop(std::vector<std::string> targets, const std::string &msg,
+							const std::string &cmd, Client *sender) {
+	std::vector<std::string>::iterator	it;
+	std::string							sendMsg;
+
+	for (it = targets.begin(); it != targets.end(); it++) {
+		if ((*it)[0] == '#')
+		{
+			Channel		*channel;
+			if (!(channel = _channelHandler.finder((*it))))
+				ERR_NOSUCHCHANNEL((*it), sender->getFd(), _errMsg);
+			if (channel->finder(channel->getBan(), sender))
+				ERR_BANNEDFROMCHAN_CONT(channel->getName(), sender->getFd(), _errMsg)
+			if (msg.length() == 1)	// Check in libera if this error is if msg is only ":" or if msg doesn't exist
+				ERR_NOTEXTTOSEND(channel->getName(), sender->getFd(), _errMsg)
+			if (channel->retStateFlag('m') && (!channel->finder(channel->getModerator(), sender) || !channel->finder(channel->getChops(), sender))) 
+				ERR_CANNOTSENDTOCHAN(channel->getName(), sender->getFd(), _errMsg); // Check in libera if it still prints on sender chat
+			if (!sender->findChannel((*it)) && channel->retStateFlag('n')) 
+				ERR_CANNOTSENDTOCHAN(channel->getName(), sender->getFd(), _errMsg);
+			std::string channel_name = msg;
+			sendMsg = ':' + sender->getNick();
+			sendMsg += cmd + (*it) + ' ' + channel_name.erase(0, 1) + "\r\n";
+			channel->sendMsgToUsers(sendMsg, sender->getFd());
+		}
+		else if (Client * client = _clientHandler.finder((*it))) {
+			std::string channel_name = msg;
+			sendMsg = ":" + sender->getNick() + cmd;
+			sendMsg += client->getNick() + ' ' + channel_name.erase(0, 1) + "\r\n";
+			send(client->getFd(), sendMsg.c_str(), sendMsg.length(), 0);
+		}
+		else
+			ERR_NOSUCHNICK((*it), sender->getFd(), _errMsg);
+	}
+}
+
+/**
+ * @brief			Sets/unsets the client nickname
+ * @param msg		String vector with the NICK command and the desired nickname
+ * @param client	Client issuing the /nick command
+ */
+void    Server::setClientNick(std::vector<std::string> msg, Client *client) {
 	std::vector<Channel *>::iterator	it;
 	std::string							sendMsg;
 	std::vector<Channel *>				channels = client->getChannels();
 	std::string							nick = msg[1];
 
-	if (client->getNick().empty())
-	{
-		if (_clientHandler.finder(nick))
-			ERR_NICKNAMEINUSE(nick, client->getFd(), _errMsg);
-		client->setNick(nick);
-		if (!client->getUser().empty())
-		{
-			std::string welcomeMsg = "001 " + client->getNick() + " :Welcome to '**HiTeK**' Server\r\n";
-			send(client->getFd(), welcomeMsg.c_str(), welcomeMsg.length(), 0);
-		}
-		return ;
-	}
+	if (msg.size() < 2)
+		ERR_NONICKNAMEGIVEN(client->getNick(), client->getFd(), _errMsg)
 	if (_clientHandler.finder(nick))
 		ERR_NICKNAMEINUSE(nick, client->getFd(), _errMsg);
-	MSG("QUIT");
+	if (nick.find(',') != std::string::npos || nick.find('.') != std::string::npos)
+		ERR_ERRONEUSNICKNAME(client->getNick(), nick, client->getFd(), _errMsg)
+	if (client->getNick().empty()) {
+		setNick(nick, client);
+		return ;
+	}
 	sendMsg = ':' + client->getNick();
 	sendMsg += " NICK " + nick + "\r\n";
 	client->setNick(nick);
-	send(client->getFd(), sendMsg.c_str(), sendMsg.length(), 0);
+	SEND(client->getFd(), sendMsg)
 	for (it = channels.begin(); it != channels.end(); it++)
 		(*it)->sendMsgToUsers(sendMsg);
+}
+
+/**
+ * @brief			Sets the nickname on the register
+ * @param nick		Desired nickname
+ * @param client	Client registering
+ */
+void	Server::setNick(const std::string &nick, Client *client) {
+	if (_clientHandler.finder(nick))
+			ERR_NICKNAMEINUSE(nick, client->getFd(), _errMsg);
+		client->setNick(nick);
+		if (!client->getUser().empty()) {
+			std::string welcomeMsg = "001 " + client->getNick() + " :Welcome to '**HiTeK**' Server\r\n";
+			send(client->getFd(), welcomeMsg.c_str(), welcomeMsg.length(), 0);
+		}
 }
 
 // ERR_NEEDMOREPARAMS
 // ERR_ALREADYREGISTRED
 void    Server::setClientUser(std::vector<std::string> args, Client *client) {
-
-	
 	std::string welcomeMsg;
-	// std::string user = msg.substr(0, msg.find(' '));
-	// std::string	realName = msg.substr(msg.find(':') + 1);
 
 	client->setUser(args[1]);
 	client->setReal(args[2]);
@@ -420,17 +450,28 @@ void    Server::setClientUser(std::vector<std::string> args, Client *client) {
 	}
 }
 
-void	Server::opKick(const std::vector<std::string> &info, Client *kicker) {
+/**
+ * @brief			Parses the kick command, checks if kicked user exists and sends the parsed command to channel kick function
+ * @param args		String vector with the nickname and reason for the kick
+ * @param client	Client issuing the /kick command
+ */
+void	Server::opKick(const std::string &args, Client *kicker) {
+	std::vector<std::string>	info = ft_split(args, ' ');
+	Client						*kicked = _clientHandler.finder(info[2]);
+
 	if (info.size() >= 2) {
         Channel *channel = _channelHandler.finder(info[1]);
         if (!channel)
-            ERR_NOSUCHCHANNEL(info[1], kicker->getFd(), _errMsg);
-        if (info.size() > 2) {
-            channel->cmdKick(_clientHandler.finder(info[2]), kicker);
-            return ;
-        }
+            ERR_NOSUCHCHANNEL(info[1], kicker->getFd(), _errMsg)
+		if (!kicked)
+        	ERR_NOSUCHNICK(info[1], kicker->getFd(), _errMsg)
+        if (info.size() > 2 && kicked)
+            channel->cmdKick(kicked, kicker, args);
+		if (!channel->usersOnChannel())
+			_channelHandler.rmvChannel(info[1]);
     }
-    ERR_NEEDMOREPARAMS(std::string("KICK"), kicker->getFd(), _errMsg);
+	else
+    	ERR_NEEDMOREPARAMS(std::string("KICK"), kicker->getFd(), _errMsg);
 }
 
 void	Server::partCmd(const std::vector<std::string> &info, Client *parter) {
@@ -462,12 +503,20 @@ void	Server::quitCmd(Client *quiter) {
 	destroyClient(quiter);
 }
 
+/**
+ * @brief			Answer to PING command
+ * @param pinger	Client that pings`
+ */
 void	Server::pong(Client *pinger) 
 {
 	std::string sendMsg = "PONG 127.0.0.1";
 	send(pinger->getFd(), sendMsg.c_str(), sendMsg.length(), 0);
 }
 
+/**
+ * @brief			Searches the oper list for the client and returns it. Returns NULL if it's not there
+ * @param client	Client to search
+ */
 Client *Server::operFinder(Client *client) {
 	std::string	nick = client->getNick();
 
@@ -478,16 +527,28 @@ Client *Server::operFinder(Client *client) {
     return (NULL);
 }
 
+/**
+ * @brief			Searches the oper list for the client and if it doesn't exist adds it
+ * @param client	Client to add
+ */
 void	Server::addOper(Client *client) {
 	if (!operFinder(client))
 		_opers.push_back(client);
 }
 
+/**
+ * @brief			Searches the oper list for the client and if it exists removes it
+ * @param client	Client to remove
+ */
 void	Server::delOper(Client *client) {
 	if (operFinder(client))
 		ERASE_VEC(_opers, _it)
 }
 
+/**
+ * @brief			Destroy client
+ * @param client	Client to destroy
+ */
 void	Server::destroyClient(Client *client) {
 	delOper(client);
 	close(client->getFd());

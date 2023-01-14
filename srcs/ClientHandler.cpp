@@ -48,7 +48,6 @@ std::string  ClientHandler::processCmd(const std::string &msg, int const &sockFd
 {
 	Client		*client = finder(sockFd);
 
-    MSG("PRO: ." + msg + ".");
     if (msg.find('\n', 0) == std::string::npos) // in case there is no \n 
     {
         MSG("First: .");

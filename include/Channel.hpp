@@ -54,7 +54,7 @@ class Channel
         void    addClient(std::vector<Client *> &, Client *);
 
         void    initFlags();
-        void    cmdKick(Client *, Client *);
+        void    cmdKick(Client *, Client *, const std::string &);
         void    cmdMode(std::string const &flags, std::string const &args, Client *client);
         void    cmdInvite(Client *client, Client *toInv);
         void    sendTopic(Client *);

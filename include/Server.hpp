@@ -35,6 +35,7 @@ class Server
 	    void	activity();
 
         void    interpreter(const std::string &, int const &);
+        void	setNick(const std::string &, Client *);
         void    setClientNick(std::vector<std::string>, Client *);
         void    setClientUser(std::vector<std::string>, Client *);
         void    opMode(const std::vector<std::string> &, Client *);
@@ -44,8 +45,9 @@ class Server
         void	pong(Client *);
         void	quitCmd(Client *);
         
-        void    opKick(const std::vector<std::string> &, Client *);
-        void    message(const std::vector<std::string> &, Client *);
+        void    opKick(const std::string &, Client *);
+        void	privMsgLoop(std::vector<std::string>, const std::string &, const std::string &, Client *);
+        void    privMsg(const std::vector<std::string> &, Client *);
         void	inviteToChannel(std::vector<std::string>, Client *);
         void    operCmd(const std::vector<std::string> &, Client *);
         void    joinChannel(const std::vector<std::string> &, Client *);
