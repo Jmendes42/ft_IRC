@@ -223,7 +223,7 @@ void    Channel::moderatorMode(const std::string &flag, Client *user, Client *ch
  */
 void    Channel::userMode(const std::string &flags, Client *user, Client *chop) {
     if (!usersOnChannel(user) && !finder(_ban_users, user))
-        ERR_USERNOTINCHANNEL(_name, user->getNick(), user->getFd(), _errMsg);
+        ERR_USERNOTINCHANNEL(chop->getNick(), user->getNick(), _name, chop->getFd(), _errMsg)
     if (flags[1] == 'b')
         banUser(flags, user, chop);
     else if (flags[1] == 'o')

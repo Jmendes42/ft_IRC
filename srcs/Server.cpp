@@ -132,14 +132,16 @@ void    Server::interpreter(const std::string &msg, int const &sockFd)
 			(*it).erase((*it).find('\r'), 1);
 	}
 
-
 	size_t i = -1;
 	while (++i < commands.size())
 	{
 		std::vector<std::string> args = ft_split(commands[i], ' ');
 
-		if (!client->getRegistration() && ((args[0].compare("PASS")) || (args[0].compare("USER")) || (args[0].compare("NICK"))))
-			ERR_NOTREGISTERED(args[0], sockFd, _errMsg)
+		if (!client->getRegistration())
+		{
+			if (args[0].compare("PASS") && args[0].compare("NICK") && args[0].compare("USER") && args[0].compare("CAP"))
+				ERR_NOTREGISTERED(args[0], sockFd, _errMsg)
+		}
 		if (!args[0].compare("QUIT"))
 			quitCmd(client);
 		else if (!args[0].compare("PING"))
@@ -174,9 +176,11 @@ void    Server::interpreter(const std::string &msg, int const &sockFd)
 	}
 }
 
-// ERR_NEEDMOREPARAMS              ERR_NOTONCHANNEL
-// RPL_NOTOPIC                     RPL_TOPIC
-// ERR_CHANOPRIVSNEEDED
+/**
+ * @brief			Parses the kill message, searches for the client to kill and sends kill message
+ * @param args		String with the nick of the client to kill and arguments to use as motive
+ * @param killer	Client issuing the /kill command
+ */
 void Server::opTopic(std::vector<std::string> msg, Client *client) {
     
 	Channel		*channel;
@@ -186,7 +190,8 @@ void Server::opTopic(std::vector<std::string> msg, Client *client) {
         ERR_NEEDMOREPARAMS(std::string("TOPIC"), client->getFd(), _errMsg)
     if (!(channel = _channelHandler.finder(msg[1])))
         ERR_NOSUCHCHANNEL(msg[1], client->getFd(), _errMsg)
-
+	if (!channel->usersOnChannel(client))
+		ERR_NOTONCHANNEL(channel->getName(), client->getFd(), _errMsg)
 	// Reply with topic
 	if (msg.size() == 2)
 	{
@@ -202,6 +207,9 @@ void Server::opTopic(std::vector<std::string> msg, Client *client) {
     for (size_t i = 2; i < msg.size(); i++) {
         args += msg[i] + ' ';
 	}
+	if (!args.empty())
+		args.erase(args.find_last_of(' '), 1);
+	
 	channel->cmdTopic(args, client);
 }
 
@@ -269,7 +277,7 @@ void Server::opMode(const std::vector<std::string> &msg, Client *chop) {
         args += msg[i] + ' ';
 	}
 	if (!args.empty())
-		args.erase(args.find(' '), 1);
+		args.erase(args.find_last_of(' '), 1);
 
 	// Parse by the flag
 	std::string	flags = msg[2];
@@ -284,30 +292,27 @@ void Server::opMode(const std::vector<std::string> &msg, Client *chop) {
     	channel->cmdMode(msg[2], args, chop);
 }
 
-// ERR_NEEDMOREPARAMS (need test using nc)
-// RPL_INVITING           RPL_AWAY
-void	Server::inviteToChannel(std::vector<std::string> info, Client *inviter) {
-	std::vector<std::string>::iterator	it;
-	Client *invited;
-	Channel	*channel = _channelHandler.finder(info.back());
+/**
+ * @brief			Parse the invite command, error handlig and send invite message 
+ * @param args		String vector with the INVITE command, targets and the channel
+ * @param inviter	Client issuing the /invite command
+ */
+void	Server::inviteToChannel(std::vector<std::string> args, Client *inviter) {
 
-	if (info.size() < 3)
-		ERR_NEEDMOREPARAMS(info[0], inviter->getFd(), _errMsg)
-	if (!channel) 
-		ERR_NOSUCHCHANNEL(info[2],inviter->getFd(), _errMsg)
+	Client *invited;
+	Channel	*channel;
+
+	if (args.size() < 3)
+		ERR_NEEDMOREPARAMS(args[0], inviter->getFd(), _errMsg)
+	if (!(channel = _channelHandler.finder(args[2])))
+		ERR_NOSUCHCHANNEL(args[2],inviter->getFd(), _errMsg)
 	if (!channel->usersOnChannel(inviter))
 		ERR_NOTONCHANNEL(channel->getName(), inviter->getFd(), _errMsg)
-	for (it = info.begin(); it != info.end(); it++) {
-		if (!(*it).compare("INVITE"))
-			continue;
-		if ((*it).find('#') != std::string::npos)
-			continue ;
-		if (!(invited = _clientHandler.finder((*it))))
-			ERR_NOSUCHNICK_CONT(info[1], inviter->getFd(), _errMsg)
-		if (channel->usersOnChannel(invited))
-			ERR_USERONCHANNEL_CONT(channel->getName(), inviter->getFd(), _errMsg)
-		channel->cmdInvite(inviter, invited);
-	}
+	if (!(invited = _clientHandler.finder(args[1])))
+		ERR_NOSUCHNICK(args[1], inviter->getFd(), _errMsg)
+	if (channel->usersOnChannel(invited))
+		ERR_USERONCHANNEL(channel->getName(), inviter->getFd(), _errMsg)
+	channel->cmdInvite(inviter, invited);
 }
 
 // RPL_TOPIC
@@ -476,6 +481,7 @@ void	Server::setNick(const std::string &nick, Client *client) {
 			ERR_NICKNAMEINUSE(nick, client->getFd(), _errMsg);
 		client->setNick(nick);
 		if (!client->getUser().empty()) {
+			client->setRegistration();
 			std::string welcomeMsg = "001 " + client->getNick() + " :Welcome to '**HiTeK**' Server\r\n";
 			send(client->getFd(), welcomeMsg.c_str(), welcomeMsg.length(), 0);
 		}
@@ -528,18 +534,29 @@ void	Server::opKick(const std::string &args, Client *kicker) {
     	ERR_NEEDMOREPARAMS(std::string("KICK"), kicker->getFd(), _errMsg);
 }
 
-void	Server::partCmd(const std::vector<std::string> &info, Client *parter) {
-	std::vector<std::string> channels = ft_split(info[1], ',');
+/**
+ * @brief			Parses the part command, check for errors and leaves the channels passed by argument
+ * @param args		String vector with the channels to part
+ * @param parter	Client issuing the /part command
+ */
+void	Server::partCmd(const std::vector<std::string> &args, Client *parter) {
+
+	if (args.size() < 2)
+		ERR_NEEDMOREPARAMS(std::string("PART"), parter->getFd(), _errMsg)
+	
+	std::vector<std::string> channels = ft_split(args[1], ',');
 	std::vector<std::string>::iterator it;
 
 	for (it = channels.begin(); it != channels.end(); it++) {
 		if (Channel *part = _channelHandler.finder((*it))) {
+			if (!part->usersOnChannel(parter))
+				ERR_NOTONCHANNEL(part->getName(), parter->getFd(), _errMsg)
 			part->partChannel(parter);
 			if (!part->usersOnChannel())
-				_channelHandler.rmvChannel(info[1]);
+				_channelHandler.rmvChannel((*it));
 		}
 		else
-			ERR_NOSUCHCHANNEL(info[1], parter->getFd(), _errMsg);
+			ERR_NOSUCHCHANNEL((*it), parter->getFd(), _errMsg);
 	}
 }
 

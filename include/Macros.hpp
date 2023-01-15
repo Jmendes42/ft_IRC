@@ -19,7 +19,7 @@
 #define ERR_ERRONEUSNICKNAME(client, nick, fd, errMsg)  {errMsg = "432 " + client + ' ' + nick + " :Erroneus nickname\r\n"; send(fd, errMsg.c_str(), errMsg.length(), 0); return ;}
 #define ERR_NICKNAMEINUSE(client, fd, errMsg)           {errMsg = "433 " + client + " :Nikname in use\r\n"; send(fd, errMsg.c_str(), errMsg.length(), 0); return ;}
 #define ERR_NICKCOLLISION(client, fd, errMsg)           {errMsg = "436 " + client + " :Nickname collision KILL\r\n"; send(fd, errMsg.c_str(), errMsg.length(), 0); return ;}
-#define ERR_USERNOTINCHANNEL(nick, channel, fd, errMsg) {errMsg = "441 :" + nick + " not in channel " + channel + "\r\n"; send(fd, errMsg.c_str(), errMsg.length(), 0); return ;}  
+#define ERR_USERNOTINCHANNEL(chop, nick, channel, fd, errMsg) {errMsg = "441 " + chop + " " + nick + " :Not in channel " + channel + "\r\n"; send(fd, errMsg.c_str(), errMsg.length(), 0); return ;}  
 #define ERR_NOTONCHANNEL(channel, fd, errMsg)           {errMsg = "442 " + channel + " :You're not on that channel\r\n"; send(fd, errMsg.c_str(), errMsg.length(), 0); return ;}
 #define ERR_USERONCHANNEL(channel, fd, errMsg)          {errMsg = "443 " + channel + " :Already on channel\r\n"; send(fd, errMsg.c_str(), errMsg.length(), 0); return ;}
 #define ERR_USERONCHANNEL_CONT(channel, fd, errMsg)     {errMsg = "443 " + channel + " :Already on channel\r\n"; send(fd, errMsg.c_str(), errMsg.length(), 0); continue; ;}
@@ -31,6 +31,7 @@
 #define ERR_CHANNELISFULL_CONT(channel, fd, errMsg)     {errMsg = "471 " + channel + " :Cannot join channel (+l)\r\n"; send(fd, errMsg.c_str(), errMsg.length(), 0); continue ;}
 #define ERR_UNKNOWNMODE(channel, fd, errMsg)            {errMsg = "472 " + channel + " :is unknown mode char to me\r\n"; send(fd, errMsg.c_str(), errMsg.length(), 0); return ;}
 #define ERR_INVITEONLYCHAN(channel, fd, errMsg)         {errMsg = "473 " + channel + " :Cannot join channel (+i)\r\n"; send(fd, errMsg.c_str(), errMsg.length(), 0); return ;}
+#define ERR_ILLEGALNAME(channel, fd, errMsg)            {errMsg = "473 " + channel + " :Ilegal channel name\r\n"; send(fd, errMsg.c_str(), errMsg.length(), 0); return ;}
 #define ERR_INVITEONLYCHAN_CONT(channel, fd, errMsg)    {errMsg = "473 " + channel + " :Cannot join channel (+i)\r\n"; send(fd, errMsg.c_str(), errMsg.length(), 0); continue ;}
 #define ERR_BANNEDFROMCHAN(channel, fd, errMsg)         {errMsg = "474 " + channel + " :Cannot interact with channel (+b)\r\n"; send(fd, errMsg.c_str(), errMsg.length(), 0); return ;}
 #define ERR_BANNEDFROMCHAN_CONT(channel, fd, errMsg)    {errMsg = "474 " + channel + " :Cannot interact with channel (+b)\r\n"; send(fd, errMsg.c_str(), errMsg.length(), 0); continue ;}
