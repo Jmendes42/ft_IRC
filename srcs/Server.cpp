@@ -346,7 +346,9 @@ void    Server::joinChannel(const std::vector<std::string> &msg, Client *client)
 				ERR_CHANNELISFULL_CONT(channel->getName(), fd, _errMsg)
 			if (channel->finder(channel->getBan(), client))
 				ERR_BANNEDFROMCHAN_CONT(channel->getName(), fd, _errMsg)
+								MSG("DEBUG KEY");
 			if (channel->retStateFlag('k')) {
+
 				if (msg.size() < 3)
 					ERR_NEEDMOREPARAMS_CONT(channel->getName(), fd, _errMsg)
 				if (msg[2] != channel->getPass())
@@ -422,8 +424,11 @@ void	Server::privMsgLoop(std::vector<std::string> targets, const std::string &ms
 				ERR_BANNEDFROMCHAN_CONT(channel->getName(), sender->getFd(), _errMsg)
 			if (msg.length() == 1)	// Check in libera if this error is if msg is only ":" or if msg doesn't exist
 				ERR_NOTEXTTOSEND(channel->getName(), sender->getFd(), _errMsg)
-			if (channel->retStateFlag('m') && (!channel->finder(channel->getModerator(), sender) || !channel->finder(channel->getChops(), sender))) 
-				ERR_CANNOTSENDTOCHAN(channel->getName(), sender->getFd(), _errMsg); // Check in libera if it still prints on sender chat
+			if (channel->retStateFlag('m'))
+			{
+				if (!channel->finder(channel->getModerator(), sender) && !channel->finder(channel->getChops(), sender))
+					ERR_CANNOTSENDTOCHAN(channel->getName(), sender->getFd(), _errMsg); // Check in libera if it still prints on sender chat
+			}
 			if (!sender->findChannel((*it)) && channel->retStateFlag('n')) 
 				ERR_CANNOTSENDTOCHAN(channel->getName(), sender->getFd(), _errMsg);
 			std::string channel_name = msg;

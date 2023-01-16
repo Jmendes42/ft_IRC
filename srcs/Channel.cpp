@@ -143,7 +143,7 @@ void Channel::changePassword(int fd, char set, std::string const &args)
         if (it->second == true)
             it->second = false;
     }
-    else if (set == '-' && !args.empty())
+    else if (set == '+' && !args.empty())
     {
         _password = args;
         if (it->second == false)
@@ -209,7 +209,15 @@ void    Channel::moderatorMode(const std::string &flag, Client *user, Client *ch
         ERR_CHANOPRIVSNEEDED(_name, chop->getFd(), _errMsg)
     if ((flag[0] == '+' && finder(_moderators, user)) || (flag[0] == '-' && !finder(_moderators, user)))
         ERR_KEYSET(_name, chop->getFd(), _errMsg)
+        
     (flag[0] == '+') ? addClient(_moderators, user) : addClient(_users, user);
+
+    // THIS IS NOT A GOOD SOLUTION. rmvClient() uses ERASE_VEC that returns, so it never actually erases it from _moderators... Check if other functions are using it and what is the best solution for this
+    if (flag[0] == '-')
+    {
+        if (finder(_moderators, user))
+            _moderators.erase(_it);
+    }
 
     msgSend = ':' + chop->getNick() + " MODE " + _name + ' ' + flag + ' ' + user->getNick() + "\r\n";
     sendMsgToUsers(msgSend);
