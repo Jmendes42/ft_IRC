@@ -289,7 +289,7 @@ void Server::opMode(const std::vector<std::string> &msg, Client *chop) {
         channel->userMode(flags, _clientHandler.finder(args), chop);
 	}
 	else
-    	channel->cmdMode(msg[2], args, chop);
+    	channel->cmdMode(flags, args, chop);
 }
 
 /**
@@ -356,7 +356,7 @@ void    Server::joinChannel(const std::vector<std::string> &msg, Client *client)
 			}
 			joinMsg = ':' + nick + '!' + user + '@' + ip + " JOIN " + (*it) + "\r\n";
 			channel->sendMsgToUsers(joinMsg);
-			channel->addClient(channel->getUsers(), client);
+			channel->addClient(channel->getUsers(), client, false);
 			client->addChannel(_channelHandler.finder((*it)));
 		}
 		else {

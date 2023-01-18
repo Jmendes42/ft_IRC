@@ -52,7 +52,7 @@ class Channel
         void    rmvClient(Client *);
         void    rmvClient(Client *, std::vector<Client *> &);
         void    addInvited(Client *);
-        void    addClient(std::vector<Client *> &, Client *);
+        void    addClient(std::vector<Client *> &, Client *, const bool &);
 
         void    initFlags();
         void    cmdKick(Client *, Client *, const std::string &);

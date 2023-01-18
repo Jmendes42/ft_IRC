@@ -7,7 +7,7 @@
 
 Channel::Channel(std::string const &name, Client *chop) : _name(name), _topic(""), _moderatedChannel(false)
 {
-    addClient(_chops, chop);
+    addClient(_chops, chop, false);
     initFlags();
 }
 
@@ -71,7 +71,7 @@ void    Channel::sendMsgToUsers(const std::string &msg) {
         send((*_it)->getFd(), msg.c_str(), msg.length(), 0);
     for (_it = _users.begin(); _it != _users.end(); _it++)
         send((*_it)->getFd(), msg.c_str(), msg.length(), 0);
-    for (_it = _muted_users.begin(); _it != _muted_users.end(); _it++)
+    for (_it = _moderators.begin(); _it != _moderators.end(); _it++)
         send((*_it)->getFd(), msg.c_str(), msg.length(), 0);
 }
 
@@ -159,8 +159,8 @@ void Channel::changePassword(int fd, char set, std::string const &args)
  * @param client    Client to search 
  * @param vec       Vector to insert 
  */
-void    Channel::addClient(std::vector<Client *> &vec, Client *client) {
-    if (vec != _ban_users)
+void    Channel::addClient(std::vector<Client *> &vec, Client *client, const bool &ban) {
+    if (ban == false)
         rmvClient(client);
     vec.push_back(client);
 }
@@ -177,8 +177,8 @@ void    Channel::banUser(const std::string &flag, Client *user, Client *chop) {
         return ;
     else if (flag[0] == '-' && !finder(_ban_users, user))
         return ;
-    (flag[0] == '+') ? addClient(_ban_users, user) : rmvClient(user, _ban_users);
-    msgSend = ':' + chop->getNick() + " MODE " + _name + ' ' + flag + ' ' + user->getNick() + "\r\n";
+    (flag[0] == '+') ? addClient(_ban_users, user, true) : rmvClient(user, _ban_users);
+    msgSend = ':' + chop->getNick() + " MODE " + _name + ' ' + flag[0] + flag[1] + ' ' + user->getNick() + "\r\n";
     sendMsgToUsers(msgSend);
 }
 
@@ -192,8 +192,8 @@ void    Channel::chopMode(const std::string &flag, Client *user, Client *chop) {
 
     if ((flag[0] == '+' && finder(_chops, user)) || (flag[0] == '-' && !finder(_chops, user)))
         ERR_KEYSET(_name, chop->getFd(), _errMsg)
-    (flag[0] == '+') ? addClient(_chops, user) : addClient(_users, user);
-    msgSend = ':' + chop->getNick() + " MODE " + _name + ' ' + flag + ' ' + user->getNick() + "\r\n";
+    (flag[0] == '+') ? addClient(_chops, user, false) : addClient(_users, user, false);
+    msgSend = ':' + chop->getNick() + " MODE " + _name + ' ' + flag[0] + flag[1] + ' ' + user->getNick() + "\r\n";
     sendMsgToUsers(msgSend);
 }
 
@@ -210,14 +210,14 @@ void    Channel::moderatorMode(const std::string &flag, Client *user, Client *ch
     if ((flag[0] == '+' && finder(_moderators, user)) || (flag[0] == '-' && !finder(_moderators, user)))
         ERR_KEYSET(_name, chop->getFd(), _errMsg)
         
-    (flag[0] == '+') ? addClient(_moderators, user) : addClient(_users, user);
+    (flag[0] == '+') ? addClient(_moderators, user, false) : addClient(_users, user, false);
 
     // THIS IS NOT A GOOD SOLUTION. rmvClient() uses ERASE_VEC that returns, so it never actually erases it from _moderators... Check if other functions are using it and what is the best solution for this
-    if (flag[0] == '-')
-    {
-        if (finder(_moderators, user))
-            _moderators.erase(_it);
-    }
+    // if (flag[0] == '-')
+    // {
+    //     if (finder(_moderators, user))
+    //         _moderators.erase(_it);
+    // }
 
     msgSend = ':' + chop->getNick() + " MODE " + _name + ' ' + flag + ' ' + user->getNick() + "\r\n";
     sendMsgToUsers(msgSend);
@@ -343,7 +343,7 @@ void Channel::changeSimpleFlag(const std::string &flag, Client *chop) {
         it->second = false;
     else
         ERR_KEYSET(_name, chop->getFd(), _errMsg);
-    msgSend = ':' + chop->getNick() + " MODE " + _name + ' ' + flag + "\r\n";
+    msgSend = ':' + chop->getNick() + " MODE " + _name + ' ' + flag[0] + flag[1] + "\r\n";
     sendMsgToUsers(msgSend);
 
 }
@@ -360,7 +360,7 @@ void    Channel::changeComposedFlag(const std::string &flag, const std::string &
     if (flag[1] == 'k') {
         changePassword(chop->getFd(), flag[0], arg);
     }
-    msgSend = ':' + chop->getNick() + " MODE " + _name + ' ' + flag + ' ' + arg + "\r\n";
+    msgSend = ':' + chop->getNick() + " MODE " + _name + ' ' + flag[0] + flag[1] + ' ' + arg + "\r\n";
     sendMsgToUsers(msgSend);
 }
 
@@ -371,18 +371,15 @@ void Channel::cmdMode(std::string const &flags, std::string const &args, Client 
         ERR_NOTONCHANNEL(getName(), chop->getFd(), _errMsg);
     char set = flags[0];
 
-    for (long unsigned int i = 1; i < flags.length(); i++) {
         // In case of P or S ! Only one can be set at a time
-        if (checkFlag(flags[i]) == 1)
-            changeModePS(chop, set, flags[i], getName());
-        else if (checkFlag(flags[i]) == 2)                          
+        if (checkFlag(flags[1]) == 1)
+            changeModePS(chop, set, flags[1], getName());
+        else if (checkFlag(flags[1]) == 2)                          
             changeSimpleFlag(flags, chop);
-        else if (checkFlag(flags[i]) == 3)
+        else if (checkFlag(flags[1]) == 3)
             changeComposedFlag(flags, args, chop);
         else
             ERR_UNKNOWNMODE(getName(), chop->getFd(), _errMsg);
-        
-    }
 }
 
 /**
