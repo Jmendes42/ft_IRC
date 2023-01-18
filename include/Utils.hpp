@@ -23,5 +23,6 @@ std::vector<std::string> ft_split(std::string const &msg, char const &c);
 
 void rmvFromVector(int fd, std::string const &channel_name, std::string const &nick, std::vector<Client *> &vec);
 void  addToVector(int fd, std::string const &channel_name, std::string const &nickname, std::vector<Client *> &vec, std::vector<Client *> &users);
+std::string		trim(const std::string &str, const char *set);
 
 #endif

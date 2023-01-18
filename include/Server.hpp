@@ -34,7 +34,7 @@ class Server
         void    sockSet();
 	    void	activity();
 
-        void    interpreter(const std::string &, int const &);
+        void    interpreter(std::string, int const &);
         void	setNick(const std::string &, Client *);
         void    setClientNick(std::vector<std::string>, Client *);
         void    setClientUser(std::vector<std::string>, Client *);

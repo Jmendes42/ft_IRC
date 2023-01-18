@@ -25,12 +25,13 @@ void Server::new_connection()
 	std::cout << "New connection , socket fd is " << _sock.getNewSocket() 
 		<< ", IP is: " << inet_ntoa(_sock.getHint().sin_addr) 
 			<< ", port: " << ntohs(_sock.getHint().sin_port) << std::endl;
-	_clientHandler.addClient(_sock.getNewSocket(), std::string(inet_ntoa(_sock.getHint().sin_addr)), ntohs(_sock.getHint().sin_port));
+
+	_clientHandler.getClients().push_back(new Client(_sock.getNewSocket(), std::string(inet_ntoa(_sock.getHint().sin_addr)), ntohs(_sock.getHint().sin_port)));
 	// Add new socket to array of sockets
 	for (int i = 0; i < _sock.getMaxClients(); i++)
 	{
 		// If position is empty
-		if (_sock.getClientSocket(i) == 0 )
+		if (_sock.getClientSocket(i) == 0)
 		{
 			_sock.setClientSocket(i, _sock.getNewSocket());
 			printf("Adding to list of sockets as %d\n" , i);
@@ -70,7 +71,7 @@ void	Server::io_operations(char *buffer, int i)
 				std::string cmd;
 				cmd = _clientHandler.processCmd(std::string(buffer, _sock.getValRead()), _sock.getSd());
 				if (!cmd.empty())
-					interpreter(cmd, _sock.getSd());
+					interpreter(trim(cmd, " \t"), _sock.getSd());
 			}
 			catch(std::exception &error)
 			{
@@ -116,27 +117,24 @@ void    Server::sockSet() {
  * @param msg		Message to interprete
  * @param sockFd	Client fd
  */
-void    Server::interpreter(const std::string &msg, int const &sockFd) 
+void    Server::interpreter(std::string msg, int const &sockFd) 
 {
-	MSG(msg);
-	std::string copy = msg;
 	Client		*client = _clientHandler.finder(sockFd);
 
-	if (copy[copy.length() - 1] == '\n')
-		copy.erase(copy.size() - 1, 1);
-	std::vector<std::string> commands = ft_split(copy, '\n');
+	if (msg[msg.length() - 1] == '\n')
+		msg.erase(msg.size() - 1, 1);
+	std::vector<std::string> commands = ft_split(msg, '\n');
 	std::vector<std::string>::iterator it;
 	for (it = commands.begin(); it != commands.end(); it++)
 	{
 		if ((*it).find('\r') != std::string::npos)
 			(*it).erase((*it).find('\r'), 1);
 	}
-
 	size_t i = -1;
 	while (++i < commands.size())
 	{
 		std::vector<std::string> args = ft_split(commands[i], ' ');
-
+		std::cout << args.size() << std::endl;
 		if (!client->getRegistration())
 		{
 			if (args[0].compare("PASS") && args[0].compare("NICK") && args[0].compare("USER") && args[0].compare("CAP"))

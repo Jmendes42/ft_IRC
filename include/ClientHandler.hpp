@@ -26,7 +26,6 @@ class ClientHandler
         ~ClientHandler() {};
 
         void    rmvClient(std::string const &);
-        void    addClient(const int &fd, const std::string &ip, const uint16_t &port);
 
         Client  *finder(const int &);
         Client  *finder(const uint16_t &);

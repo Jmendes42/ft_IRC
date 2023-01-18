@@ -94,3 +94,23 @@ void  addToVector(int fd, std::string const &channel_name, std::string const &ni
     send(fd, toSend.c_str(), toSend.length(), 0);
     return ;
 }
+
+bool	isEqual(char c, const std::string &str)
+{
+	return (str.find_first_of(c) != std::string::npos ? true : false);
+}
+
+std::string		trim(const std::string &str, const char *set)
+{
+	std::string ret = str;
+	size_t i = 0;
+	while (ret[i] && isEqual(ret[i], set)) 
+		i++;
+	ret.erase(0, i);
+
+	i = ret.length() - 1;
+	while (ret[i] && isEqual(ret[i], set))
+		i--;
+	ret.erase(i + 1, (ret.length() - 1) - i);
+	return (ret);
+}
