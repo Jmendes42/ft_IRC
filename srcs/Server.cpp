@@ -394,11 +394,12 @@ void    Server::privMsg(const std::vector<std::string> &info, Client *sender) {
 		ERR_NEEDMOREPARAMS(info[0], sender->getFd(), _errMsg);
 	if (info[2].length() == 1)	// Check in libera if this error is if msg is only ":" or if info[2] doesn't exist .. Needs to be tested with nc .. weechat always puts the ':'
 		ERR_NOTEXTTOSEND(info[1], sender->getFd(), _errMsg)
-	if (info.size() > 3) {
+	if (info.size() > 2) {
 		msg = info[2];
 		for(size_t i = 3; i < info.size(); i++)
 			msg += ' ' + info[i];
 	}
+	MSG("OLAAAA = " + msg + "  | " + info[2]);
  	(!info[0].compare("PRIVMSG")) ? cmd = " PRIVMSG " : cmd = " NOTICE ";
 	privMsgLoop(ft_split(info[1], ','), msg, cmd, sender);
 }
@@ -410,10 +411,11 @@ void    Server::privMsg(const std::vector<std::string> &info, Client *sender) {
  * @param cmd		Command issued PRIVMSG/NOTICE
  * @param sender	Client issuing the /msg command
  */
-void	Server::privMsgLoop(std::vector<std::string> targets, const std::string &msg,
+void	Server::privMsgLoop(std::vector<std::string> targets, std::string &msg,
 							const std::string &cmd, Client *sender) {
 	std::vector<std::string>::iterator	it;
 	std::string							sendMsg;
+	MSG("AQUI = " + msg);
 
 	for (it = targets.begin(); it != targets.end(); it++) {
 		if ((*it)[0] == '#')
@@ -432,15 +434,15 @@ void	Server::privMsgLoop(std::vector<std::string> targets, const std::string &ms
 			}
 			if (!sender->findChannel((*it)) && channel->retStateFlag('n')) 
 				ERR_CANNOTSENDTOCHAN(channel->getName(), sender->getFd(), _errMsg);
-			std::string channel_name = msg;
+			MSG("OUTRO = " + msg);
+			
 			sendMsg = ':' + sender->getNick();
-			sendMsg += cmd + (*it) + ' ' + channel_name.erase(0, 1) + "\r\n";
+			sendMsg += cmd + (*it) + ' ' + msg.erase(0, 1) + "\r\n";
 			channel->sendMsgToUsers(sendMsg, sender->getFd());
 		}
 		else if (Client * client = _clientHandler.finder((*it))) {
-			std::string channel_name = msg;
 			sendMsg = ":" + sender->getNick() + cmd;
-			sendMsg += client->getNick() + ' ' + channel_name.erase(0, 1) + "\r\n";
+			sendMsg += client->getNick() + ' ' + msg.erase(0, 1) + "\r\n";
 			send(client->getFd(), sendMsg.c_str(), sendMsg.length(), 0);
 		}
 		else

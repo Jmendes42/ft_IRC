@@ -47,7 +47,7 @@ class Server
         void	quitCmd(Client *);
         
         void    opKick(const std::string &, Client *);
-        void	privMsgLoop(std::vector<std::string>, const std::string &, const std::string &, Client *);
+        void	privMsgLoop(std::vector<std::string>, std::string &, const std::string &, Client *);
         void    privMsg(const std::vector<std::string> &, Client *);
         void	inviteToChannel(std::vector<std::string>, Client *);
         void    operCmd(const std::vector<std::string> &, Client *);
