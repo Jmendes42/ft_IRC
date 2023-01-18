@@ -319,9 +319,6 @@ void	Server::inviteToChannel(std::vector<std::string> args, Client *inviter) {
 // ERR_BADCHANMASK
 // ERR_TOOMANYCHANNELS
 void    Server::joinChannel(const std::vector<std::string> &msg, Client *client) {
-
-	MSG("Join: ." + msg[0] + ".");
-
 	std::vector<std::string>::iterator	it;
 	std::vector<std::string>			channels;
 	int									fd = client->getFd();
@@ -346,9 +343,7 @@ void    Server::joinChannel(const std::vector<std::string> &msg, Client *client)
 				ERR_CHANNELISFULL_CONT(channel->getName(), fd, _errMsg)
 			if (channel->finder(channel->getBan(), client))
 				ERR_BANNEDFROMCHAN_CONT(channel->getName(), fd, _errMsg)
-								MSG("DEBUG KEY");
 			if (channel->retStateFlag('k')) {
-
 				if (msg.size() < 3)
 					ERR_NEEDMOREPARAMS_CONT(channel->getName(), fd, _errMsg)
 				if (msg[2] != channel->getPass())
@@ -368,7 +363,13 @@ void    Server::joinChannel(const std::vector<std::string> &msg, Client *client)
 		channelMsg = "353 " + nick + " = " + (*it) + " :";
 		channelMsg += _channelHandler.finder((*it))->getUsersString() + "\r\n";
 		SEND(fd, channelMsg)
-		_channelHandler.finder((*it))->sendTopic(client);
+		if (!_channelHandler.finder((*it))->getTopic().empty())
+		{
+			Channel *channel = _channelHandler.finder((*it));
+			std::string sendMsg;
+		    sendMsg = "332 " + client->getNick() + ' ' + channel->getName() + ' ' + channel->getTopic() + '\n';
+    		SEND(client->getFd(), sendMsg)
+		}
 	}
 }
 
@@ -399,7 +400,7 @@ void    Server::privMsg(const std::vector<std::string> &info, Client *sender) {
 			msg += ' ' + info[i];
 	}
  	(!info[0].compare("PRIVMSG")) ? cmd = " PRIVMSG " : cmd = " NOTICE ";
-	privMsgLoop(ft_split(info[1], ','), info[2], cmd, sender);
+	privMsgLoop(ft_split(info[1], ','), msg, cmd, sender);
 }
 
 /**

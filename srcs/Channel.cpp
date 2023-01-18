@@ -249,7 +249,7 @@ void Channel::initFlags()
     _flags.insert(std::pair<char, bool>('p', false));       //  p - private channel flag;
     _flags.insert(std::pair<char, bool>('s', false));       //  s - secret channel flag;
     _flags.insert(std::pair<char, bool>('i', false));       //  i - invite-only channel flag;
-    _flags.insert(std::pair<char, bool>('t', true));       //  t - topic settable by channel operator only flag;
+    _flags.insert(std::pair<char, bool>('t', true));        //  t - topic settable by channel operator only flag;
     _flags.insert(std::pair<char, bool>('n', true));        //  n - no messages to channel from clients on the outside;
     _flags.insert(std::pair<char, bool>('m', false));       //  m - moderated channel;
     _flags.insert(std::pair<char, bool>('l', false));       //  l - set the user limit to channel;
