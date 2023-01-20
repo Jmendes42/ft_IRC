@@ -18,8 +18,8 @@ int	main(int argc, char **argv)
     // REPLACE THIS WITH AN ERROR MESSAGE (Just here for testing purpose)
     if (argc != 3)
     {
-        port = 54000;
-        password = "012";
+        std::cout << "Error: Invalid number of arguments" << std::endl;
+        return (-1);
     }
     else
     {

@@ -33,7 +33,6 @@ class Channel
         std::map<char, bool> _flags;
         std::string         _password;
         int                 _user_limit;
-        bool                _moderatedChannel;
 
     public:
 

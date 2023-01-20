@@ -5,7 +5,7 @@
 #include "../include/Macros.hpp"
 #include "../include/Channel.hpp"
 
-Channel::Channel(std::string const &name, Client *chop) : _name(name), _topic(""), _moderatedChannel(false)
+Channel::Channel(std::string const &name, Client *chop) : _name(name), _topic("")
 {
     addClient(_chops, chop, false);
     initFlags();

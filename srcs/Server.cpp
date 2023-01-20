@@ -18,14 +18,8 @@ void Server::new_connection()
 	_sock.setNewSocket(accept(_sock.getSocketFd(), (struct sockaddr *)&_sock.getHint(), (socklen_t*)&_sock.getClientSize()));
 	if (_sock.getNewSocket() < 0)
 	{
-		MSG("Accepting Error");
 		throw ConnectionException();
 	}
-	// Inform user of socket number - used in send and receive commands   -- WE DON'T NEED THIS. JUST FOR DEBUG
-	std::cout << "New connection , socket fd is " << _sock.getNewSocket() 
-		<< ", IP is: " << inet_ntoa(_sock.getHint().sin_addr) 
-			<< ", port: " << ntohs(_sock.getHint().sin_port) << std::endl;
-
 	_clientHandler.getClients().push_back(new Client(_sock.getNewSocket(), std::string(inet_ntoa(_sock.getHint().sin_addr)), ntohs(_sock.getHint().sin_port)));
 	// Add new socket to array of sockets
 	for (int i = 0; i < _sock.getMaxClients(); i++)
@@ -34,7 +28,6 @@ void Server::new_connection()
 		if (_sock.getClientSocket(i) == 0)
 		{
 			_sock.setClientSocket(i, _sock.getNewSocket());
-			printf("Adding to list of sockets as %d\n" , i);
 			break;
 		}
 	}
@@ -57,7 +50,6 @@ void	Server::io_operations(char *buffer, int i)
 		{
 			// Somebody disconnected , get his details and print
 			getpeername(_sock.getSd(), (struct sockaddr*)&_sock.getHint(), (socklen_t*)&_sock.getClientSize());
-			printf("Host disconnected , ip %s , port %d \n", inet_ntoa(_sock.getHint().sin_addr), ntohs(_sock.getHint().sin_port));
 			// Close the socket and mark as 0 in list for reuse
 			close(_sock.getSd());
 			_sock.setClientSocket(i, 0);
