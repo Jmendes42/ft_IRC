@@ -21,15 +21,11 @@ int	main(int argc, char **argv)
         std::cout << "Error: Invalid number of arguments" << std::endl;
         return (-1);
     }
-    else
-    {
-        std::istringstream(argv[1]) >> port; //i is 10 after this
-        password = argv[2];
-    }
+    std::istringstream(argv[1]) >> port; //i is 10 after this
+    password = argv[2];
     std::cout << "Port = " << port << " | Pass = " << password << std::endl;
 
     Server server(port, password);
-
     try
     {
 	    server.sockSet();

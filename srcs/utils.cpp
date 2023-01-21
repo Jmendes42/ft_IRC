@@ -1,6 +1,7 @@
 #include "../include/Utils.hpp"
 #include "../include/Client.hpp"
 #include "../include/Socket.hpp"
+#include "../include/Macros.hpp"
 
 void sighandler(int signum) {
     std::cout << signum << "Turning off server" << std::endl;
@@ -43,7 +44,7 @@ void rmvFromVector(int fd, std::string const &channel_name, std::string const &n
     if (nick.empty())
     {
         std::string toSend =  "461 MODE :Not enough parameters\r\n";
-        send(fd, toSend.c_str(), toSend.length(), 0);
+        SEND(fd, toSend);
         return ;
     }
 	std::vector<Client *>::iterator it;
@@ -56,7 +57,7 @@ void rmvFromVector(int fd, std::string const &channel_name, std::string const &n
         }
     }
     std::string toSend =  "401 " + channel_name + " :No such nick/channel\r\n";
-    send(fd, toSend.c_str(), toSend.length(), 0);
+    SEND(fd, toSend);
     return ;
 }
 
@@ -65,7 +66,7 @@ void  addToVector(int fd, std::string const &channel_name, std::string const &ni
     if (nickname.empty())
     {
         std::string toSend =  "461 MODE :Not enough parameters\r\n";
-        send(fd, toSend.c_str(), toSend.length(), 0);
+        SEND(fd, toSend);
         return ;
     }
     std::vector<Client *>::iterator it_chop;
@@ -77,7 +78,7 @@ void  addToVector(int fd, std::string const &channel_name, std::string const &ni
         if (!((*it_chop)->getNick().compare(nickname)))
         {
             std::string toSend =  "467 " + channel_name + " :Channel key already set\r\n";
-            send(fd, toSend.c_str(), toSend.length(), 0);
+            SEND(fd, toSend);
             return ;
         }
     }
@@ -85,13 +86,12 @@ void  addToVector(int fd, std::string const &channel_name, std::string const &ni
     {
         if (!((*it_clients)->getNick().compare(nickname)))
         {
-            std::cout << "Added to Vector" << std::endl;
             vec.push_back((*it_clients));
             return ;
         }
     }
     std::string toSend =  "401 " + channel_name + " :No such nick/channel\r\n";
-    send(fd, toSend.c_str(), toSend.length(), 0);
+    SEND(fd, toSend);
     return ;
 }
 

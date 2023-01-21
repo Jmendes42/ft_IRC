@@ -1,10 +1,13 @@
 #include "../include/Socket.hpp"
+# include <fcntl.h>
 
-Socket::Socket(int port) {
-
+Socket::Socket(int port) 
+{
 	_max_clients = 30;
 	_port = port;
 	_socketFd = socket(AF_INET, SOCK_STREAM, 0);
+	if (fcntl(_socketFd, F_SETFL, O_NONBLOCK) == -1)
+		throw ConnectionException();
 }
 
 void 		Socket::initSockets()

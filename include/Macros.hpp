@@ -1,7 +1,7 @@
 #ifndef MACROS_HPP
 # define MACROS_HPP
 
-#define SEND(fd, sendMsg)                               {send(fd, sendMsg.c_str(), sendMsg.length(), 0);}
+#define SEND(fd, sendMsg)                               {if (send(fd, sendMsg.c_str(), sendMsg.length(), 0) == -1) MSG("Send error");}
 #define ERASE_VEC(vec, _it)                             {vec.erase(_it); return;}
 #define ERASE_DEL_VEC(vec, _it)                         {delete (*_it); vec.erase(_it); return;}
 
@@ -17,7 +17,7 @@
 #define ERR_NOTEXTTOSEND(channel, fd, errMsg)           {errMsg = "412 " + channel + " :No text to send\r\n"; send(fd, errMsg.c_str(), errMsg.length(), 0); return ;}
 #define ERR_NONICKNAMEGIVEN(client, fd, errMsg)         {errMsg = "431 " + client + " :No nickname given\r\n"; send(fd, errMsg.c_str(), errMsg.length(), 0); return ;}
 #define ERR_ERRONEUSNICKNAME(client, nick, fd, errMsg)  {errMsg = "432 " + client + ' ' + nick + " :Erroneus nickname\r\n"; send(fd, errMsg.c_str(), errMsg.length(), 0); return ;}
-#define ERR_NICKNAMEINUSE(client, fd, errMsg)           {errMsg = "433 " + client + " :Nikname in use\r\n"; send(fd, errMsg.c_str(), errMsg.length(), 0); return ;}
+#define ERR_NICKNAMEINUSE(client, fd, errMsg)           {errMsg = "433 " + client + " :Nickname in use\r\n"; send(fd, errMsg.c_str(), errMsg.length(), 0); return ;}
 #define ERR_NICKCOLLISION(client, fd, errMsg)           {errMsg = "436 " + client + " :Nickname collision KILL\r\n"; send(fd, errMsg.c_str(), errMsg.length(), 0); return ;}
 #define ERR_USERNOTINCHANNEL(chop, nick, channel, fd, errMsg) {errMsg = "441 " + chop + " " + nick + " :Not in channel " + channel + "\r\n"; send(fd, errMsg.c_str(), errMsg.length(), 0); return ;}  
 #define ERR_NOTONCHANNEL(channel, fd, errMsg)           {errMsg = "442 " + channel + " :You're not on that channel\r\n"; send(fd, errMsg.c_str(), errMsg.length(), 0); return ;}

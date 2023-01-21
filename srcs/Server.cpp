@@ -1,6 +1,7 @@
 # include <vector>
 # include <string>
 # include <iostream>
+# include <fcntl.h>
 
 #include "../include/Utils.hpp"
 #include "../include/Client.hpp"
@@ -17,9 +18,9 @@ void Server::new_connection()
 {
 	_sock.setNewSocket(accept(_sock.getSocketFd(), (struct sockaddr *)&_sock.getHint(), (socklen_t*)&_sock.getClientSize()));
 	if (_sock.getNewSocket() < 0)
-	{
 		throw ConnectionException();
-	}
+	if (fcntl(_sock.getNewSocket(), F_SETFL, O_NONBLOCK) == -1)
+		throw ConnectionException();
 	_clientHandler.getClients().push_back(new Client(_sock.getNewSocket(), std::string(inet_ntoa(_sock.getHint().sin_addr)), ntohs(_sock.getHint().sin_port)));
 	// Add new socket to array of sockets
 	for (int i = 0; i < _sock.getMaxClients(); i++)
@@ -112,7 +113,6 @@ void    Server::sockSet() {
 void    Server::interpreter(std::string msg, int const &sockFd) 
 {
 	Client		*client = _clientHandler.finder(sockFd);
-	MSG("Interpreter = " + msg);
 
 	if (msg[msg.length() - 1] == '\n')
 		msg.erase(msg.size() - 1, 1);
@@ -127,7 +127,6 @@ void    Server::interpreter(std::string msg, int const &sockFd)
 	while (++i < commands.size())
 	{
 		std::vector<std::string> args = ft_split(commands[i], ' ');
-		std::cout << args.size() << std::endl;
 		if (!client->getRegistration())
 		{
 			if (args[0].compare("PASS") && args[0].compare("NICK") && args[0].compare("USER") && args[0].compare("CAP"))
@@ -390,7 +389,6 @@ void    Server::privMsg(const std::vector<std::string> &info, Client *sender) {
 		for(size_t i = 3; i < info.size(); i++)
 			msg += ' ' + info[i];
 	}
-	MSG("OLAAAA = " + msg + "  | " + info[2]);
  	(!info[0].compare("PRIVMSG")) ? cmd = " PRIVMSG " : cmd = " NOTICE ";
 	privMsgLoop(ft_split(info[1], ','), msg, cmd, sender);
 }
@@ -424,7 +422,6 @@ void	Server::privMsgLoop(std::vector<std::string> targets, std::string &msg,
 			}
 			if (!sender->findChannel((*it)) && channel->retStateFlag('n')) 
 				ERR_CANNOTSENDTOCHAN(channel->getName(), sender->getFd(), _errMsg);
-			MSG("OUTRO = " + msg);
 			
 			sendMsg = ':' + sender->getNick();
 			sendMsg += cmd + (*it) + ' ' + msg.erase(0, 1) + "\r\n";
@@ -433,7 +430,7 @@ void	Server::privMsgLoop(std::vector<std::string> targets, std::string &msg,
 		else if (Client * client = _clientHandler.finder((*it))) {
 			sendMsg = ":" + sender->getNick() + cmd;
 			sendMsg += client->getNick() + ' ' + msg.erase(0, 1) + "\r\n";
-			send(client->getFd(), sendMsg.c_str(), sendMsg.length(), 0);
+			SEND(client->getFd(), sendMsg)
 		}
 		else
 			ERR_NOSUCHNICK((*it), sender->getFd(), _errMsg);
@@ -481,7 +478,7 @@ void	Server::setNick(const std::string &nick, Client *client) {
 		if (!client->getUser().empty()) {
 			client->setRegistration();
 			std::string welcomeMsg = ":HiTeK 001 " + client->getNick() + " :Welcome to '**HiTeK**' Server\r\n";
-			send(client->getFd(), welcomeMsg.c_str(), welcomeMsg.length(), 0);
+			SEND(client->getFd(), welcomeMsg)
 		}
 }
 
@@ -490,7 +487,6 @@ void	Server::setNick(const std::string &nick, Client *client) {
 void    Server::setClientUser(std::vector<std::string> args, Client *client) {
 	std::string welcomeMsg;
 
-	MSG("User Function");
 
 	client->setUser(args[1]);
 	client->setReal(args[2]);
@@ -500,9 +496,9 @@ void    Server::setClientUser(std::vector<std::string> args, Client *client) {
 		{
 			client->setRegistration();
 			welcomeMsg = ":HiTeK 001 " + client->getNick() + " :Welcome to '**HiTeK**' Server\r\n";
-			MSG("Welcome = ." + welcomeMsg + ".");
-			MSG("Nick = ." + client->getNick() + ".");
-			send(client->getFd(), welcomeMsg.c_str(), welcomeMsg.length(), 0);
+			// MSG("Welcome = ." + welcomeMsg + ".");
+			// MSG("Nick = ." + client->getNick() + ".");
+			SEND(client->getFd(), welcomeMsg)
 		}
 	}
 	else
@@ -585,7 +581,7 @@ void	Server::quitCmd(Client *quiter) {
 void	Server::pong(Client *pinger) 
 {
 	std::string sendMsg = "PONG :" + pinger->getHost() + "\r\n";
-	send(pinger->getFd(), sendMsg.c_str(), sendMsg.length(), 0);
+	SEND(pinger->getFd(), sendMsg)
 }
 
 /**

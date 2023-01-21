@@ -46,7 +46,6 @@ std::string  ClientHandler::processCmd(const std::string &msg, int const &sockFd
 {
 	Client		*client = finder(sockFd);
     std::string newCmd = client->getCmdBuffer() + msg;
-
     if (msg.find('\n', 0) == std::string::npos) // in case there is no \n 
     {
         client->setCmdBuffer(newCmd);

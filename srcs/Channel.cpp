@@ -68,11 +68,11 @@ std::string Channel::getUsersString() { // + if the user has the rigth to speak 
 **/
 void    Channel::sendMsgToUsers(const std::string &msg) {
     for (_it = _chops.begin(); _it != _chops.end(); _it++)
-        send((*_it)->getFd(), msg.c_str(), msg.length(), 0);
+        SEND((*_it)->getFd(), msg)
     for (_it = _users.begin(); _it != _users.end(); _it++)
-        send((*_it)->getFd(), msg.c_str(), msg.length(), 0);
+        SEND((*_it)->getFd(), msg)
     for (_it = _moderators.begin(); _it != _moderators.end(); _it++)
-        send((*_it)->getFd(), msg.c_str(), msg.length(), 0);
+        SEND((*_it)->getFd(), msg)
 }
 
 /**
@@ -84,17 +84,17 @@ void    Channel::sendMsgToUsers(const std::string &msg, const int &fd) {
     for (_it = _chops.begin(); _it != _chops.end(); _it++) {
         if ((*_it)->getFd() == fd)
             continue;
-        send((*_it)->getFd(), msg.c_str(), msg.length(), 0);
+        SEND((*_it)->getFd(), msg)
     }
     for (_it = _users.begin(); _it != _users.end(); _it++) {
         if ((*_it)->getFd() == fd)
             continue;        
-        send((*_it)->getFd(), msg.c_str(), msg.length(), 0);
+        SEND((*_it)->getFd(), msg)
     }
     for (_it = _muted_users.begin(); _it != _muted_users.end(); _it++) {
         if ((*_it)->getFd() == fd)
             continue;
-        send((*_it)->getFd(), msg.c_str(), msg.length(), 0);
+        SEND((*_it)->getFd(), msg)
     }
 }
 
@@ -389,11 +389,11 @@ void Channel::cmdMode(std::string const &flags, std::string const &args, Client 
 void Channel::sendTopic(Client *client) {
     std::string sendMsg;
     if (_topic.empty()) {
-        sendMsg = "331 " + client->getNick() + ' ' + _name + '\n';
+        sendMsg = ":HiTeK 331 " + _name + " :NOTOPIC\r\n";
         SEND(client->getFd(), sendMsg)
         return ;
     }
-    sendMsg = "332 " + client->getNick() + ' ' + _name + ' ' + _topic + '\n';
+    sendMsg = ":HiTeK 332 " + client->getNick() + ' ' + _name + ' ' + _topic + "\r\n";
     SEND(client->getFd(), sendMsg)
 }
 
@@ -441,7 +441,7 @@ void        Channel::cmdInvite(Client *inviter, Client *invited) {
     if (!finder(_chops, inviter))
 		ERR_CHANOPRIVSNEEDED(_name, inviter->getFd(), _errMsg);
     msgSend =":" + inviter->getNick() + " INVITE " + invited->getNick() + ' ' + getName() + '\n';
-    send(invited->getFd(), msgSend.c_str(), msgSend.length(), 0);
+    SEND(invited->getFd(), msgSend)
     addInvited(invited);
 }
 
