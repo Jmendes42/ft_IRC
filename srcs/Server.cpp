@@ -112,6 +112,7 @@ void    Server::sockSet() {
 void    Server::interpreter(std::string msg, int const &sockFd) 
 {
 	Client		*client = _clientHandler.finder(sockFd);
+	MSG("Interpreter = " + msg);
 
 	if (msg[msg.length() - 1] == '\n')
 		msg.erase(msg.size() - 1, 1);
@@ -405,7 +406,6 @@ void	Server::privMsgLoop(std::vector<std::string> targets, std::string &msg,
 							const std::string &cmd, Client *sender) {
 	std::vector<std::string>::iterator	it;
 	std::string							sendMsg;
-	MSG("AQUI = " + msg);
 
 	for (it = targets.begin(); it != targets.end(); it++) {
 		if ((*it)[0] == '#')
@@ -480,7 +480,7 @@ void	Server::setNick(const std::string &nick, Client *client) {
 		client->setNick(nick);
 		if (!client->getUser().empty()) {
 			client->setRegistration();
-			std::string welcomeMsg = "001 " + client->getNick() + " :Welcome to '**HiTeK**' Server\r\n";
+			std::string welcomeMsg = ":HiTeK 001 " + client->getNick() + " :Welcome to '**HiTeK**' Server\r\n";
 			send(client->getFd(), welcomeMsg.c_str(), welcomeMsg.length(), 0);
 		}
 }
@@ -490,6 +490,8 @@ void	Server::setNick(const std::string &nick, Client *client) {
 void    Server::setClientUser(std::vector<std::string> args, Client *client) {
 	std::string welcomeMsg;
 
+	MSG("User Function");
+
 	client->setUser(args[1]);
 	client->setReal(args[2]);
 	if (client->getPass())
@@ -497,15 +499,14 @@ void    Server::setClientUser(std::vector<std::string> args, Client *client) {
 		if (!client->getNick().empty())
 		{
 			client->setRegistration();
-			welcomeMsg = "001 " + client->getNick() + " :Welcome to '**HiTeK**' Server\r\n";
+			welcomeMsg = ":HiTeK 001 " + client->getNick() + " :Welcome to '**HiTeK**' Server\r\n";
+			MSG("Welcome = ." + welcomeMsg + ".");
+			MSG("Nick = ." + client->getNick() + ".");
 			send(client->getFd(), welcomeMsg.c_str(), welcomeMsg.length(), 0);
 		}
 	}
 	else
-	{
 		ERR_PASSWDMISMATCH(client->getNick(), client->getFd(), _errMsg)
-	}
-
 }
 
 /**
